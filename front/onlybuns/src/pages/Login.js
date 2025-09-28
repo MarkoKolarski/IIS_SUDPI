@@ -37,7 +37,7 @@ const Login = () => {
 
     return (
         <div className="login-container">
-            <h2>Login</h2>
+            <h2>Prijava</h2>
             
             {message && <p className="message success">{message}</p>}
             
@@ -57,14 +57,14 @@ const Login = () => {
                 <input
                     type="password"
                     name="password"
-                    placeholder="Password"
+                    placeholder="Lozinka"
                     value={formData.password}
                     onChange={handleChange}
                     required
                 />
                 {errors.password && <p className="error-message">{errors.password}</p>}
 
-                <button type="submit">Submit</button>
+                <button type="submit">Prijavi se</button>
             </form>
         </div>
     );
