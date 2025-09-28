@@ -3,7 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
-from onlybuns import settings
+from IIS_SUDPI import settings
 import re
 
 # class RegistrationSerializer(serializers.ModelSerializer):

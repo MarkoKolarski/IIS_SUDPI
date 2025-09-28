@@ -15,13 +15,13 @@ class User(AbstractUser):
     )
     
     # Atributi prema ER dijagramu
-    sifra_k = models.AutoField(primary_key=True)
-    ime_k = models.CharField(max_length=100)
-    prz_k = models.CharField(max_length=100)
-    mail_k = models.EmailField(unique=True)
-    lozinka_k = models.CharField(max_length=128)  # Django automatski enkriptuje
-    tip_k = models.CharField(max_length=30, choices=USER_TYPES)
-    
+    sifra_k = models.AutoField(primary_key=True, default=None)
+    ime_k = models.CharField(max_length=100, default=None)
+    prz_k = models.CharField(max_length=100, default=None)
+    mail_k = models.EmailField(unique=True, default=None)
+    lozinka_k = models.CharField(max_length=128, default=None)
+    tip_k = models.CharField(max_length=30, choices=USER_TYPES, default=None)
+
     # Koristi email kao username za autentifikaciju
     USERNAME_FIELD = 'mail_k'
     REQUIRED_FIELDS = ['ime_k', 'prz_k', 'tip_k']
