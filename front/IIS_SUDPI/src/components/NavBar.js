@@ -9,8 +9,8 @@ const Navbar = () => {
                 <Link to="/" className="title-link">Centar za dobavljače</Link>
             </h1>
             <ul className="nav-links">
-                {/* <li><Link to="/login">Prijava</Link></li>
-                <li><Link to="/register">Registracija</Link></li> */}
+                {/* <li><Link to="/login">Prijava</Link></li> */}
+                <li><Link to="/register">Registracija</Link></li>
             </ul>
         </nav>
     );

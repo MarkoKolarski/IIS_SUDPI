@@ -15,12 +15,11 @@ class User(AbstractUser):
     )
     
     # Atributi prema ER dijagramu
-    sifra_k = models.AutoField(primary_key=True, default=None)
-    ime_k = models.CharField(max_length=100, default=None)
-    prz_k = models.CharField(max_length=100, default=None)
-    mail_k = models.EmailField(unique=True, default=None)
-    lozinka_k = models.CharField(max_length=128, default=None)
-    tip_k = models.CharField(max_length=30, choices=USER_TYPES, default=None)
+    sifra_k = models.AutoField(primary_key=True)
+    ime_k = models.CharField(max_length=100)
+    prz_k = models.CharField(max_length=100)
+    mail_k = models.EmailField(unique=True)
+    tip_k = models.CharField(max_length=30, choices=USER_TYPES)
 
     # Koristi email kao username za autentifikaciju
     USERNAME_FIELD = 'mail_k'
@@ -28,6 +27,10 @@ class User(AbstractUser):
 
     class Meta:
         db_table = 'korisnik'
+
+    @property
+    def id(self):
+        return self.sifra_k
 
     def __str__(self):
         return f"{self.ime_k} {self.prz_k} ({self.get_tip_k_display()})"
