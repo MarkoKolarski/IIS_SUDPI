@@ -150,7 +150,7 @@ node_modules/
 */node_modules/
 **/node_modules/
 front/node_modules/
-back/onlybuns/node_modules/
+back/IIS_SUDPI/node_modules/
 
 # Package manager files
 package-lock.json
