@@ -4,6 +4,7 @@ import Register from './pages/Register.js';
 import Login from './pages/Login.js';
 import DashboardFA from './pages/DashboardFA.js';
 import Invoice from './pages/Invoice.js';
+import InvoiceDetails from './pages/InvoiceDetails.js';
 
 
 const App = () => {
@@ -15,6 +16,7 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/dashboard-fa" element={<DashboardFA />} />
                 <Route path="/invoice" element={<Invoice />} />
+                <Route path="/invoice-details" element={<InvoiceDetails />} />
             </Routes>
         </Router>
     );

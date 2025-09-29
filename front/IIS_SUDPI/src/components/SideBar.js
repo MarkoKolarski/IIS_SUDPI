@@ -45,6 +45,15 @@ const SideBar = ({ isCollapsed, toggleSidebar }) => {
                         </div>
                     )}
                 </a>
+                <a href="/invoice-details" className={`nav-item ${location.pathname === '/invoice-details' ? 'active' : ''}`}>
+                    <span className="nav-icon">{location.pathname === '/invoice-details' ? '⭐' : '★'}</span>
+                    {!isCollapsed && (
+                        <div className="nav-text">
+                            <span className="nav-title">Detalji fakture</span>
+                            <span className="nav-description">Pregled statusa i sledećih koraka</span>
+                        </div>
+                    )}
+                </a>
                 <a href="/reports" className={`nav-item ${location.pathname === '/reports' ? 'active' : ''}`}>
                     <span className="nav-icon">{location.pathname === '/reports' ? '⭐' : '★'}</span>
                     {!isCollapsed && (
