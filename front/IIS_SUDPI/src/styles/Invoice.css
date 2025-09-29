@@ -1,0 +1,215 @@
+/* General Structure */
+.invoice-wrapper {
+    display: flex;
+    background-color: #f0fdfa; /* Very light green from dashboard */
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.invoice-main-content {
+    flex-grow: 1;
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.invoice-wrapper.sidebar-collapsed .invoice-main-content {
+    margin-left: 80px;
+}
+
+/* Header Section */
+.invoice-header {
+    background-color: #14b8a6; /* Main green from dashboard */
+    padding: 28px;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.invoice-header h1 {
+    font-size: 34px;
+    font-weight: 700;
+    color: #ffffff; /* White text on green background */
+    margin: 0;
+}
+
+/* Filter Section */
+.filter-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid #a7f3d0; /* Light green border */
+}
+
+.filter-controls {
+    display: flex;
+    gap: 16px;
+}
+
+.filter-dropdown {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-dropdown label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #134e4a; /* Dark green text */
+    margin-bottom: 8px;
+}
+
+.filter-dropdown button {
+    background-color: #14b8a6; /* Main green */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0 16px;
+    height: 46px;
+    width: 160px;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.filter-dropdown button:hover {
+    background-color: #0f766e; /* Darker green on hover */
+}
+
+.active-filters .filter-chip {
+    background-color: #ffffff;
+    border: 1px solid #a7f3d0; /* Light green border */
+    border-radius: 24px;
+    padding: 8px 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.remove-chip-icon {
+    font-size: 14px;
+    color: #134e4a; /* Dark green */
+    transition: color 0.2s;
+}
+
+.filter-chip:hover .remove-chip-icon {
+    color: #065f46; /* Darker green on hover */
+}
+
+/* Table Section */
+.table-section {
+    padding: 32px;
+}
+
+.table-container {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1); /* Green shadow */
+    overflow: hidden;
+    max-width: 1600px;
+    margin: 0 auto;
+    border: 1px solid #a7f3d0; /* Light green border */
+    background-color: #ffffff; /* White background */
+}
+
+.table-title-header {
+    background-color: #14b8a6; /* Main green */
+    padding: 20px 24px;
+}
+
+.table-title-header h2 {
+    font-size: 23px;
+    font-weight: 700;
+    color: #ffffff; /* White text */
+    margin: 0;
+}
+
+.table-content {
+    width: 100%;
+}
+
+.table-header {
+    display: flex;
+    background-color: #a7f3d0; /* Light green background */
+    border-bottom: 1px solid #14b8a6; /* Main green border */
+}
+
+.table-header .table-col {
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #065f46; /* Dark green text */
+}
+
+.table-body .table-row {
+    display: flex;
+    border-bottom: 1px solid #a7f3d0; /* Light green border */
+    transition: background-color 0.2s;
+}
+
+.table-body .table-row:hover {
+    background-color: #d1fae5; /* Light green hover */
+}
+
+.table-body .row-odd {
+    background-color: #ecfdf5; /* Very light green */
+}
+
+.table-body .row-even {
+    background-color: #ffffff; /* White */
+}
+
+.table-body .table-col {
+    padding: 16px 20px;
+    font-size: 15px;
+    color: #134e4a; /* Dark green text */
+}
+
+.status-col {
+    text-align: right;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-waiting {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-paid {
+    background-color: #d1fae5; /* Light green background */
+    color: #065f46; /* Dark green text */
+}
+
+.status-received {
+    background-color: #a7f3d0; /* Medium green background */
+    color: #134e4a; /* Dark green text */
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .table-section {
+        overflow-x: auto;
+    }
+    .table-container {
+        min-width: 1000px;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}

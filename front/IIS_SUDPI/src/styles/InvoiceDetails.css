@@ -1,0 +1,414 @@
+/* Wrapper & Layout */
+.invoice-details-wrapper {
+    display: flex;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.invoice-details-main {
+    flex-grow: 1;
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: 140px;
+}
+
+.invoice-details-wrapper.sidebar-collapsed .invoice-details-main {
+    margin-left: 80px;
+}
+
+.invoice-details-header {
+    background-color: #14b8a6;
+    padding: 26px 24px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(20, 184, 166, 0.2);
+}
+
+.invoice-details-header h1 {
+    font-size: 34px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.invoice-details-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 36px 32px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+}
+
+/* Invoice Summary Card */
+.invoice-summary-card {
+    width: 100%;
+    max-width: 960px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
+    overflow: hidden;
+}
+
+.invoice-summary-header {
+    background-color: #14b8a6;
+    padding: 18px 32px;
+    text-align: center;
+}
+
+.invoice-summary-header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.invoice-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 18px 32px;
+}
+
+.invoice-summary-row.row-light {
+    background-color: #ecfdf5;
+}
+
+.invoice-summary-row.row-medium {
+    background-color: #d1fae5;
+}
+
+.summary-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #134e4a;
+}
+
+.summary-col + .summary-col {
+    border-left: 1px solid #a7f3d0;
+    padding-left: 32px;
+}
+
+.summary-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f766e;
+}
+
+.summary-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #065f46;
+}
+
+/* Process Flow */
+.process-flow {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
+    overflow: hidden;
+}
+
+.process-flow-header {
+    background-color: #14b8a6;
+    padding: 16px 24px;
+    text-align: center;
+}
+
+.process-flow-header h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.process-flow-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 28px 32px;
+    background-color: #ecfdf5;
+}
+
+.process-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-width: 110px;
+    text-align: center;
+}
+
+.step-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid #14b8a6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    background-color: #ffffff;
+    color: #065f46;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.step-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #134e4a;
+}
+
+.process-step.completed .step-circle {
+    background-color: #14b8a6;
+    color: #ffffff;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.2);
+}
+
+.process-step.active .step-circle {
+    background-color: #0f766e;
+    color: #ffffff;
+    border-color: #0b4f4a;
+    box-shadow: 0 0 0 4px rgba(6, 95, 70, 0.25);
+}
+
+.step-connector {
+    flex: 1;
+    height: 2px;
+    background-color: #14b8a6;
+    align-self: center;
+    border-radius: 999px;
+}
+
+/* Bottom Cards */
+.bottom-cards {
+    width: 100%;
+    max-width: 960px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+}
+
+.discrepancy-card,
+.notification-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: 1px solid #a7f3d0;
+}
+
+.card-header {
+    background-color: #14b8a6;
+    padding: 16px 24px;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+}
+
+.card-header h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.card-body {
+    background-color: #ecfdf5;
+    padding: 26px 28px;
+    border-radius: 0 0 8px 8px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.discrepancy-card .card-body {
+    justify-content: flex-start;
+    color: #134e4a;
+    line-height: 1.6;
+}
+
+.notification-card .card-body {
+    gap: 20px;
+    align-items: center;
+    text-align: center;
+}
+
+.notification-question {
+    font-size: 16px;
+    color: #134e4a;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.notification-btn {
+    background-color: #14b8a6;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    min-width: 110px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 4px 10px rgba(20, 184, 166, 0.2);
+}
+
+.notification-btn:hover {
+    background-color: #0f766e;
+    transform: translateY(-2px);
+}
+
+.notification-btn:active {
+    transform: translateY(0);
+}
+
+/* Simulation Button */
+.simulate-payment-btn {
+    position: fixed;
+    bottom: 36px;
+    right: 36px;
+    background-color: #14b8a6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 200px;
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.35);
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    z-index: 20;
+}
+
+.simulate-payment-btn:hover {
+    background-color: #0f766e;
+    box-shadow: 0 12px 28px rgba(6, 95, 70, 0.35);
+    transform: translateY(-2px);
+}
+
+.simulate-payment-btn:active {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .invoice-details-main {
+        margin-left: 260px;
+    }
+
+    .invoice-details-wrapper.sidebar-collapsed .invoice-details-main {
+        margin-left: 72px;
+    }
+
+    .invoice-summary-card,
+    .bottom-cards {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 992px) {
+    .invoice-details-main {
+        margin-left: 240px;
+    }
+
+    .bottom-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .simulate-payment-btn {
+        right: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .invoice-details-main {
+        margin-left: 0;
+    }
+
+    .invoice-details-wrapper.sidebar-collapsed .invoice-details-main {
+        margin-left: 0;
+    }
+
+    .invoice-details-content {
+        padding: 24px 20px 80px;
+        align-items: stretch;
+    }
+
+    .invoice-summary-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .summary-col + .summary-col {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px solid #b5b9bd;
+        padding-top: 16px;
+    }
+
+    .process-flow {
+        max-width: 100%;
+    }
+
+    .process-flow-body {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .step-connector {
+        flex: none;
+        width: 2px;
+        height: 40px;
+    }
+
+    .bottom-cards {
+        gap: 20px;
+    }
+
+    .simulate-payment-btn {
+        position: static;
+        margin: 0 0 32px;
+        align-self: center;
+        width: 100%;
+        max-width: 320px;
+    }
+}
+
+@media (max-width: 480px) {
+    .invoice-summary-header h2 {
+        font-size: 22px;
+    }
+
+    .invoice-details-header h1 {
+        font-size: 28px;
+    }
+
+    .invoice-summary-row {
+        padding: 16px 20px;
+    }
+
+    .process-flow-body {
+        padding: 24px;
+    }
+
+    .card-body {
+        padding: 24px 20px;
+    }
+}
