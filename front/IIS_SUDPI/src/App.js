@@ -6,6 +6,7 @@ import DashboardFA from './pages/DashboardFA.js';
 import Invoice from './pages/Invoice.js';
 import InvoiceDetails from './pages/InvoiceDetails.js';
 import Reports from './pages/Reports.js';
+import Penalties from './pages/Penalties.js';
 
 
 const App = () => {
@@ -19,6 +20,7 @@ const App = () => {
                 <Route path="/invoice" element={<Invoice />} />
                 <Route path="/invoice-details" element={<InvoiceDetails />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/penalties" element={<Penalties />} />
             </Routes>
         </Router>
     );
