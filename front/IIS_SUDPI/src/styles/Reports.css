@@ -1,0 +1,291 @@
+/* General Structure */
+.reports-wrapper {
+    display: flex;
+    background-color: #f0fdfa; /* Very light green from dashboard */
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.reports-main-content {
+    flex-grow: 1;
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.reports-wrapper.sidebar-collapsed .reports-main-content {
+    margin-left: 80px;
+}
+
+/* Header Section */
+.reports-header {
+    background-color: #14b8a6; /* Main green from dashboard */
+    padding: 28px;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.reports-header h1 {
+    font-size: 34px;
+    font-weight: 700;
+    color: #ffffff; /* White text on green background */
+    margin: 0;
+}
+
+/* Filter Section */
+.reports-filter-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 24px 32px;
+    gap: 20px;
+    border-bottom: 1px solid #a7f3d0; /* Light green border */
+}
+
+.filter-controls {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.filter-dropdown {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-dropdown label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #134e4a; /* Dark green text */
+    margin-bottom: 8px;
+}
+
+.filter-dropdown button {
+    background-color: #14b8a6; /* Main green */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0 16px;
+    height: 46px;
+    width: 140px;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.filter-dropdown button:hover {
+    background-color: #0f766e; /* Darker green on hover */
+}
+
+#group-by-filter {
+    width: 160px;
+}
+
+.generate-report-btn {
+    background-color: #14b8a6; /* Main green */
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 0 14px;
+    border-radius: 6px;
+    border: none;
+    height: 46px;
+    min-width: 180px;
+    cursor: pointer;
+    margin-left: auto;
+    transition: background-color 0.2s;
+}
+
+.generate-report-btn:hover {
+    background-color: #0f766e; /* Darker green on hover */
+}
+
+/* Chart Section */
+.chart-section {
+    display: flex;
+    gap: 24px;
+    padding: 32px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.chart-card {
+    flex: 1;
+    min-width: 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1); /* Green shadow */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #a7f3d0; /* Light green border */
+    background-color: #ffffff; /* White background */
+}
+
+.chart-card-header {
+    background-color: #a7f3d0; /* Light green background */
+    padding: 18px 24px;
+    text-align: center;
+    border-bottom: 1px solid #14b8a6;
+}
+
+.chart-card-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #065f46; /* Dark green text */
+    margin: 0;
+}
+
+.chart-card-body {
+    background-color: #ffffff;
+    padding: 32px;
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.chart-placeholder {
+    background-color: #d1fae5; /* Light green hover */
+    width: 95%;
+    height: 280px;
+    border-radius: 4px;
+}
+
+/* Table Section */
+.reports-table-section {
+    padding: 32px;
+}
+
+.table-container {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1); /* Green shadow */
+    overflow: hidden;
+    max-width: 1600px;
+    margin: 0 auto;
+    border: 1px solid #a7f3d0; /* Light green border */
+    background-color: #ffffff; /* White background */
+}
+
+.table-title-header {
+    background-color: #14b8a6; /* Main green */
+    padding: 20px 32px;
+    text-align: center;
+}
+
+.table-title-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.table-content {
+    width: 100%;
+}
+
+.reports-table-header, .table-row {
+    display: flex;
+    width: 100%;
+}
+
+.reports-table-header {
+    background-color: #a7f3d0; /* Light green background */
+    border-bottom: 1px solid #14b8a6; /* Main green border */
+}
+
+.reports-table-header .table-col {
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #065f46; /* Dark green text */
+}
+
+.reports-table-body .table-row {
+    border-bottom: 1px solid #a7f3d0; /* Light green border */
+    transition: background-color 0.2s;
+}
+
+.reports-table-body .table-row:hover {
+    background-color: #d1fae5; /* Light green hover */
+}
+
+.reports-table-body .row-dark {
+    background-color: #ecfdf5; /* Very light green */
+}
+
+.reports-table-body .row-light {
+    background-color: #ffffff; /* White */
+}
+
+.reports-table-body .table-col {
+    padding: 16px 24px;
+    font-size: 15px;
+    color: #134e4a; /* Dark green text */
+    display: flex;
+    align-items: center;
+}
+
+.col-proizvod { width: 20%; text-align: left; }
+.col-kolicina { width: 20%; text-align: center; justify-content: center; }
+.col-trosak { width: 35%; text-align: right; justify-content: flex-end; }
+.col-profit { width: 25%; text-align: right; justify-content: flex-end; }
+
+.summary-row {
+    background-color: #a7f3d0; /* Medium green background */
+    border-top: 2px solid #14b8a6;
+}
+
+.summary-row .table-col {
+    font-weight: 700;
+    font-size: 16px;
+    color: #065f46;
+}
+
+.profit-positive {
+    color: #16a34a;
+    font-weight: 700;
+}
+
+.profit-positive .arrow {
+    margin-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .reports-table-section {
+        overflow-x: auto;
+    }
+    .table-container {
+        min-width: 900px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .chart-section {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    .reports-filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    .filter-dropdown button {
+        width: 100%;
+    }
+    .generate-report-btn {
+        margin-left: 0;
+        width: 100%;
+    }
+}
