@@ -92,6 +92,22 @@
     border-top: 1px solid rgba(255,255,255,0.2);
 }
 
+.dashboard-fa-wrapper {
+    display: flex;
+    background-color: #f0f2f5; /* A neutral background for the wrapper */
+}
+
+.dashboard-fa-main-content {
+    flex-grow: 1;
+    margin-left: 280px; /* Default sidebar width */
+    transition: margin-left 0.3s ease;
+    padding: 0; /* Remove padding if container has it */
+}
+
+.dashboard-fa-wrapper.sidebar-collapsed .dashboard-fa-main-content {
+    margin-left: 80px; /* Collapsed sidebar width */
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .dashboard-fa-container {
