@@ -1,129 +1,177 @@
-.dashboard-fa-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.dashboard-header {
-    text-align: center;
-    color: white;
-    margin-bottom: 40px;
-}
-
-.dashboard-header h1 {
-    font-size: 2.5em;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-}
-
-.dashboard-header p {
-    font-size: 1.2em;
-    opacity: 0.9;
-}
-
-.dashboard-content {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
-    margin-bottom: 40px;
-}
-
-.dashboard-card {
-    background: white;
-    border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    text-align: center;
-}
-
-.dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 35px rgba(0,0,0,0.15);
-}
-
-.dashboard-card h3 {
-    color: #333;
-    font-size: 1.5em;
-    margin-bottom: 15px;
-    font-weight: 600;
-}
-
-.dashboard-card p {
-    color: #666;
-    margin-bottom: 20px;
-    line-height: 1.5;
-}
-
-.card-button {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.card-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.card-button:active {
-    transform: translateY(0);
-}
-
-.dashboard-footer {
-    text-align: center;
-    color: white;
-    opacity: 0.8;
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.2);
-}
-
+/* General Wrapper and Main Content */
 .dashboard-fa-wrapper {
     display: flex;
-    background-color: #f0f2f5; /* A neutral background for the wrapper */
+    background-color: #f0fdfa; /* Very light green from login page */
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .dashboard-fa-main-content {
     flex-grow: 1;
     margin-left: 280px; /* Default sidebar width */
     transition: margin-left 0.3s ease;
-    padding: 0; /* Remove padding if container has it */
+    padding: 0;
 }
 
 .dashboard-fa-wrapper.sidebar-collapsed .dashboard-fa-main-content {
     margin-left: 80px; /* Collapsed sidebar width */
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    .dashboard-fa-container {
-        padding: 15px;
-    }
-    
-    .dashboard-header h1 {
-        font-size: 2em;
-    }
-    
+/* Header Section */
+.dashboard-header {
+    background-color: #14b8a6; /* Main green from login page */
+    padding: 24px;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.dashboard-header h1 {
+    font-size: 30px;
+    font-weight: 700;
+    color: #ffffff; /* White text on green background */
+    margin: 0;
+}
+
+/* Content Area */
+.dashboard-content {
+    padding: 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Grid Layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+/* Card Styling */
+.dashboard-card {
+    background-color: #ffffff; /* White background for cards */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1);
+    overflow: hidden; /* To contain header border-radius */
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #a7f3d0; /* Light green border */
+}
+
+.card-header {
+    background-color: #14b8a6; /* Main green */
+    padding: 16px 20px;
+}
+
+.card-header h3 {
+    color: #ffffff; /* White text */
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card-content {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+/* Card 1: Finance Overview */
+.finance-overview-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    padding: 16px 0;
+}
+
+.finance-overview-item:not(:last-child) {
+    border-bottom: 1px solid #a7f3d0; /* Light green separator */
+}
+
+.finance-overview-item span {
+    color: #134e4a; /* Dark green text */
+}
+
+.finance-overview-item strong {
+    color: #065f46; /* Darker green for emphasis */
+    font-weight: 600;
+}
+
+/* Card 2: Supplier Profitability */
+.supplier-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    padding: 15px 0;
+    color: #134e4a;
+}
+
+.supplier-item:not(:last-child) {
+    border-bottom: 1px solid #a7f3d0; /* Light green separator */
+}
+
+/* Card 3: Upcoming Payments */
+.upcoming-payments-table {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    color: #134e4a;
+}
+
+.table-header-row, .table-row {
+    display: flex;
+    padding: 15px 0;
+    font-size: 16px;
+}
+
+.table-header-row {
+    font-weight: 700;
+    color: #065f46; /* Darker green for header */
+    border-bottom: 2px solid #14b8a6; /* Main green border */
+}
+
+.table-row:not(:last-child) {
+    border-bottom: 1px solid #a7f3d0; /* Light green separator */
+}
+
+.table-col {
+    text-align: left;
+}
+
+.id-col { width: 25%; }
+.supplier-col { width: 45%; }
+.amount-col { width: 30%; text-align: right; }
+
+
+/* Card 4: Chart Placeholder */
+.chart-placeholder {
+    background-color: #d1fae5; /* Light green background for chart area */
+    border-radius: 4px;
+    min-height: 280px;
+    width: 100%;
+    height: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
-        gap: 20px;
     }
-    
-    .dashboard-card {
-        padding: 20px;
+    .dashboard-content {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-fa-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+    }
+    .dashboard-fa-wrapper.sidebar-collapsed .dashboard-fa-main-content {
+        margin-left: 0;
+    }
+    .dashboard-content {
+        padding: 16px;
+    }
+    .dashboard-header h1 {
+        font-size: 24px;
     }
 }
