@@ -185,3 +185,32 @@ class ReportsSerializer(serializers.Serializer):
     chart_costs = ChartDataSerializer(many=True)
     total_summary = ReportDataSerializer()
     period_info = serializers.DictField()
+
+class PenalSerializer(serializers.ModelSerializer):
+    dobavljac_naziv = serializers.CharField(source='ugovor.dobavljac.naziv', read_only=True)
+    ugovor_sifra = serializers.CharField(source='ugovor.sifra_u', read_only=True)
+    status_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Penal
+        fields = [
+            'sifra_p',
+            'razlog_p', 
+            'iznos_p',
+            'datum_p',
+            'dobavljac_naziv',
+            'ugovor_sifra',
+            'status_display'
+        ]
+    
+    def get_status_display(self, obj):
+        """Generiše status na osnovu datuma i logike penala"""
+        # Za sada ću koristiti jednostavnu logiku - možeš proširiti po potrebi
+        from datetime import date, timedelta
+        
+        danas = date.today()
+        # Ako je penal stariji od 30 dana, smatra se rešenim
+        if obj.datum_p < danas - timedelta(days=30):
+            return 'Rešen'
+        else:
+            return 'Obavešten'

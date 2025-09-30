@@ -20,6 +20,7 @@ from .serializers import (
     FakturaDetailSerializer,
     DobavljacSerializer,
     ReportsSerializer,
+    PenalSerializer,
 )
 
 def index(request):
@@ -562,4 +563,144 @@ def reports_filter_options(request):
         'statusi': statusi,
         'periodi': periodi,
         'grupiranje': grupiranje,
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def penalties_list(request):
+    """
+    API endpoint za prikaz liste penala sa filtering opcijama
+    """
+    # Početni queryset sa related objektima za optimizaciju
+    queryset = Penal.objects.select_related('ugovor__dobavljac').all()
+    
+    # Filtering po dobavljaču
+    dobavljac_filter = request.GET.get('dobavljac')
+    if dobavljac_filter and dobavljac_filter != 'svi':
+        try:
+            dobavljac_id = int(dobavljac_filter)
+            queryset = queryset.filter(ugovor__dobavljac__sifra_d=dobavljac_id)
+        except (ValueError, TypeError):
+            pass
+    
+    # Filtering po statusu (na osnovu datuma)
+    status_filter = request.GET.get('status')
+    if status_filter and status_filter != 'svi':
+        from datetime import date, timedelta
+        danas = date.today()
+        if status_filter == 'resen':
+            # Penali stariji od 30 dana
+            queryset = queryset.filter(datum_p__lt=danas - timedelta(days=30))
+        elif status_filter == 'obavesten':
+            # Penali noviji od 30 dana
+            queryset = queryset.filter(datum_p__gte=danas - timedelta(days=30))
+    
+    # Sortiranje po datumu (najnoviji prvo)
+    queryset = queryset.order_by('-datum_p', '-sifra_p')
+    
+    # Paginacija
+    page_size = int(request.GET.get('page_size', 10))
+    page_number = int(request.GET.get('page', 1))
+    
+    paginator = Paginator(queryset, page_size)
+    page = paginator.get_page(page_number)
+    
+    # Serijalizacija podataka
+    serializer = PenalSerializer(page.object_list, many=True)
+    
+    return Response({
+        'results': serializer.data,
+        'count': paginator.count,
+        'num_pages': paginator.num_pages,
+        'current_page': page.number,
+        'has_next': page.has_next(),
+        'has_previous': page.has_previous(),
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def penalties_filter_options(request):
+    """
+    API endpoint za dobijanje opcija za dropdown filtere
+    """
+    # Dostupni statusi penala
+    statusi = [
+        {'value': 'svi', 'label': 'Svi statusi'},
+        {'value': 'resen', 'label': 'Rešen'},
+        {'value': 'obavesten', 'label': 'Obavešten'},
+    ]
+    
+    # Dobavljači koji imaju penale
+    dobavljaci = Dobavljac.objects.filter(
+        ugovori__penali__isnull=False
+    ).distinct().values('sifra_d', 'naziv')
+    
+    dobavljaci_opcije = [{'value': 'svi', 'label': 'Svi dobavljači'}]
+    dobavljaci_opcije.extend([
+        {'value': str(d['sifra_d']), 'label': d['naziv']} 
+        for d in dobavljaci
+    ])
+    
+    return Response({
+        'statusi': statusi,
+        'dobavljaci': dobavljaci_opcije,
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def penalties_analysis(request):
+    """
+    API endpoint za automatsku analizu saradnje sa dobavljačima na osnovu penala
+    """
+    
+    # Analiziramo dobavljače koji imaju penale
+    dobavljaci_analiza = []
+    
+    # Koristimo drugačiji pristup da izbegnemo NCLOB problem sa Oracle bazom
+    dobavljaci_sa_penalima = Dobavljac.objects.filter(
+        ugovori__penali__isnull=False
+    ).annotate(
+        broj_penala=Count('ugovori__penali__sifra_p', distinct=True),
+        ukupan_iznos=Sum('ugovori__penali__iznos_p'),
+        broj_ugovora=Count('ugovori__sifra_u', distinct=True)
+    ).values(
+        'sifra_d', 'naziv', 'broj_penala', 'ukupan_iznos', 'broj_ugovora'
+    ).distinct()
+    
+    for dobavljac_data in dobavljaci_sa_penalima:
+        # Računamo stopu kršenja kao procenat ugovora koji imaju penale
+        # Sada koristimo podatke iz annotated queryseta
+        dobavljac_obj = Dobavljac.objects.get(sifra_d=dobavljac_data['sifra_d'])
+        ugovori_sa_penalima = dobavljac_obj.ugovori.filter(
+            penali__isnull=False
+        ).values('sifra_u').distinct().count()
+        
+        ukupno_ugovora = dobavljac_data['broj_ugovora']
+        stopa_krsenja = (ugovori_sa_penalima / ukupno_ugovora * 100) if ukupno_ugovora > 0 else 0
+        
+        # Određujemo preporuku na osnovu stope kršenja
+        if stopa_krsenja >= 50:
+            preporuka = "Razmotriti prekid saradnje"
+            tip_preporuke = "negative"
+        elif stopa_krsenja >= 25:
+            preporuka = "Pojačana kontrola"
+            tip_preporuke = "warning"
+        else:
+            preporuka = "Pouzdana saradnja"
+            tip_preporuke = "positive"
+        
+        dobavljaci_analiza.append({
+            'naziv': dobavljac_data['naziv'],
+            'broj_penala': dobavljac_data['broj_penala'],
+            'ukupan_iznos': float(dobavljac_data['ukupan_iznos'] or 0),
+            'stopa_krsenja': round(stopa_krsenja, 1),
+            'preporuka': preporuka,
+            'tip_preporuke': tip_preporuke
+        })
+    
+    # Sortiramo po stopi kršenja (najgori prvi)
+    dobavljaci_analiza.sort(key=lambda x: x['stopa_krsenja'], reverse=True)
+    
+    return Response({
+        'dobavljaci_analiza': dobavljaci_analiza
     }, status=status.HTTP_200_OK)

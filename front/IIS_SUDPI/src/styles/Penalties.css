@@ -37,12 +37,15 @@
 .penalties-filter-section {
     padding: 24px 32px;
     border-bottom: 1px solid #a7f3d0; /* Light green border */
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
 .filter-dropdown {
     display: flex;
     flex-direction: column;
-    max-width: 200px;
+    min-width: 200px;
 }
 
 .filter-dropdown label {
@@ -52,7 +55,8 @@
     margin-bottom: 8px;
 }
 
-.filter-dropdown button {
+.filter-dropdown button,
+.filter-dropdown select {
     background-color: #14b8a6; /* Main green */
     color: white;
     border: none;
@@ -67,8 +71,19 @@
     transition: background-color 0.2s;
 }
 
-.filter-dropdown button:hover {
+.filter-dropdown button:hover,
+.filter-dropdown select:hover {
     background-color: #0f766e; /* Darker green on hover */
+}
+
+.filter-dropdown select {
+    width: 100%;
+    appearance: none;
+}
+
+.filter-dropdown select option {
+    background-color: white;
+    color: #134e4a;
 }
 
 /* Table Section */
@@ -237,13 +252,24 @@
     font-weight: 600;
 }
 
+.warning-metric {
+    color: #f59e0b !important;
+    font-weight: 600;
+}
+
+.positive-metric {
+    color: #16a34a !important;
+    font-weight: 600;
+}
+
 .recommendation-negative {
     color: #dc2626 !important;
     font-weight: 700;
 }
 
-.positive-metric {
-    color: #16a34a !important;
+.recommendation-warning {
+    color: #f59e0b !important;
+    font-weight: 700;
 }
 
 .recommendation-positive {
