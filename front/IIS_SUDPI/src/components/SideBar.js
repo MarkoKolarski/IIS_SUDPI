@@ -27,7 +27,7 @@ const SideBar = ({ isCollapsed, toggleSidebar }) => {
                 </button>
             </div>
             <nav className="sidebar-nav">
-                <a href="/dashboard" className={`nav-item ${location.pathname === '/dashboard-fa' ? 'active' : ''}`}>
+                <a href="/dashboard-fa" className={`nav-item ${location.pathname === '/dashboard-fa' ? 'active' : ''}`}>
                     <span className="nav-icon">{location.pathname === '/dashboard-fa' ? '⭐' : '★'}</span>
                     {!isCollapsed && (
                         <div className="nav-text">
@@ -36,8 +36,8 @@ const SideBar = ({ isCollapsed, toggleSidebar }) => {
                         </div>
                     )}
                 </a>
-                <a href="/invoices" className={`nav-item ${location.pathname === '/invoices' ? 'active' : ''}`}>
-                    <span className="nav-icon">{location.pathname === '/invoices' ? '⭐' : '★'}</span>
+                <a href="/invoice" className={`nav-item ${location.pathname === '/invoice' ? 'active' : ''}`}>
+                    <span className="nav-icon">{location.pathname === '/invoice' ? '⭐' : '★'}</span>
                     {!isCollapsed && (
                         <div className="nav-text">
                             <span className="nav-title">Fakture</span>

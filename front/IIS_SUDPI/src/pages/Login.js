@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axiosInstance from '../axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
+import NavBar from '../components/NavBar';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -48,37 +49,40 @@ const Login = () => {
     };
 
     return (
-        <div className="login-container">
-            <h2>Prijava</h2>
-            
-            {message && <p className="message success">{message}</p>}
-            
-            {errors.detail && <p className="message error">{errors.detail}</p>}
+        <>
+            <NavBar />
+            <div className="login-container">
+                <h2>Prijava</h2>
+                
+                {message && <p className="message success">{message}</p>}
+                
+                {errors.detail && <p className="message error">{errors.detail}</p>}
 
-            <form onSubmit={handleSubmit} className="login-form">
-                <input
-                    type="email"
-                    name="mail_k"
-                    placeholder="Email"
-                    value={formData.mail_k}
-                    onChange={handleChange}
-                    required
-                />
-                {errors.mail_k && <p className="error-message">{errors.mail_k}</p>}
+                <form onSubmit={handleSubmit} className="login-form">
+                    <input
+                        type="email"
+                        name="mail_k"
+                        placeholder="Email"
+                        value={formData.mail_k}
+                        onChange={handleChange}
+                        required
+                    />
+                    {errors.mail_k && <p className="error-message">{errors.mail_k}</p>}
 
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Lozinka"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                />
-                {errors.password && <p className="error-message">{errors.password}</p>}
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Lozinka"
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                    />
+                    {errors.password && <p className="error-message">{errors.password}</p>}
 
-                <button type="submit">Prijavi se</button>
-            </form>
-        </div>
+                    <button type="submit">Prijavi se</button>
+                </form>
+            </div>
+        </>
     );
 };
 

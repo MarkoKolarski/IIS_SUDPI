@@ -7,4 +7,35 @@ const axiosInstance = axios.create({
     },
 });
 
+// Interceptor za dodavanje auth tokena
+axiosInstance.interceptors.request.use(
+    (config) => {
+        // Lista javnih endpoint-a koji ne zahtevaju autentifikaciju
+        const publicEndpoints = ['/register/', '/login/'];
+        
+        // Proveravamo da li je trenutni zahtev za javni endpoint
+        const isPublicEndpoint = publicEndpoints.some(endpoint => 
+            config.url && config.url.includes(endpoint)
+        );
+        
+        // Dodajemo Authorization header samo ako nije javni endpoint i token postoji
+        if (!isPublicEndpoint) {
+            const token = sessionStorage.getItem('access_token');
+            if (token && token !== 'null' && token !== 'undefined') {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
+        }
+        
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+export const dashboardAPI = {
+    getFinansijskiAnalitičarData: () => 
+        axiosInstance.get('dashboard-fa/'),
+};
+
 export default axiosInstance;

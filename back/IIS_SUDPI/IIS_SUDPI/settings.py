@@ -179,6 +179,8 @@ EMAIL_HOST_PASSWORD = 'uxuwqvwefovkufvq '
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "USER_ID_FIELD": "sifra_k",  # Koristimo sifra_k umesto id
+    "USER_ID_CLAIM": "sifra_k",  # Claim u JWT token-u
 }
 
 #URLS
