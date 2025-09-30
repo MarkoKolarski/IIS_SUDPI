@@ -112,7 +112,7 @@ const Invoice = () => {
     };
 
     const formatAmount = (amount) => {
-        return `${parseFloat(amount).toFixed(0)}€`;
+        return `${parseFloat(amount).toFixed(0)} RSD`;
     };
 
     const getStatusClassName = (status) => {

@@ -71,19 +71,11 @@ const DashboardFA = () => {
                                 <div className="card-content">
                                     <div className="finance-overview-item">
                                         <span>Ukupno plaćeno:</span>
-                                        <strong>{dashboardData.pregled_finansija.ukupno_placeno?.toLocaleString('sr-RS', { 
-                                            style: 'currency', 
-                                            currency: 'EUR',
-                                            minimumFractionDigits: 0 
-                                        })}</strong>
+                                        <strong>{dashboardData.pregled_finansija.ukupno_placeno?.toLocaleString('sr-Latn-RS')} RSD</strong>
                                     </div>
                                     <div className="finance-overview-item">
                                         <span>Na čekanju:</span>
-                                        <strong>{dashboardData.pregled_finansija.na_cekanju?.toLocaleString('sr-RS', { 
-                                            style: 'currency', 
-                                            currency: 'EUR',
-                                            minimumFractionDigits: 0 
-                                        })}</strong>
+                                        <strong>{dashboardData.pregled_finansija.na_cekanju?.toLocaleString('sr-Latn-RS')} RSD</strong>
                                     </div>
                                     <div className="finance-overview-item">
                                         <span>Prosečno vreme plaćanja:</span>
@@ -128,7 +120,7 @@ const DashboardFA = () => {
                                                 <div key={payment.id} className="table-row">
                                                     <div className="table-col id-col">{payment.id}</div>
                                                     <div className="table-col supplier-col">{payment.supplier}</div>
-                                                    <div className="table-col amount-col">{payment.amount}</div>
+                                                    <div className="table-col amount-col">{parseFloat(payment.amount).toLocaleString('sr-Latn-RS')} RSD</div>
                                                 </div>
                                             ))
                                         ) : (
@@ -157,11 +149,7 @@ const DashboardFA = () => {
                                                              }}>
                                                         </div>
                                                         <div className="chart-amount">
-                                                            {item.iznos.toLocaleString('sr-RS', { 
-                                                                style: 'currency', 
-                                                                currency: 'EUR',
-                                                                minimumFractionDigits: 0 
-                                                            })}
+                                                            {item.iznos.toLocaleString('sr-Latn-RS')} RSD
                                                         </div>
                                                     </div>
                                                 ))}
