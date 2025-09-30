@@ -37,9 +37,10 @@
 .filter-section {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 24px 32px;
     border-bottom: 1px solid #a7f3d0; /* Light green border */
+    gap: 24px;
 }
 
 .filter-controls {
@@ -50,6 +51,7 @@
 .filter-dropdown {
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .filter-dropdown label {
@@ -79,6 +81,81 @@
     background-color: #0f766e; /* Darker green on hover */
 }
 
+/* Dropdown Menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.dropdown-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f9ff;
+    transition: background-color 0.2s;
+    font-size: 14px;
+    color: #134e4a;
+}
+
+.dropdown-item:hover {
+    background-color: #d1fae5;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+/* Search and Filters Section */
+.search-and-filters {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.search-box input {
+    padding: 12px 16px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    width: 250px;
+    color: #134e4a;
+}
+
+.search-box input::placeholder {
+    color: #6b7280;
+}
+
+.search-box button {
+    background-color: #14b8a6;
+    border: none;
+    padding: 12px 16px;
+    cursor: pointer;
+    color: white;
+    transition: background-color 0.2s;
+}
+
+.search-box button:hover {
+    background-color: #0f766e;
+}
+
 .active-filters .filter-chip {
     background-color: #ffffff;
     border: 1px solid #a7f3d0; /* Light green border */
@@ -99,6 +176,53 @@
 
 .filter-chip:hover .remove-chip-icon {
     color: #065f46; /* Darker green on hover */
+}
+
+/* Loading and No Data Messages */
+.loading-message,
+.no-data-message {
+    padding: 40px 20px;
+    text-align: center;
+    font-size: 16px;
+    color: #6b7280;
+    background-color: #f9fafb;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    gap: 16px;
+    border-top: 1px solid #a7f3d0;
+}
+
+.pagination-btn {
+    background-color: #14b8a6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #0f766e;
+}
+
+.pagination-btn:disabled {
+    background-color: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #134e4a;
+    font-weight: 500;
 }
 
 /* Table Section */
@@ -194,6 +318,11 @@
 .status-received {
     background-color: #a7f3d0; /* Medium green background */
     color: #134e4a; /* Dark green text */
+}
+
+.status-rejected {
+    background-color: #fee2e2; /* Light red background */
+    color: #991b1b; /* Dark red text */
 }
 
 /* Responsive */

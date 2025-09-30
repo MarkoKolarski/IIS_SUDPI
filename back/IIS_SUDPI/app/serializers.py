@@ -31,3 +31,36 @@ class RegistrationSerializer(serializers.ModelSerializer):
             tip_k=validated_data['tip_k']
         )
         return user
+
+class DobavljacSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dobavljac
+        fields = ['sifra_d', 'naziv']
+
+class FakturaSerializer(serializers.ModelSerializer):
+    dobavljac_naziv = serializers.CharField(source='ugovor.dobavljac.naziv', read_only=True)
+    dobavljac_id = serializers.IntegerField(source='ugovor.dobavljac.sifra_d', read_only=True)
+    status_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Faktura
+        fields = [
+            'sifra_f', 
+            'iznos_f', 
+            'datum_prijema_f', 
+            'rok_placanja_f', 
+            'status_f',
+            'status_display',
+            'dobavljac_naziv',
+            'dobavljac_id'
+        ]
+    
+    def get_status_display(self, obj):
+        """Vraća čitljiv naziv statusa"""
+        status_mapping = {
+            'primljena': 'Primljeno',
+            'verifikovana': 'Čeka verifikaciju',
+            'isplacena': 'Plaćeno',
+            'odbijena': 'Odbačeno'
+        }
+        return status_mapping.get(obj.status_f, obj.status_f)

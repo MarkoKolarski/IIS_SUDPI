@@ -8,12 +8,15 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from decimal import Decimal
 from datetime import timedelta, date
+from django.core.paginator import Paginator
 from .models import Faktura, Dobavljac, Penal
 from .serializers import (
     RegistrationSerializer, 
+    FakturaSerializer,
+    DobavljacSerializer,
 )
 
 def index(request):
@@ -166,3 +169,120 @@ def dashboard_finansijski_analiticar(request):
     }
     
     return Response(dashboard_data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def invoice_list(request):
+    """
+    API endpoint za prikaz liste faktura sa filtering i search opcijama
+    """
+    # Početni queryset sa related objektima za optimizaciju
+    queryset = Faktura.objects.select_related('ugovor__dobavljac').all()
+    
+    # Filtering po statusu
+    status_filter = request.GET.get('status')
+    if status_filter and status_filter != 'svi':
+        queryset = queryset.filter(status_f=status_filter)
+    
+    # Filtering po dobavljaču
+    dobavljac_filter = request.GET.get('dobavljac')
+    if dobavljac_filter and dobavljac_filter != 'svi':
+        try:
+            dobavljac_id = int(dobavljac_filter)
+            queryset = queryset.filter(ugovor__dobavljac__sifra_d=dobavljac_id)
+        except (ValueError, TypeError):
+            pass
+    
+    # Filtering po datumu
+    datum_filter = request.GET.get('datum')
+    if datum_filter and datum_filter != 'svi':
+        today = date.today()
+        if datum_filter == 'danas':
+            queryset = queryset.filter(datum_prijema_f=today)
+        elif datum_filter == 'ova_nedelja':
+            start_week = today - timedelta(days=today.weekday())
+            end_week = start_week + timedelta(days=6)
+            queryset = queryset.filter(datum_prijema_f__range=[start_week, end_week])
+        elif datum_filter == 'ovaj_mesec':
+            queryset = queryset.filter(
+                datum_prijema_f__year=today.year,
+                datum_prijema_f__month=today.month
+            )
+        elif datum_filter == 'poslednji_mesec':
+            last_month = today.replace(day=1) - timedelta(days=1)
+            queryset = queryset.filter(
+                datum_prijema_f__year=last_month.year,
+                datum_prijema_f__month=last_month.month
+            )
+    
+    # Search funkcionalnost
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        queryset = queryset.filter(
+            Q(sifra_f__icontains=search_query) |
+            Q(ugovor__dobavljac__naziv__icontains=search_query) |
+            Q(iznos_f__icontains=search_query)
+        )
+    
+    # Sortiranje po datumu prijema (najnovije prvo)
+    queryset = queryset.order_by('-datum_prijema_f', '-sifra_f')
+    
+    # Paginacija
+    page_size = int(request.GET.get('page_size', 10))
+    page_number = int(request.GET.get('page', 1))
+    
+    paginator = Paginator(queryset, page_size)
+    page = paginator.get_page(page_number)
+    
+    # Serijalizacija podataka
+    serializer = FakturaSerializer(page.object_list, many=True)
+    
+    return Response({
+        'results': serializer.data,
+        'count': paginator.count,
+        'num_pages': paginator.num_pages,
+        'current_page': page.number,
+        'has_next': page.has_next(),
+        'has_previous': page.has_previous(),
+    }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def invoice_filter_options(request):
+    """
+    API endpoint za dobijanje opcija za dropdown filtere
+    """
+    # Dostupni statusi faktura
+    statusi = [
+        {'value': 'svi', 'label': 'Svi statusi'},
+        {'value': 'primljena', 'label': 'Primljeno'},
+        {'value': 'verifikovana', 'label': 'Čeka verifikaciju'},
+        {'value': 'isplacena', 'label': 'Plaćeno'},
+        {'value': 'odbijena', 'label': 'Odbačeno'},
+    ]
+    
+    # Dobavljači koji imaju fakture
+    dobavljaci = Dobavljac.objects.filter(
+        ugovori__fakture__isnull=False
+    ).distinct().values('sifra_d', 'naziv')
+    
+    dobavljaci_opcije = [{'value': 'svi', 'label': 'Svi dobavljači'}]
+    dobavljaci_opcije.extend([
+        {'value': str(d['sifra_d']), 'label': d['naziv']} 
+        for d in dobavljaci
+    ])
+    
+    # Opcije za datum
+    datumi = [
+        {'value': 'svi', 'label': 'Svi datumi'},
+        {'value': 'danas', 'label': 'Danas'},
+        {'value': 'ova_nedelja', 'label': 'Ova nedelja'},
+        {'value': 'ovaj_mesec', 'label': 'Ovaj mesec'},
+        {'value': 'poslednji_mesec', 'label': 'Prošli mesec'},
+    ]
+    
+    return Response({
+        'statusi': statusi,
+        'dobavljaci': dobavljaci_opcije,
+        'datumi': datumi,
+    }, status=status.HTTP_200_OK)
