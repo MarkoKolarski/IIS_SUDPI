@@ -809,27 +809,42 @@ def penalties_analysis(request):
     # Analiziramo dobavljače koji imaju penale
     dobavljaci_analiza = []
     
-    # Koristimo drugačiji pristup da izbegnemo NCLOB problem sa Oracle bazom
-    dobavljaci_sa_penalima = Dobavljac.objects.filter(
-        ugovori__penali__isnull=False
-    ).annotate(
-        broj_penala=Count('ugovori__penali__sifra_p', distinct=True),
-        ukupan_iznos=Sum('ugovori__penali__iznos_p'),
-        broj_ugovora=Count('ugovori__sifra_u', distinct=True)
-    ).values(
-        'sifra_d', 'naziv', 'broj_penala', 'ukupan_iznos', 'broj_ugovora'
+    # Dobijamo sve dobavljače koji imaju ugovore (ne samo one sa penalima)
+    dobavljaci = Dobavljac.objects.filter(
+        ugovori__isnull=False
     ).distinct()
     
-    for dobavljac_data in dobavljaci_sa_penalima:
-        # Računamo stopu kršenja kao procenat ugovora koji imaju penale
-        # Sada koristimo podatke iz annotated queryseta
-        dobavljac_obj = Dobavljac.objects.get(sifra_d=dobavljac_data['sifra_d'])
-        ugovori_sa_penalima = dobavljac_obj.ugovori.filter(
-            penali__isnull=False
-        ).values('sifra_u').distinct().count()
+    for dobavljac in dobavljaci:
+        # Ukupan broj ugovora za ovog dobavljača
+        ukupno_ugovora = dobavljac.ugovori.count()
         
-        ukupno_ugovora = dobavljac_data['broj_ugovora']
-        stopa_krsenja = (ugovori_sa_penalima / ukupno_ugovora * 100) if ukupno_ugovora > 0 else 0
+        # Dobijamo unikatne ID-jeve ugovora koji imaju penale
+        # Koristimo values_list sa flat=True da izbegnemo NCLOB problem
+        ugovori_sa_penalima_ids = list(
+            dobavljac.ugovori.filter(
+                penali__isnull=False
+            ).values_list('sifra_u', flat=True).distinct()
+        )
+        broj_ugovora_sa_penalima = len(ugovori_sa_penalima_ids)
+        
+        # Ukupan broj penala za ovog dobavljača
+        broj_penala = Penal.objects.filter(
+            ugovor__dobavljac=dobavljac
+        ).count()
+        
+        # Ukupan iznos penala
+        ukupan_iznos = Penal.objects.filter(
+            ugovor__dobavljac=dobavljac
+        ).aggregate(
+            total=Sum('iznos_p')
+        )['total'] or 0
+        
+        # Preskačemo dobavljače koji nemaju penale
+        if broj_penala == 0:
+            continue
+            
+        # Računamo stopu kršenja kao procenat ugovora koji imaju penale
+        stopa_krsenja = (broj_ugovora_sa_penalima / ukupno_ugovora * 100) if ukupno_ugovora > 0 else 0
         
         # Određujemo preporuku na osnovu stope kršenja
         if stopa_krsenja >= 50:
@@ -843,9 +858,11 @@ def penalties_analysis(request):
             tip_preporuke = "positive"
         
         dobavljaci_analiza.append({
-            'naziv': dobavljac_data['naziv'],
-            'broj_penala': dobavljac_data['broj_penala'],
-            'ukupan_iznos': float(dobavljac_data['ukupan_iznos'] or 0),
+            'naziv': dobavljac.naziv,
+            'broj_penala': broj_penala,
+            'ukupno_ugovora': ukupno_ugovora,
+            'ugovori_sa_penalima': broj_ugovora_sa_penalima,
+            'ukupan_iznos': float(ukupan_iznos),
             'stopa_krsenja': round(stopa_krsenja, 1),
             'preporuka': preporuka,
             'tip_preporuke': tip_preporuke
