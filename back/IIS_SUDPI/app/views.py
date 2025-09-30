@@ -355,7 +355,7 @@ def reports_data(request):
     """
     # Parsiranje filtara
     status_filter = request.GET.get('status', 'sve')
-    period_filter = request.GET.get('period', 'ovaj_mesec')
+    period_filter = request.GET.get('period', 'sve')
     group_by_filter = request.GET.get('group_by', 'proizvodu')
     
     # Definišemo vremenski period
@@ -381,7 +381,7 @@ def reports_data(request):
         start_date = (today.replace(day=1) - timedelta(days=90)).replace(day=1)
         end_date = today
         period_label = 'Poslednja 3 meseca'
-    else:  # sve
+    else:  # sve (sav period)
         start_date = None
         end_date = None
         period_label = 'Sav period'
@@ -465,7 +465,126 @@ def reports_data(request):
             'profitabilnost': f"+{ukupna_profitabilnost:.0f}%"
         }
         
-    else:  # grupa po dobavljačima ili drugim kriterijumima
+    elif group_by_filter == 'dobavljacu':
+        # Grupiranje po dobavljačima
+        report_data = []
+        
+        # Agregiramo podatke po dobavljačima preko faktura
+        dobavljaci_data = fakture_queryset.values('ugovor__dobavljac__naziv').annotate(
+            ukupan_trosak=Sum('iznos_f'),
+            broj_faktura=Count('sifra_f')
+        ).order_by('-ukupan_trosak')
+        
+        chart_profitability = []
+        chart_costs = []
+        
+        ukupna_kolicina_svi = 0
+        ukupan_trosak_svi = Decimal('0.00')
+        ukupna_profitabilnost = 0
+        
+        for dobavljac in dobavljaci_data:
+            naziv = dobavljac['ugovor__dobavljac__naziv'] or 'Nepoznat dobavljač'
+            broj_faktura = dobavljac['broj_faktura'] or 0
+            trosak = dobavljac['ukupan_trosak'] or Decimal('0.00')
+            
+            # Simuliramo profitabilnost na osnovu troška i broja faktura
+            profitabilnost_procenat = min(50, max(5, (float(trosak) / 10000) + (broj_faktura * 3)))
+            
+            ukupna_kolicina_svi += broj_faktura
+            ukupan_trosak_svi += trosak
+            ukupna_profitabilnost += profitabilnost_procenat
+            
+            report_data.append({
+                'proizvod': naziv,
+                'kolicina': f"{broj_faktura:,}",
+                'ukupan_trosak': f"{float(trosak):,.2f} RSD",
+                'profitabilnost': f"+{profitabilnost_procenat:.0f}%"
+            })
+            
+            # Podaci za grafike
+            chart_profitability.append({
+                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
+                'value': profitabilnost_procenat
+            })
+            
+            chart_costs.append({
+                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
+                'value': float(trosak)
+            })
+        
+        # Ograniči na top 10 za grafike
+        chart_profitability = chart_profitability[:10]
+        chart_costs = chart_costs[:10]
+        
+        # Ukupni red
+        total_summary = {
+            'proizvod': 'UKUPNO:',
+            'kolicina': f"{ukupna_kolicina_svi:,} faktura",
+            'ukupan_trosak': f"{float(ukupan_trosak_svi):,.2f} RSD",
+            'profitabilnost': f"+{ukupna_profitabilnost:.0f}%"
+        }
+        
+    elif group_by_filter == 'kategoriji':
+        # Grupiranje po kategorijama proizvoda
+        report_data = []
+        
+        # Agregiramo podatke po kategorijama
+        kategorije_data = stavke_queryset.values('proizvod__kategorija__naziv_kp').annotate(
+            ukupna_kolicina=Sum('kolicina_sf'),
+            ukupan_trosak=Sum('cena_po_jed'),
+            broj_stavki=Count('sifra_sf')
+        ).order_by('-ukupan_trosak')
+        
+        chart_profitability = []
+        chart_costs = []
+        
+        ukupna_kolicina_svi = 0
+        ukupan_trosak_svi = Decimal('0.00')
+        ukupna_profitabilnost = 0
+        
+        for kategorija in kategorije_data:
+            naziv = kategorija['proizvod__kategorija__naziv_kp'] or 'Nepoznata kategorija'
+            kolicina = kategorija['ukupna_kolicina'] or 0
+            trosak = kategorija['ukupan_trosak'] or Decimal('0.00')
+            
+            # Simuliramo profitabilnost na osnovu troška i količine
+            profitabilnost_procenat = min(50, max(5, (float(trosak) / 1000) + (kolicina * 2)))
+            
+            ukupna_kolicina_svi += kolicina
+            ukupan_trosak_svi += trosak
+            ukupna_profitabilnost += profitabilnost_procenat
+            
+            report_data.append({
+                'proizvod': naziv,
+                'kolicina': f"{kolicina:,}",
+                'ukupan_trosak': f"{float(trosak):,.2f} RSD",
+                'profitabilnost': f"+{profitabilnost_procenat:.0f}%"
+            })
+            
+            # Podaci za grafike
+            chart_profitability.append({
+                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
+                'value': profitabilnost_procenat
+            })
+            
+            chart_costs.append({
+                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
+                'value': float(trosak)
+            })
+        
+        # Ograniči na top 10 za grafike
+        chart_profitability = chart_profitability[:10]
+        chart_costs = chart_costs[:10]
+        
+        # Ukupni red
+        total_summary = {
+            'proizvod': 'UKUPNO:',
+            'kolicina': f"{ukupna_kolicina_svi:,} kom",
+            'ukupan_trosak': f"{float(ukupan_trosak_svi):,.2f} RSD",
+            'profitabilnost': f"+{ukupna_profitabilnost:.0f}%"
+        }
+        
+    else:  # fallback za nepoznate opcije
         # Fallback na proizvode
         report_data = [{
             'proizvod': 'Nema podataka',
@@ -541,16 +660,15 @@ def reports_filter_options(request):
         {'value': 'primljena', 'label': 'Primljeno'},
         {'value': 'verifikovana', 'label': 'Verifikovano'},
         {'value': 'isplacena', 'label': 'Isplaćeno'},
-        {'value': 'odbijena', 'label': 'Odbačeno'},
     ]
     
     periodi = [
+        {'value': 'sve', 'label': 'Sav period'},
         {'value': 'danas', 'label': 'Danas'},
         {'value': 'ova_nedelja', 'label': 'Ova nedelja'},
         {'value': 'ovaj_mesec', 'label': 'Ovaj mesec'},
         {'value': 'poslednji_mesec', 'label': 'Prošli mesec'},
         {'value': 'poslednja_3_meseca', 'label': 'Poslednja 3 meseca'},
-        {'value': 'sve', 'label': 'Sav period'},
     ]
     
     grupiranje = [

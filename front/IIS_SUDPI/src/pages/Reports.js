@@ -22,8 +22,8 @@ const Reports = () => {
         statusi: []
     });
     const [filters, setFilters] = useState({
-        status: '',
-        period: '',
+        status: 'sve',
+        period: 'sve',
         group_by: 'proizvodu'
     });
     const [loading, setLoading] = useState(true);
@@ -120,7 +120,6 @@ const Reports = () => {
                                 value={filters.status}
                                 onChange={(e) => handleFilterChange('status', e.target.value)}
                             >
-                                <option value="">Sve</option>
                                 {(filterOptions.statusi || []).map(status => (
                                     <option key={status.value} value={status.value}>
                                         {status.label}
@@ -135,7 +134,6 @@ const Reports = () => {
                                 value={filters.period}
                                 onChange={(e) => handleFilterChange('period', e.target.value)}
                             >
-                                <option value="">Sve</option>
                                 {(filterOptions.periodi || []).map(period => (
                                     <option key={period.value} value={period.value}>
                                         {period.label}
@@ -158,15 +156,16 @@ const Reports = () => {
                             </select>
                         </div>
                     </div>
-                    <button className="generate-report-btn" onClick={fetchReportsData}>
-                        Generiši izveštaj
-                    </button>
                 </section>
 
                 <section className="chart-section">
                     <div className="chart-card">
                         <div className="chart-card-header">
-                            <h2>Profitabilnost po {filters.group_by === 'proizvodu' ? 'proizvodu' : 'dobavljaču'}</h2>
+                            <h2>Profitabilnost po {
+                                filters.group_by === 'proizvodu' ? 'proizvodu' : 
+                                filters.group_by === 'dobavljacu' ? 'dobavljaču' : 
+                                'kategoriji'
+                            }</h2>
                         </div>
                         <div className="chart-card-body">
                             {loading ? (
@@ -188,7 +187,11 @@ const Reports = () => {
                     </div>
                     <div className="chart-card">
                         <div className="chart-card-header">
-                            <h2>Troškovi po {filters.group_by === 'proizvodu' ? 'proizvodu' : 'dobavljaču'}</h2>
+                            <h2>Troškovi po {
+                                filters.group_by === 'proizvodu' ? 'proizvodu' : 
+                                filters.group_by === 'dobavljacu' ? 'dobavljaču' : 
+                                'kategoriji'
+                            }</h2>
                         </div>
                         <div className="chart-card-body">
                             {loading ? (
@@ -224,7 +227,11 @@ const Reports = () => {
                             <div className="table-content">
                                 <div className="reports-table-header">
                                     <div className="table-col col-proizvod">
-                                        {filters.group_by === 'proizvodu' ? 'Proizvod' : 'Dobavljač'}
+                                        {
+                                            filters.group_by === 'proizvodu' ? 'Proizvod' : 
+                                            filters.group_by === 'dobavljacu' ? 'Dobavljač' : 
+                                            'Kategorija'
+                                        }
                                     </div>
                                     <div className="table-col col-kolicina">Količina</div>
                                     <div className="table-col col-trosak">Ukupan trošak</div>
