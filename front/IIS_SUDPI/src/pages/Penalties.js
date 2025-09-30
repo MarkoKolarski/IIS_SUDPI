@@ -209,6 +209,7 @@ const Penalties = () => {
                                 analysisData.map((analiza, index) => (
                                     <div key={index} className="analysis-card">
                                         <h3>{analiza.naziv}</h3>
+                                        <p><strong>Broj penala:</strong> {analiza.broj_penala}</p>
                                         <p><strong>Broj prekršenih ugovora:</strong> {analiza.ugovori_sa_penalima} od {analiza.ukupno_ugovora}</p>
                                         <p><strong>Ukupan iznos:</strong> {formatAmount(analiza.ukupan_iznos)}</p>
                                         <p className={
