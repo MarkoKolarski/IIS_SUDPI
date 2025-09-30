@@ -31,11 +31,14 @@ const Login = () => {
             sessionStorage.setItem('user_name', response.data.user_name);
             
             // Redirect based on user type
-            if (response.data.user_type === 'finansijski_analiticar') {
-                navigate('/dashboard-fa');
-            } else {
-                // For other user types, redirect to home or a generic dashboard
-                navigate('/');
+            switch (response.data.user_type) {
+                case 'logisticki_koordinator': navigate('/dashboard-lk'); break;
+                case 'skladisni_operater': navigate('/dashboard-so'); break;
+                case 'nabavni_menadzer': navigate('/dashboard-nm'); break;
+                case 'finansijski_analiticar': navigate('/dashboard-fa'); break;
+                case 'kontrolor_kvaliteta': navigate('/dashboard-kk'); break;
+                case 'administrator': navigate('/dashboard-admin'); break;
+                default: navigate('/');
             }
         } catch (error) {
             if (error.response && error.response.data) {
