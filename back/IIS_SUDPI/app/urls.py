@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action
+from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options
 
 urlpatterns = [
     path('', index, name='index'),
@@ -10,4 +10,6 @@ urlpatterns = [
     path('invoices/filter-options/', invoice_filter_options, name='invoice_filter_options'),
     path('invoices/<int:invoice_id>/', invoice_detail, name='invoice_detail'),
     path('invoices/<int:invoice_id>/action/', invoice_action, name='invoice_action'),
+    path('reports/', reports_data, name='reports_data'),
+    path('reports/filter-options/', reports_filter_options, name='reports_filter_options'),
 ]

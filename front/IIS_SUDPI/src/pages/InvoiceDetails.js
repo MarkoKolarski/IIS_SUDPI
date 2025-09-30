@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SideBar from '../components/SideBar';
 import PaymentSimulationModal from '../components/PaymentSimulationModal';
 import '../styles/InvoiceDetails.css';
@@ -14,10 +14,6 @@ const InvoiceDetails = () => {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
 
-    useEffect(() => {
-        loadInvoiceDetails();
-    }, [invoiceId]);
-
     const toggleSidebar = () => {
         setSidebarCollapsed(!isSidebarCollapsed);
     };
@@ -30,7 +26,7 @@ const InvoiceDetails = () => {
         setIsPaymentModalOpen(false);
     };
 
-    const loadInvoiceDetails = async () => {
+    const loadInvoiceDetails = useCallback(async () => {
         setLoading(true);
         try {
             const response = await axiosInstance.get(`/invoices/${invoiceId}/`);
@@ -43,7 +39,7 @@ const InvoiceDetails = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [invoiceId, navigate]);
 
     const handleInvoiceAction = async (action, reason = '') => {
         setActionLoading(true);
@@ -72,6 +68,10 @@ const InvoiceDetails = () => {
     const formatAmount = (amount) => {
         return `${parseFloat(amount).toFixed(2)} RSD`;
     };
+
+    useEffect(() => {
+        loadInvoiceDetails();
+    }, [loadInvoiceDetails]);
 
     if (loading) {
         return (

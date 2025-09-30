@@ -61,7 +61,8 @@
     margin-bottom: 8px;
 }
 
-.filter-dropdown button {
+.filter-dropdown button,
+.filter-dropdown select {
     background-color: #14b8a6; /* Main green */
     color: white;
     border: none;
@@ -77,8 +78,20 @@
     transition: background-color 0.2s;
 }
 
-.filter-dropdown button:hover {
+.filter-dropdown button:hover,
+.filter-dropdown select:hover {
     background-color: #0f766e; /* Darker green on hover */
+}
+
+.filter-dropdown select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    padding-right: 32px;
 }
 
 #group-by-filter {
@@ -154,6 +167,49 @@
     width: 95%;
     height: 280px;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.chart-summary {
+    width: 100%;
+}
+
+.chart-summary h3 {
+    color: #065f46;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.chart-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 8px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 4px;
+}
+
+.chart-item span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #065f46;
+    min-width: 0;
+    flex: 1;
+}
+
+.chart-bar {
+    height: 8px;
+    background-color: #14b8a6;
+    border-radius: 4px;
+    margin-left: 12px;
+    min-width: 20px;
+    max-width: 100px;
 }
 
 /* Table Section */
@@ -253,6 +309,34 @@
 
 .profit-positive .arrow {
     margin-right: 8px;
+}
+
+.profit-negative {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.profit-negative .arrow {
+    margin-right: 8px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 16px;
+    color: #065f46;
+    font-weight: 500;
+}
+
+.error-message {
+    background-color: #fef2f2;
+    color: #dc2626;
+    padding: 16px;
+    margin: 16px 0;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    text-align: center;
+    font-weight: 500;
 }
 
 /* Responsive */

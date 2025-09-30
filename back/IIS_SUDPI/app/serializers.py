@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture
+from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -168,3 +168,20 @@ class FakturaDetailSerializer(serializers.ModelSerializer):
             })
         
         return steps
+
+class ReportDataSerializer(serializers.Serializer):
+    proizvod = serializers.CharField()
+    kolicina = serializers.CharField()
+    ukupan_trosak = serializers.CharField()
+    profitabilnost = serializers.CharField()
+
+class ChartDataSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    value = serializers.FloatField()
+    
+class ReportsSerializer(serializers.Serializer):
+    table_data = ReportDataSerializer(many=True)
+    chart_profitability = ChartDataSerializer(many=True)
+    chart_costs = ChartDataSerializer(many=True)
+    total_summary = ReportDataSerializer()
+    period_info = serializers.DictField()

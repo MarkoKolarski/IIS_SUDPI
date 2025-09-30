@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SideBar from '../components/SideBar';
 import '../styles/Invoice.css';
 import { FaChevronDown, FaTimes, FaSearch } from 'react-icons/fa';
@@ -39,16 +39,6 @@ const Invoice = () => {
         setSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Učitavanje filter opcija prilikom mount-a
-    useEffect(() => {
-        loadFilterOptions();
-    }, []);
-
-    // Učitavanje faktura kada se promene filteri
-    useEffect(() => {
-        loadInvoices();
-    }, [filters, activeSearch, pagination.current_page]);
-
     const loadFilterOptions = async () => {
         try {
             const response = await axiosInstance.get('/invoices/filter-options/');
@@ -58,7 +48,7 @@ const Invoice = () => {
         }
     };
 
-    const loadInvoices = async () => {
+    const loadInvoices = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
@@ -88,7 +78,7 @@ const Invoice = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters, activeSearch, pagination.current_page]);
 
     const handleFilterChange = (filterType, value) => {
         setFilters(prev => ({
@@ -149,6 +139,16 @@ const Invoice = () => {
     const handleInvoiceClick = (invoiceId) => {
         navigate(`/invoice-details/${invoiceId}`);
     };
+
+    // Učitavanje filter opcija prilikom mount-a
+    useEffect(() => {
+        loadFilterOptions();
+    }, []);
+
+    // Učitavanje faktura kada se promene filteri
+    useEffect(() => {
+        loadInvoices();
+    }, [loadInvoices]);
 
     return (
         <div className={`invoice-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
