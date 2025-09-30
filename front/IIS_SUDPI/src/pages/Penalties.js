@@ -1,20 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SideBar from '../components/SideBar';
 import '../styles/Penalties.css';
+import axiosInstance from '../axiosInstance';
 
 const Penalties = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [penaltiesData, setPenaltiesData] = useState([]);
+    const [filterOptions, setFilterOptions] = useState({ dobavljaci: [] });
+    const [analysisData, setAnalysisData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedFilters, setSelectedFilters] = useState({
+        dobavljac: 'svi',
+        status: 'svi'
+    });
 
     const toggleSidebar = () => {
         setSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    const penaltiesData = [
-        { id: 1, dobavljac: 'A', ugovor: 'Ugovor1', datum_krsenja: '15.09.2025', iznos: '450 RSD', status: 'Rešen' },
-        { id: 2, dobavljac: 'B', ugovor: 'Ugovor2', datum_krsenja: '12.09.2025', iznos: '350 RSD', status: 'Obavešten' },
-        { id: 3, dobavljac: 'C', ugovor: 'Ugovor3', datum_krsenja: '08.09.2025', iznos: '1500 RSD', status: 'Obavešten' },
-        { id: 4, dobavljac: 'D', ugovor: 'Ugovor4', datum_krsenja: '05.09.2025', iznos: '700 RSD', status: 'Rešen' },
-    ];
+    // Fetch podataka o penalima
+    const fetchPenalties = useCallback(async () => {
+        try {
+            setLoading(true);
+            const params = new URLSearchParams();
+            if (selectedFilters.dobavljac !== 'svi') {
+                params.append('dobavljac', selectedFilters.dobavljac);
+            }
+            if (selectedFilters.status !== 'svi') {
+                params.append('status', selectedFilters.status);
+            }
+            
+            const response = await axiosInstance.get(`penalties/?${params.toString()}`);
+            setPenaltiesData(response.data.results || []);
+        } catch (err) {
+            console.error('Greška pri dohvatanju penala:', err);
+            setError('Greška pri učitavanju podataka o penalima');
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedFilters]);
+
+    // Fetch opcija za filtere
+    const fetchFilterOptions = async () => {
+        try {
+            const response = await axiosInstance.get('penalties/filter-options/');
+            setFilterOptions(response.data);
+        } catch (err) {
+            console.error('Greška pri dohvatanju filter opcija:', err);
+        }
+    };
+
+    // Fetch analize dobavljača
+    const fetchAnalysis = async () => {
+        try {
+            const response = await axiosInstance.get('penalties/analysis/');
+            setAnalysisData(response.data.dobavljaci_analiza || []);
+        } catch (err) {
+            console.error('Greška pri dohvatanju analize:', err);
+        }
+    };
+
+    // UseEffect za inicijalno učitavanje
+    useEffect(() => {
+        fetchFilterOptions();
+        fetchAnalysis();
+    }, []);
+
+    // UseEffect za učitavanje penala kad se promene filteri
+    useEffect(() => {
+        fetchPenalties();
+    }, [fetchPenalties]);
+
+    // Handler za promenu filtera
+    const handleFilterChange = (filterName, value) => {
+        setSelectedFilters(prev => ({
+            ...prev,
+            [filterName]: value
+        }));
+    };
+
+
+
+    // Formatiranje datuma
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('sr-Latn-RS');
+    };
+
+    // Formatiranje iznosa
+    const formatAmount = (amount) => {
+        return `${parseFloat(amount).toLocaleString('sr-Latn-RS')} RSD`;
+    };
 
     const getStatusBadge = (status) => {
         switch (status.toLowerCase()) {
@@ -38,7 +115,31 @@ const Penalties = () => {
                 <section className="penalties-filter-section">
                     <div className="filter-dropdown">
                         <label htmlFor="dobavljac-filter">Dobavljač</label>
-                        <button id="dobavljac-filter">Svi dobavljači <span className="chevron">▼</span></button>
+                        <select 
+                            id="dobavljac-filter"
+                            value={selectedFilters.dobavljac}
+                            onChange={(e) => handleFilterChange('dobavljac', e.target.value)}
+                        >
+                            {filterOptions.dobavljaci?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="filter-dropdown">
+                        <label htmlFor="status-filter">Status</label>
+                        <select 
+                            id="status-filter"
+                            value={selectedFilters.status}
+                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                        >
+                            {filterOptions.statusi?.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </section>
 
@@ -57,16 +158,36 @@ const Penalties = () => {
                                 <div className="table-col col-status">Status</div>
                             </div>
                             <div className="penalties-table-body">
-                                {penaltiesData.map((row, index) => (
-                                    <div key={row.id} className={`table-row ${index % 2 === 0 ? 'row-dark' : 'row-light'}`}>
-                                        <div className="table-col col-id">{row.id}</div>
-                                        <div className="table-col col-dobavljac">{row.dobavljac}</div>
-                                        <div className="table-col col-ugovor">{row.ugovor}</div>
-                                        <div className="table-col col-datum">{row.datum_krsenja}</div>
-                                        <div className="table-col col-iznos">{row.iznos}</div>
-                                        <div className="table-col col-status">{getStatusBadge(row.status)}</div>
+                                {loading ? (
+                                    <div className="table-row">
+                                        <div className="table-col" style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+                                            Učitavanje...
+                                        </div>
                                     </div>
-                                ))}
+                                ) : error ? (
+                                    <div className="table-row">
+                                        <div className="table-col" style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1', color: 'red'}}>
+                                            {error}
+                                        </div>
+                                    </div>
+                                ) : penaltiesData.length === 0 ? (
+                                    <div className="table-row">
+                                        <div className="table-col" style={{textAlign: 'center', padding: '20px', gridColumn: '1 / -1'}}>
+                                            Nema penala za prikaz
+                                        </div>
+                                    </div>
+                                ) : (
+                                    penaltiesData.map((row, index) => (
+                                        <div key={row.sifra_p} className={`table-row ${index % 2 === 0 ? 'row-dark' : 'row-light'}`}>
+                                            <div className="table-col col-id">{row.sifra_p}</div>
+                                            <div className="table-col col-dobavljac">{row.dobavljac_naziv}</div>
+                                            <div className="table-col col-ugovor">{row.ugovor_sifra}</div>
+                                            <div className="table-col col-datum">{formatDate(row.datum_p)}</div>
+                                            <div className="table-col col-iznos">{formatAmount(row.iznos_p)}</div>
+                                            <div className="table-col col-status">{getStatusBadge(row.status_display)}</div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
@@ -78,20 +199,31 @@ const Penalties = () => {
                             <h2>Automatska analiza saradnje</h2>
                         </div>
                         <div className="analysis-cards-wrapper">
-                            <div className="analysis-card">
-                                <h3>TechCorp Solutions d.o.o.</h3>
-                                <p><strong>Broj penala:</strong> 4</p>
-                                <p><strong>Ukupan iznos:</strong> 1.250 RSD</p>
-                                <p className="critical-metric"><strong>Stopa kršenja:</strong> 75% ugovora</p>
-                                <p className="recommendation-negative"><strong>Preporuka:</strong> Razmotriti prekid saradnje</p>
-                            </div>
-                            <div className="analysis-card">
-                                <h3>Global Trade Ltd.</h3>
-                                <p><strong>Broj penala:</strong> 1</p>
-                                <p><strong>Ukupan iznos:</strong> 320 RSD</p>
-                                <p className="positive-metric"><strong>Stopa kršenja:</strong> 15% ugovora</p>
-                                <p className="recommendation-positive"><strong>Preporuka:</strong> Pouzdana saradnja</p>
-                            </div>
+                            {analysisData.length === 0 ? (
+                                <div className="analysis-card">
+                                    <p style={{textAlign: 'center', padding: '20px'}}>
+                                        Nema dovoljno podataka za analizu
+                                    </p>
+                                </div>
+                            ) : (
+                                analysisData.map((analiza, index) => (
+                                    <div key={index} className="analysis-card">
+                                        <h3>{analiza.naziv}</h3>
+                                        <p><strong>Broj penala:</strong> {analiza.broj_penala}</p>
+                                        <p><strong>Broj prekršenih ugovora:</strong> {analiza.ugovori_sa_penalima} od {analiza.ukupno_ugovora}</p>
+                                        <p><strong>Ukupan iznos:</strong> {formatAmount(analiza.ukupan_iznos)}</p>
+                                        <p className={
+                                            analiza.stopa_krsenja >= 50 ? "critical-metric" :
+                                            analiza.stopa_krsenja >= 25 ? "warning-metric" : "positive-metric"
+                                        }>
+                                            <strong>Stopa kršenja:</strong> {analiza.stopa_krsenja}% ugovora
+                                        </p>
+                                        <p className={`recommendation-${analiza.tip_preporuke}`}>
+                                            <strong>Preporuka:</strong> {analiza.preporuka}
+                                        </p>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </section>

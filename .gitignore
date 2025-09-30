@@ -282,5 +282,4 @@ secrets.json
 .secrets
 
 # Database backups
-*.sql
 *.dump
