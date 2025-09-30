@@ -384,6 +384,16 @@
         width: 100%;
         max-width: 320px;
     }
+
+    .action-buttons {
+        bottom: 16px;
+        right: 16px;
+    }
+
+    .back-btn {
+        padding: 14px 20px;
+        font-size: 15px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -410,17 +420,16 @@
 
 /* Action Buttons */
 .action-buttons {
-    position: absolute;
-    bottom: 48px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
     display: flex;
     gap: 16px;
-    z-index: 10;
+    z-index: 1000;
 }
 
 .back-btn {
-    background-color: #6b7280;
+    background-color: #14b8a6;
     color: white;
     border: none;
     border-radius: 8px;
@@ -428,14 +437,14 @@
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+    box-shadow: 0 4px 8px rgba(20, 184, 166, 0.3);
     transition: all 0.3s ease;
 }
 
 .back-btn:hover {
-    background-color: #4b5563;
+    background-color: #0f766e;
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(107, 114, 128, 0.4);
+    box-shadow: 0 6px 12px rgba(20, 184, 166, 0.4);
 }
 
 /* Loading and Error Messages */
