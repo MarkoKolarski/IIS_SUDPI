@@ -279,6 +279,16 @@
     background-color: #d1fae5; /* Light green hover */
 }
 
+.clickable-row {
+    cursor: pointer;
+}
+
+.clickable-row:hover {
+    background-color: #d1fae5 !important; /* Light green hover */
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.15);
+}
+
 .table-body .row-odd {
     background-color: #ecfdf5; /* Very light green */
 }

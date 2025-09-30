@@ -12,10 +12,12 @@ from django.db.models import Sum, Q
 from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
 from .models import Faktura, Dobavljac, Penal
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
+    FakturaDetailSerializer,
     DobavljacSerializer,
 )
 
@@ -286,3 +288,59 @@ def invoice_filter_options(request):
         'dobavljaci': dobavljaci_opcije,
         'datumi': datumi,
     }, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def invoice_detail(request, invoice_id):
+    """
+    API endpoint za prikaz detalja pojedinačne fakture
+    """
+    try:
+        faktura = get_object_or_404(
+            Faktura.objects.select_related('ugovor__dobavljac', 'transakcija').prefetch_related('stavke'),
+            sifra_f=invoice_id
+        )
+        serializer = FakturaDetailSerializer(faktura)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Faktura.DoesNotExist:
+        return Response({'detail': 'Faktura nije pronađena.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def invoice_action(request, invoice_id):
+    """
+    API endpoint za akcije nad fakturom (potpis, odbacivanje)
+    """
+    try:
+        faktura = get_object_or_404(Faktura, sifra_f=invoice_id)
+        action = request.data.get('action')
+        
+        if action == 'approve':
+            if faktura.status_f == 'primljena':
+                faktura.status_f = 'verifikovana'
+                faktura.razlog_cekanja_f = None
+            elif faktura.status_f == 'verifikovana':
+                faktura.status_f = 'isplacena'
+            faktura.save()
+            
+            return Response({
+                'message': 'Faktura je uspešno odobrena.',
+                'new_status': faktura.status_f
+            }, status=status.HTTP_200_OK)
+            
+        elif action == 'reject':
+            reason = request.data.get('reason', '')
+            faktura.status_f = 'odbijena'
+            faktura.razlog_cekanja_f = reason
+            faktura.save()
+            
+            return Response({
+                'message': 'Faktura je odbijena.',
+                'new_status': faktura.status_f
+            }, status=status.HTTP_200_OK)
+            
+        else:
+            return Response({'detail': 'Nevalidna akcija.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Faktura.DoesNotExist:
+        return Response({'detail': 'Faktura nije pronađena.'}, status=status.HTTP_404_NOT_FOUND)

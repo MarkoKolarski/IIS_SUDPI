@@ -3,8 +3,10 @@ import SideBar from '../components/SideBar';
 import '../styles/Invoice.css';
 import { FaChevronDown, FaTimes, FaSearch } from 'react-icons/fa';
 import axiosInstance from '../axiosInstance';
+import { useNavigate } from 'react-router-dom';
 
 const Invoice = () => {
+    const navigate = useNavigate();
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [invoices, setInvoices] = useState([]);
     const [filterOptions, setFilterOptions] = useState({
@@ -144,6 +146,10 @@ const Invoice = () => {
         return selected ? selected.label : 'Svi';
     };
 
+    const handleInvoiceClick = (invoiceId) => {
+        navigate(`/invoice-details/${invoiceId}`);
+    };
+
     return (
         <div className={`invoice-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <SideBar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
@@ -262,7 +268,11 @@ const Invoice = () => {
                                     <div className="no-data-message">Nema faktura za prikaz</div>
                                 ) : (
                                     invoices.map((invoice, index) => (
-                                        <div key={invoice.sifra_f} className={`table-row ${index % 2 === 0 ? 'row-even' : 'row-odd'}`}>
+                                        <div 
+                                            key={invoice.sifra_f} 
+                                            className={`table-row ${index % 2 === 0 ? 'row-even' : 'row-odd'} clickable-row`}
+                                            onClick={() => handleInvoiceClick(invoice.sifra_f)}
+                                        >
                                             <div className="table-col" style={{ width: '12%' }}>{invoice.sifra_f}</div>
                                             <div className="table-col" style={{ width: '12%' }}>{invoice.dobavljac_naziv}</div>
                                             <div className="table-col" style={{ width: '14%' }}>{formatAmount(invoice.iznos_f)}</div>
