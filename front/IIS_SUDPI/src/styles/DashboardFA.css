@@ -149,6 +149,77 @@
     min-height: 280px;
     width: 100%;
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Chart Data Display */
+.chart-data {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 250px;
+    width: 100%;
+    padding: 20px;
+}
+
+.chart-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.chart-month {
+    font-size: 12px;
+    color: #065f46;
+    font-weight: 600;
+}
+
+.chart-bar {
+    width: 30px;
+    background-color: #14b8a6;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.chart-bar:hover {
+    background-color: #0f766e;
+}
+
+.chart-amount {
+    font-size: 10px;
+    color: #134e4a;
+    text-align: center;
+}
+
+/* Loading and Error States */
+.loading-message, .error-message {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    margin: 20px;
+    border-radius: 8px;
+}
+
+.loading-message {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.no-data {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 20px;
 }
 
 /* Responsive Design */
