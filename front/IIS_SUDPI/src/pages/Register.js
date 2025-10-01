@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import axiosInstance from "../axiosInstance";
 import "../styles/Register.css";
+import MainSideBar from "../components/MainSideBar"; // Importuj komponentu bočne trake
 
 const Register = () => {
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [formData, setFormData] = useState({
     ime_k: "",
     prz_k: "",
@@ -50,76 +52,96 @@ const Register = () => {
     }
   };
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!isSidebarCollapsed);
+  };
+
   return (
-    <div className="register-container">
-      <h2>Registracija</h2>
-
-      {message && <p className="message success">{message}</p>}
-
-      {errors.detail && <p className="message error">{errors.detail}</p>}
-
-      <form onSubmit={handleSubmit} className="register-form">
-        <input
-          type="text"
-          name="ime_k"
-          placeholder="Ime"
-          value={formData.ime_k}
-          onChange={handleChange}
-          required
+    <div
+      className={`register-wrapper ${
+        isSidebarCollapsed ? "sidebar-collapsed" : ""
+      }`}
+    >
+      {sessionStorage.getItem("user_type") === "administrator" && (
+        <MainSideBar
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
         />
-        {errors.ime_k && <p className="error-message">{errors.ime_k}</p>}
+      )}
+      <main className="register-main-content">
+        <div className="register-container">
+          <h2>Registracija</h2>
 
-        <input
-          type="text"
-          name="prz_k"
-          placeholder="Prezime"
-          value={formData.prz_k}
-          onChange={handleChange}
-          required
-        />
-        {errors.prz_k && <p className="error-message">{errors.prz_k}</p>}
+          {message && <p className="message success">{message}</p>}
 
-        <input
-          type="email"
-          name="mail_k"
-          placeholder="Email"
-          value={formData.mail_k}
-          onChange={handleChange}
-          required
-        />
-        {errors.mail_k && <p className="error-message">{errors.mail_k}</p>}
+          {errors.detail && <p className="message error">{errors.detail}</p>}
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Lozinka"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        {errors.password && <p className="error-message">{errors.password}</p>}
+          <form onSubmit={handleSubmit} className="register-form">
+            <input
+              type="text"
+              name="ime_k"
+              placeholder="Ime"
+              value={formData.ime_k}
+              onChange={handleChange}
+              required
+            />
+            {errors.ime_k && <p className="error-message">{errors.ime_k}</p>}
 
-        <select
-          name="tip_k"
-          value={formData.tip_k}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Izaberite radno mesto</option>
-          {userTypes.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
-        {errors.tip_k && <p className="error-message">{errors.tip_k}</p>}
+            <input
+              type="text"
+              name="prz_k"
+              placeholder="Prezime"
+              value={formData.prz_k}
+              onChange={handleChange}
+              required
+            />
+            {errors.prz_k && <p className="error-message">{errors.prz_k}</p>}
 
-        <button type="submit">Potvrdi registraciju</button>
-      </form>
+            <input
+              type="email"
+              name="mail_k"
+              placeholder="Email"
+              value={formData.mail_k}
+              onChange={handleChange}
+              required
+            />
+            {errors.mail_k && <p className="error-message">{errors.mail_k}</p>}
 
-      <p>
-        Već imate nalog? <a href="/login">Prijavite se</a>
-      </p>
+            <input
+              type="password"
+              name="password"
+              placeholder="Lozinka"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            {errors.password && (
+              <p className="error-message">{errors.password}</p>
+            )}
+
+            <select
+              name="tip_k"
+              value={formData.tip_k}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Izaberite radno mesto</option>
+              {userTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+            {errors.tip_k && <p className="error-message">{errors.tip_k}</p>}
+
+            <button type="submit">Potvrdi registraciju</button>
+          </form>
+
+          <p>
+            Već imate nalog? <a href="/login">Prijavite se</a>
+          </p>
+        </div>
+      </main>
     </div>
   );
 };

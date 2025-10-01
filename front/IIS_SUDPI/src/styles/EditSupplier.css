@@ -1,0 +1,100 @@
+.edit-supplier-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f0fdfa;
+}
+
+.edit-supplier-main-content {
+  flex-grow: 1;
+  margin-left: 280px;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+.edit-supplier-wrapper.sidebar-collapsed .edit-supplier-main-content {
+  margin-left: 80px;
+}
+
+.supplier-form {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+}
+
+.form-actions-right {
+  display: flex;
+  gap: 10px;
+}
+
+.cancel-btn, .save-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background-color: #e0e0e0;
+}
+
+.save-btn {
+  background-color: #1a237e;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #dc2626;
+  color: white;
+  transition: background-color 0.3s ease;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background-color: #b91c1c;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .edit-supplier-main-content {
+    margin-left: 80px;
+  }
+  .edit-supplier-wrapper.sidebar-collapsed .edit-supplier-main-content {
+    margin-left: 0;
+  }
+}
