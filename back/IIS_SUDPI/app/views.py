@@ -22,6 +22,7 @@ from .serializers import (
     ReportsSerializer,
     PenalSerializer,
 )
+from rest_framework import generics, filters
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -874,3 +875,14 @@ def penalties_analysis(request):
     return Response({
         'dobavljaci_analiza': dobavljaci_analiza
     }, status=status.HTTP_200_OK)
+
+
+class suppliers(generics.ListAPIView):
+    queryset = Dobavljac.objects.all()
+    serializer_class = DobavljacSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['naziv', 'ime_sirovine', 'PIB_d']
+
+    def get(self, request, *args, **kwargs):
+        print("User that searched:", request.user)
+        return super().get(request, *args, **kwargs)
