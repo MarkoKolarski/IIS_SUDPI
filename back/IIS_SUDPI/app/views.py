@@ -57,25 +57,35 @@ class LoginView(TokenObtainPairView):
             return Response({'detail': 'Incorrect email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([AllowAny])  # Make sure this is present
 def register(request):
+    print("Registration data received:", request.data)  # Add debug print
     serializer = RegistrationSerializer(data=request.data)
     if serializer.is_valid():
-        user = serializer.save()
-        
-        # Create role-specific instance based on user type
-        if user.tip_k == 'kontrolor_kvaliteta':
-            KontrolorKvaliteta.objects.create(korisnik=user)
-        elif user.tip_k == 'finansijski_analiticar':
-            FinansijskiAnaliticar.objects.create(korisnik=user)
-        elif user.tip_k == 'nabavni_menadzer':
-            NabavniMenadzer.objects.create(korisnik=user)
-        
-        return Response({
-            'message': 'Korisnik je uspešno registrovan.',
-            'user_type': user.tip_k,
-            'user_name': f"{user.ime_k} {user.prz_k}",
-        }, status=status.HTTP_201_CREATED)
+        try:
+            user = serializer.save()
+            
+            # Create role-specific instance based on user type
+            if user.tip_k == 'kontrolor_kvaliteta':
+                KontrolorKvaliteta.objects.create(korisnik=user)
+            elif user.tip_k == 'finansijski_analiticar':
+                FinansijskiAnaliticar.objects.create(korisnik=user)
+            elif user.tip_k == 'nabavni_menadzer':
+                NabavniMenadzer.objects.create(korisnik=user)
+            
+            return Response({
+                'message': 'Korisnik je uspešno registrovan.',
+                'user_type': user.tip_k,
+                'user_name': f"{user.ime_k} {user.prz_k}",
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print("Registration error:", str(e))  # Add debug print
+            return Response({
+                'error': 'Greška pri registraciji',
+                'details': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    print("Serializer errors:", serializer.errors)  # Add debug print
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
