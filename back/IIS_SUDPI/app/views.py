@@ -929,7 +929,7 @@ class suppliers(generics.ListAPIView):
 
     def check_permissions(self, request):
         super().check_permissions(request)
-        allowed_types = ['nabavni_menadzer', 'kontrolor_kvaliteta']
+        allowed_types = ['administrator', 'nabavni_menadzer', 'kontrolor_kvaliteta']
         
         # For GET methods, both roles are allowed
         if request.method in ['GET', 'HEAD', 'OPTIONS']:

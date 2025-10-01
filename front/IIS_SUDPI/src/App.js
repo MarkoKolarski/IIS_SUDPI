@@ -23,6 +23,8 @@ import Complaints from "./pages/Complaints.js";
 import ComplaintCreate from "./pages/ComplaintCreate.js";
 import ScheduleVisit from "./pages/ScheduleVisit.js";
 import DashboardAdmin from "./pages/DashboardAdmin";
+import EditSuppliers from "./pages/EditSuppliers";
+import EditSupplier from "./pages/EditSupplier";
 
 const App = () => {
   return (
@@ -164,7 +166,15 @@ const App = () => {
           path="/edit/suppliers"
           element={
             <ProtectedRoute allowedRoles={["administrator"]}>
-              <Suppliers />
+              <EditSuppliers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit/supplier/:supplierId"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <EditSupplier />
             </ProtectedRoute>
           }
         />
