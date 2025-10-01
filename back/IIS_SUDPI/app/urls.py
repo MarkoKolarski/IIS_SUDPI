@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis
+from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers
 
 urlpatterns = [
     path('', index, name='index'),
@@ -15,4 +15,5 @@ urlpatterns = [
     path('penalties/', penalties_list, name='penalties_list'),
     path('penalties/filter-options/', penalties_filter_options, name='penalties_filter_options'),
     path('penalties/analysis/', penalties_analysis, name='penalties_analysis'),
+    path('suppliers/', suppliers.as_view(), name='dobavljaci-list'),
 ]
