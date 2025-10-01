@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "../styles/DashboardNM.css";
 import MainSideBar from "../components/MainSideBar";
-import { sidebarLinksNM } from "./DashboardNM";
 import SuppliersTable from "../components/SuppliersTable";
 
 const Suppliers = () => {
@@ -18,7 +17,6 @@ const Suppliers = () => {
       }`}
     >
       <MainSideBar
-        links={sidebarLinksNM}
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />

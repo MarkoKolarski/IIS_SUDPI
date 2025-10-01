@@ -3,24 +3,6 @@ import "../styles/DashboardNM.css";
 import MainSideBar from "../components/MainSideBar";
 import { dashboardAPI } from "../api";
 
-export const sidebarLinksNM = [
-  {
-    href: "/dashboard-nm",
-    title: "Kontrolna tabla",
-    description: "Pregled ključnih podataka i metrika",
-  },
-  {
-    href: "/suppliers",
-    title: "Dobavljači",
-    description: "Upravljanje i pregled dobavljača",
-  },
-  {
-    href: "/penalties",
-    title: "Penali",
-    description: "Evidencija i obračun kašnjenja",
-  },
-];
-
 const DashboardNM = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dashboardData, setDashboardData] = useState({
@@ -58,7 +40,6 @@ const DashboardNM = () => {
       }`}
     >
       <MainSideBar
-        links={sidebarLinksNM}
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />

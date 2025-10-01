@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/DashboardKK.css";
 import MainSideBar from "../components/MainSideBar";
-import { sidebarLinksKK } from "./DashboardKK";
 import ComplaintSupplierTable from "../components/ComplaintSupplierTable";
 import axiosInstance from "../axiosInstance";
 
@@ -50,7 +49,6 @@ const Complaints = () => {
       }`}
     >
       <MainSideBar
-        links={sidebarLinksKK}
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />
