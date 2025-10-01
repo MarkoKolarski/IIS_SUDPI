@@ -64,6 +64,19 @@ const EditSupplier = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const handleDelete = async () => {
+    if (
+      window.confirm("Da li ste sigurni da želite da obrišete ovog dobavljača?")
+    ) {
+      try {
+        await axiosInstance.delete(`/suppliers/${supplierId}/`);
+        navigate("/edit/suppliers");
+      } catch (error) {
+        setError("Greška pri brisanju dobavljača");
+      }
+    }
+  };
+
   if (loading) return <div>Učitavanje...</div>;
 
   return (
@@ -186,16 +199,27 @@ const EditSupplier = () => {
           </div>
 
           <div className="form-actions">
-            <button
-              type="button"
-              onClick={() => navigate("/edit/suppliers")}
-              className="cancel-btn"
-            >
-              Odustani
-            </button>
-            <button type="submit" className="save-btn">
-              {supplierId === "new" ? "Dodaj dobavljača" : "Sačuvaj izmene"}
-            </button>
+            {supplierId !== "new" && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="delete-btn"
+              >
+                Obriši dobavljača
+              </button>
+            )}
+            <div className="form-actions-right">
+              <button
+                type="button"
+                onClick={() => navigate("/edit/suppliers")}
+                className="cancel-btn"
+              >
+                Odustani
+              </button>
+              <button type="submit" className="save-btn">
+                {supplierId === "new" ? "Dodaj dobavljača" : "Sačuvaj izmene"}
+              </button>
+            </div>
           </div>
         </form>
       </main>
