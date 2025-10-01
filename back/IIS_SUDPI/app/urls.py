@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers
+from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint
 
 urlpatterns = [
     path('', index, name='index'),
@@ -16,5 +16,13 @@ urlpatterns = [
     path('penalties/filter-options/', penalties_filter_options, name='penalties_filter_options'),
     path('penalties/analysis/', penalties_analysis, name='penalties_analysis'),
     path('suppliers/', suppliers.as_view(), name='dobavljaci-list'),
+    path('suppliers/<int:sifra_d>/', suppliers.as_view(), name='dobavljaci-detail'),
     path('suppliers/<int:sifra_d>/select/', suppliers.as_view(), name='dobavljaci-select'),
+
+    # Kontrolor Kvaliteta endpoints
+    path('visits/', visits_list, name='visits-list'),
+    path('visits/<int:visit_id>/', visit_detail, name='visit-detail'),
+    path('visits/create/', create_visit, name='visit-create'),
+    path('complaints/', complaints_list, name='complaints-list'),
+    path('complaints/create/', create_complaint, name='complaint-create'),
 ]
