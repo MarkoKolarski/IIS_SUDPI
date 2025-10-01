@@ -110,40 +110,89 @@ const Visits = () => {
             {loading && <div className="loading">Učitavanje...</div>}
             {error && <div className="error">{error}</div>}
 
-            <table className="visits-table">
-              <thead>
-                <tr>
-                  <th>Dobavljač</th>
-                  <th>Datum od</th>
-                  <th>Datum do</th>
-                  <th>Status</th>
-                  <th>Akcije</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visits.map((visit) => (
-                  <tr key={visit.poseta_id}>
-                    <td>{visit.dobavljac}</td>
-                    <td>{new Date(visit.datum_od).toLocaleString()}</td>
-                    <td>{new Date(visit.datum_do).toLocaleString()}</td>
-                    <td>{visit.status}</td>
-                    <td>
-                      <select
-                        value={visit.status}
-                        onChange={(e) =>
-                          updateVisitStatus(visit.poseta_id, e.target.value)
-                        }
-                      >
-                        <option value="zakazana">Zakazana</option>
-                        <option value="u_toku">U toku</option>
-                        <option value="zavrsena">Završena</option>
-                        <option value="otkazana">Otkazana</option>
-                      </select>
-                    </td>
+            {!loading && !error && visits.length === 0 && (
+              <div className="empty-visits">Nema zakazanih poseta</div>
+            )}
+
+            {visits.length > 0 && (
+              <table className="visits-table">
+                <thead>
+                  <tr>
+                    <th>Dobavljač</th>
+                    <th>Datum početka</th>
+                    <th>Datum završetka</th>
+                    <th>Trajanje</th>
+                    <th>Status</th>
+                    <th>Akcije</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {visits.map((visit) => {
+                    const startDate = new Date(visit.datum_od);
+                    const endDate = new Date(visit.datum_do);
+                    const duration = Math.round(
+                      (endDate - startDate) / (1000 * 60 * 60)
+                    );
+
+                    return (
+                      <tr key={visit.poseta_id}>
+                        <td>
+                          <span className="visit-supplier">
+                            {visit.dobavljac}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="visit-date">
+                            {startDate.toLocaleString("sr-RS", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="visit-date">
+                            {endDate.toLocaleString("sr-RS", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="visit-duration">
+                            {duration} {duration === 1 ? "sat" : "sati"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`visit-status ${visit.status}`}>
+                            {visit.status.charAt(0).toUpperCase() +
+                              visit.status.slice(1).replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="visit-actions">
+                          <select
+                            value={visit.status}
+                            onChange={(e) =>
+                              updateVisitStatus(visit.poseta_id, e.target.value)
+                            }
+                          >
+                            <option value="zakazana">Zakazana</option>
+                            <option value="u_toku">U toku</option>
+                            <option value="zavrsena">Završena</option>
+                            <option value="otkazana">Otkazana</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </main>

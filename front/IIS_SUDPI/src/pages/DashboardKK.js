@@ -66,6 +66,20 @@ const DashboardKK = () => {
     });
   };
 
+  // Helper function to get today's visits
+  const getTodayVisits = () => {
+    const today = new Date();
+    return visits.filter(
+      (visit) =>
+        new Date(visit.datum_od).toDateString() === today.toDateString()
+    );
+  };
+
+  // Helper function to get visits by status
+  const getVisitsByStatus = (status) => {
+    return visits.filter((visit) => visit.status === status);
+  };
+
   return (
     <div
       className={`dashboard-kk-wrapper ${
@@ -89,40 +103,104 @@ const DashboardKK = () => {
 
         {!loading && !error && (
           <div className="dashboard-content">
-            <div className="calendar-section">
-              <Calendar
-                className="visits-calendar"
-                tileClassName={({ date }) =>
-                  hasVisits(date) ? "has-visits" : null
-                }
-                tileContent={({ date }) => {
-                  const dayVisits = getVisitsForDate(date);
-                  return dayVisits.length > 0 ? (
-                    <div className="visit-indicator">{dayVisits.length}</div>
-                  ) : null;
-                }}
-              />
-            </div>
+            <div className="dashboard-grid">
+              {/* Status Cards */}
+              <div className="status-cards">
+                <div className="status-card today">
+                  <h3>Današnje posete</h3>
+                  <div className="card-number">{getTodayVisits().length}</div>
+                </div>
+                <div className="status-card scheduled">
+                  <h3>Zakazane</h3>
+                  <div className="card-number">
+                    {getVisitsByStatus("zakazana").length}
+                  </div>
+                </div>
+                <div className="status-card in-progress">
+                  <h3>U toku</h3>
+                  <div className="card-number">
+                    {getVisitsByStatus("u_toku").length}
+                  </div>
+                </div>
+                <div className="status-card completed">
+                  <h3>Završene</h3>
+                  <div className="card-number">
+                    {getVisitsByStatus("zavrsena").length}
+                  </div>
+                </div>
+              </div>
 
-            <div className="upcoming-visits">
-              <h2>Predstojeće posete</h2>
-              <div className="visits-list">
-                {visits
-                  .filter((visit) => new Date(visit.datum_od) >= new Date())
-                  .sort((a, b) => new Date(a.datum_od) - new Date(b.datum_od))
-                  .map((visit, index) => (
-                    <div key={visit.poseta_id} className="visit-item">
-                      <div className="visit-date">
-                        {new Date(visit.datum_od).toLocaleDateString()}
-                      </div>
-                      <div className="visit-details">
-                        <span className="visit-supplier">
-                          {visit.dobavljac}
-                        </span>
-                        <span className="visit-status">{visit.status}</span>
-                      </div>
-                    </div>
-                  ))}
+              {/* Calendar and Upcoming Visits Grid */}
+              <div className="main-grid">
+                <div className="calendar-container">
+                  <h2>Kalendar poseta</h2>
+                  <Calendar
+                    className="visits-calendar"
+                    tileClassName={({ date }) =>
+                      hasVisits(date) ? "has-visits" : null
+                    }
+                    tileContent={({ date }) => {
+                      const dayVisits = getVisitsForDate(date);
+                      return dayVisits.length > 0 ? (
+                        <div className="visit-indicator">
+                          {dayVisits.length}
+                        </div>
+                      ) : null;
+                    }}
+                  />
+                </div>
+
+                <div className="upcoming-visits-container">
+                  <h2>Predstojeće posete</h2>
+                  <div className="visits-timeline">
+                    {visits
+                      .filter((visit) => new Date(visit.datum_od) >= new Date())
+                      .sort(
+                        (a, b) => new Date(a.datum_od) - new Date(b.datum_od)
+                      )
+                      .slice(0, 5)
+                      .map((visit) => (
+                        <div
+                          key={visit.poseta_id}
+                          className={`timeline-item ${visit.status}`}
+                        >
+                          <div className="timeline-date">
+                            <div className="date-day">
+                              {new Date(visit.datum_od).toLocaleDateString(
+                                "sr-RS",
+                                {
+                                  day: "numeric",
+                                }
+                              )}
+                            </div>
+                            <div className="date-month">
+                              {new Date(visit.datum_od).toLocaleDateString(
+                                "sr-RS",
+                                {
+                                  month: "short",
+                                }
+                              )}
+                            </div>
+                          </div>
+                          <div className="timeline-content">
+                            <h4>{visit.dobavljac}</h4>
+                            <div className="timeline-time">
+                              {new Date(visit.datum_od).toLocaleTimeString(
+                                "sr-RS",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </div>
+                            <span className={`visit-badge ${visit.status}`}>
+                              {visit.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
