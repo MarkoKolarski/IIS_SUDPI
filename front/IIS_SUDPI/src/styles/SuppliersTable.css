@@ -1,0 +1,73 @@
+.suppliers-container {
+  padding: 20px;
+}
+
+.suppliers-title {
+  color: #333;
+  margin-bottom: 24px;
+}
+
+.suppliers-search {
+  margin-bottom: 20px;
+  padding: 12px;
+  width: 300px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.suppliers-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.suppliers-table th {
+  background-color: #f8f9fa;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.suppliers-table td {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  color: #212529;
+}
+
+.suppliers-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.suppliers-table .selected {
+  color: #28a745;
+}
+
+.suppliers-table .not-selected {
+  color: #dc3545;
+}
+
+.select-button {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.select-button:hover {
+  background-color: #0056b3;
+}
+
+.select-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod
+from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -35,7 +35,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class DobavljacSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dobavljac
-        fields = ['sifra_d', 'naziv']
+        fields = ['sifra_d', 'naziv', 'email', 'PIB_d', 'ime_sirovine', 
+                 'cena', 'rok_isporuke', 'ocena', 'datum_ocenjivanja', 'izabran']
 
 class FakturaSerializer(serializers.ModelSerializer):
     dobavljac_naziv = serializers.CharField(source='ugovor.dobavljac.naziv', read_only=True)
@@ -214,3 +215,27 @@ class PenalSerializer(serializers.ModelSerializer):
             return 'Rešen'
         else:
             return 'Obavešten'
+
+class VisitSerializer(serializers.ModelSerializer):
+    dobavljac_naziv = serializers.CharField(source='dobavljac.naziv', read_only=True)
+    
+    class Meta:
+        model = Poseta
+        fields = ['poseta_id', 'datum_od', 'datum_do', 'status', 'dobavljac', 'dobavljac_naziv']
+
+class ComplaintSerializer(serializers.ModelSerializer):
+    dobavljac_naziv = serializers.CharField(source='dobavljac.naziv', read_only=True)
+    
+    class Meta:
+        model = Reklamacija
+        fields = [
+            'reklamacija_id',
+            'datum_prijema',
+            'status',
+            'opis_problema',
+            'vreme_trajanja',
+            'jacina_zalbe',
+            'dobavljac',
+            'dobavljac_naziv'
+        ]
+        read_only_fields = ['reklamacija_id', 'datum_prijema', 'status']

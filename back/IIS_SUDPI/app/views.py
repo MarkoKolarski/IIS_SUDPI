@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod
+from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -21,8 +21,11 @@ from .serializers import (
     DobavljacSerializer,
     ReportsSerializer,
     PenalSerializer,
+    VisitSerializer,
+    ComplaintSerializer,
 )
 from rest_framework import generics, filters
+from django.db import transaction
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -54,16 +57,35 @@ class LoginView(TokenObtainPairView):
             return Response({'detail': 'Incorrect email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([AllowAny])  # Make sure this is present
 def register(request):
+    print("Registration data received:", request.data)  # Add debug print
     serializer = RegistrationSerializer(data=request.data)
     if serializer.is_valid():
-        user = serializer.save()
-        return Response({
-            'message': 'Korisnik je uspešno registrovan.',
-            'user_type': user.tip_k,
-            'user_name': f"{user.ime_k} {user.prz_k}",
-        }, status=status.HTTP_201_CREATED)
+        try:
+            user = serializer.save()
+            
+            # Create role-specific instance based on user type
+            if user.tip_k == 'kontrolor_kvaliteta':
+                KontrolorKvaliteta.objects.create(korisnik=user)
+            elif user.tip_k == 'finansijski_analiticar':
+                FinansijskiAnaliticar.objects.create(korisnik=user)
+            elif user.tip_k == 'nabavni_menadzer':
+                NabavniMenadzer.objects.create(korisnik=user)
+            
+            return Response({
+                'message': 'Korisnik je uspešno registrovan.',
+                'user_type': user.tip_k,
+                'user_name': f"{user.ime_k} {user.prz_k}",
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print("Registration error:", str(e))  # Add debug print
+            return Response({
+                'error': 'Greška pri registraciji',
+                'details': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    print("Serializer errors:", serializer.errors)  # Add debug print
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
@@ -883,6 +905,215 @@ class suppliers(generics.ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['naziv', 'ime_sirovine', 'PIB_d']
 
-    def get(self, request, *args, **kwargs):
-        print("User that searched:", request.user)
+    def get_object(self, sifra_d):
+        return get_object_or_404(Dobavljac, sifra_d=sifra_d)
+
+    def get(self, request, sifra_d=None, *args, **kwargs):
+        if sifra_d is not None:
+            supplier = self.get_object(sifra_d)
+            serializer = self.get_serializer(supplier)
+            return Response(serializer.data)
         return super().get(request, *args, **kwargs)
+
+    def put(self, request, sifra_d=None):
+        try:
+            with transaction.atomic():
+                # Get the supplier we want to select using sifra_d
+                supplier = Dobavljac.objects.get(sifra_d=sifra_d)
+                
+                # First, unselect all suppliers with the same raw material
+                Dobavljac.objects.filter(
+                    ime_sirovine=supplier.ime_sirovine,
+                    izabran=True
+                ).update(izabran=False)
+                
+                # Then select our supplier
+                supplier.izabran = True
+                supplier.save()
+                
+                serializer = self.get_serializer(supplier)
+                return Response({
+                    'message': 'Dobavljač je uspešno izabran',
+                    'supplier': serializer.data
+                }, status=status.HTTP_200_OK)
+                
+        except Dobavljac.DoesNotExist:
+            return Response({
+                'error': 'Dobavljač nije pronađen'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def visits_list(request):
+    """
+    API endpoint za prikaz liste zakazanih poseta
+    """
+    try:
+        # First check if user is kontrolor_kvaliteta
+        if not hasattr(request.user, 'kontrolor_kvaliteta'):
+            return Response(
+                {'error': 'Samo kontrolor kvaliteta može pristupiti ovom endpoint-u'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        kontrolor = request.user.kontrolor_kvaliteta
+        visits = Poseta.objects.filter(kontrolor=kontrolor).select_related('dobavljac')
+        
+        # Filter by status if provided
+        status_filter = request.GET.get('status')
+        if status_filter:
+            visits = visits.filter(status=status_filter)
+            
+        # Filter by date range if provided
+        date_from = request.GET.get('date_from')
+        date_to = request.GET.get('date_to')
+        if date_from and date_to:
+            visits = visits.filter(datum_od__range=[date_from, date_to])
+        
+        serializer = VisitSerializer(visits, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju poseta', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def visit_detail(request, visit_id):
+    """
+    API endpoint za detalje posete i ažuriranje statusa
+    """
+    try:
+        visit = get_object_or_404(Poseta, poseta_id=visit_id)
+        
+        if request.method == 'PUT':
+            new_status = request.data.get('status')
+            if new_status in dict(Poseta.STATUS_CHOICES):
+                visit.status = new_status
+                visit.save()
+        
+        return Response({
+            'poseta_id': visit.poseta_id,
+            'datum_od': visit.datum_od,
+            'datum_do': visit.datum_do,
+            'status': visit.status,
+            'dobavljac': visit.dobavljac.naziv,
+            'dobavljac_id': visit.dobavljac.sifra_d
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_visit(request):
+    """
+    API endpoint za kreiranje nove posete
+    """
+    try:
+        kontrolor = request.user.kontrolor_kvaliteta
+        datum_od = request.data.get('datum_od')
+        datum_do = request.data.get('datum_do')
+        dobavljac_id = request.data.get('dobavljac_id')
+        
+        dobavljac = get_object_or_404(Dobavljac, sifra_d=dobavljac_id)
+        
+        visit = Poseta.objects.create(
+            kontrolor=kontrolor,
+            dobavljac=dobavljac,
+            datum_od=datum_od,
+            datum_do=datum_do,
+            status='zakazana'
+        )
+        
+        return Response({
+            'message': 'Poseta je uspešno kreirana',
+            'poseta_id': visit.poseta_id
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def complaints_list(request):
+    """
+    API endpoint za prikaz liste reklamacija
+    """
+    try:
+        # First check if user is kontrolor_kvaliteta
+        if not hasattr(request.user, 'kontrolor_kvaliteta'):
+            return Response(
+                {'error': 'Samo kontrolor kvaliteta može pristupiti ovom endpoint-u'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        kontrolor = request.user.kontrolor_kvaliteta
+        complaints = Reklamacija.objects.filter(kontrolor=kontrolor).select_related('dobavljac')
+        
+        serializer = ComplaintSerializer(complaints, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju reklamacija', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_complaint(request):
+    """
+    API endpoint za kreiranje nove reklamacije
+    """
+    try:
+        if not hasattr(request.user, 'kontrolor_kvaliteta'):
+            return Response(
+                {'error': 'Samo kontrolor kvaliteta može podneti reklamaciju'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        kontrolor = request.user.kontrolor_kvaliteta
+        dobavljac_id = request.data.get('dobavljac_id')
+        
+        # Get the supplier
+        try:
+            dobavljac = Dobavljac.objects.get(sifra_d=dobavljac_id)
+        except Dobavljac.DoesNotExist:
+            return Response(
+                {'error': 'Dobavljač nije pronađen'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Create complaint data
+        complaint_data = {
+            'dobavljac': dobavljac.sifra_d,
+            'opis_problema': request.data.get('opis_problema'),
+            'jacina_zalbe': request.data.get('jacina_zalbe'),
+            'vreme_trajanja': request.data.get('vreme_trajanja', 1)
+        }
+        
+        serializer = ComplaintSerializer(data=complaint_data)
+        if serializer.is_valid():
+            serializer.save(
+                kontrolor=kontrolor,
+                status='prijem'
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        return Response(
+            {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

@@ -11,6 +11,11 @@ import Penalties from "./pages/Penalties.js";
 
 import DashboardNM from "./pages/DashboardNM.js";
 import Suppliers from "./pages/Suppliers.js";
+import DashboardKK from "./pages/DashboardKK.js";
+import Visits from "./pages/Visits.js";
+import Complaints from "./pages/Complaints.js";
+import ComplaintCreate from "./pages/ComplaintCreate.js";
+import ScheduleVisit from "./pages/ScheduleVisit.js";
 
 const App = () => {
   return (
@@ -31,6 +36,19 @@ const App = () => {
 
         <Route path="/dashboard-nm" element={<DashboardNM />} />
         <Route path="/suppliers" element={<Suppliers />} />
+
+        {/* Kontrolor Kvaliteta routes */}
+        <Route path="/dashboard-kk" element={<DashboardKK />} />
+        <Route path="/visits" element={<Visits />} />
+        <Route path="/complaints" element={<Complaints />} />
+        <Route
+          path="/complaints/create/:supplierId"
+          element={<ComplaintCreate />}
+        />
+        <Route
+          path="/visits/schedule/:supplierId"
+          element={<ScheduleVisit />}
+        />
       </Routes>
     </Router>
   );
