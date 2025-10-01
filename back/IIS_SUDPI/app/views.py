@@ -26,6 +26,7 @@ from .serializers import (
 )
 from rest_framework import generics, filters
 from django.db import transaction
+from .decorators import allowed_users
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -100,6 +101,7 @@ def register(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def dashboard_finansijski_analiticar(request):
     """
     API endpoint za dashboard finansijskog analitičara
@@ -209,6 +211,7 @@ def dashboard_finansijski_analiticar(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_list(request):
     """
     API endpoint za prikaz liste faktura sa filtering i search opcijama
@@ -285,6 +288,7 @@ def invoice_list(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_filter_options(request):
     """
     API endpoint za dobijanje opcija za dropdown filtere
@@ -326,6 +330,7 @@ def invoice_filter_options(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_detail(request, invoice_id):
     """
     API endpoint za prikaz detalja pojedinačne fakture
@@ -342,6 +347,7 @@ def invoice_detail(request, invoice_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_action(request, invoice_id):
     """
     API endpoint za akcije nad fakturom (potpis, odbacivanje)
@@ -382,6 +388,7 @@ def invoice_action(request, invoice_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def reports_data(request):
     """
     API endpoint za generiranje izveštaja o troškovima i profitabilnosti
@@ -719,6 +726,7 @@ def reports_data(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def reports_filter_options(request):
     """
     API endpoint za dobijanje opcija za report filtere
@@ -753,6 +761,7 @@ def reports_filter_options(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def penalties_list(request):
     """
     API endpoint za prikaz liste penala sa filtering opcijama
@@ -805,6 +814,7 @@ def penalties_list(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def penalties_filter_options(request):
     """
     API endpoint za dobijanje opcija za dropdown filtere
@@ -834,6 +844,7 @@ def penalties_filter_options(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def penalties_analysis(request):
     """
     API endpoint za automatsku analizu saradnje sa dobavljačima na osnovu penala
@@ -910,6 +921,7 @@ def penalties_analysis(request):
 
 
 class suppliers(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Dobavljac.objects.all()
     serializer_class = DobavljacSerializer
     filter_backends = [filters.SearchFilter]
@@ -958,6 +970,7 @@ class suppliers(generics.ListAPIView):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def visits_list(request):
     """
     API endpoint za prikaz liste zakazanih poseta
@@ -995,6 +1008,7 @@ def visits_list(request):
 
 @api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def visit_detail(request, visit_id):
     """
     API endpoint za detalje posete i ažuriranje statusa
@@ -1022,6 +1036,7 @@ def visit_detail(request, visit_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def create_visit(request):
     """
     API endpoint za kreiranje nove posete
@@ -1052,6 +1067,7 @@ def create_visit(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def complaints_list(request):
     """
     API endpoint za prikaz liste reklamacija
@@ -1078,6 +1094,7 @@ def complaints_list(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def create_complaint(request):
     """
     API endpoint za kreiranje nove reklamacije
