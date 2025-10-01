@@ -927,6 +927,25 @@ class suppliers(generics.ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['naziv', 'ime_sirovine', 'PIB_d']
 
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        allowed_types = ['nabavni_menadzer', 'kontrolor_kvaliteta']
+        
+        # For GET methods, both roles are allowed
+        if request.method in ['GET', 'HEAD', 'OPTIONS']:
+            if request.user.tip_k not in allowed_types:
+                self.permission_denied(
+                    request,
+                    message='Samo nabavni menadžer i kontrolor kvaliteta mogu pristupiti ovim podacima.'
+                )
+        # For PUT methods, only nabavni_menadzer is allowed
+        elif request.method == 'PUT':
+            if request.user.tip_k != 'nabavni_menadzer':
+                self.permission_denied(
+                    request,
+                    message='Samo nabavni menadžer može ažurirati dobavljača.'
+                )
+
     def get_object(self, sifra_d):
         return get_object_or_404(Dobavljac, sifra_d=sifra_d)
 
