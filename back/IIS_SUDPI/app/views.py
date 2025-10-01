@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer
+from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -66,12 +66,22 @@ def register(request):
             user = serializer.save()
             
             # Create role-specific instance based on user type
-            if user.tip_k == 'kontrolor_kvaliteta':
-                KontrolorKvaliteta.objects.create(korisnik=user)
-            elif user.tip_k == 'finansijski_analiticar':
-                FinansijskiAnaliticar.objects.create(korisnik=user)
-            elif user.tip_k == 'nabavni_menadzer':
-                NabavniMenadzer.objects.create(korisnik=user)
+            if user.tip_k in ['kontrolor_kvaliteta', 'finansijski_analiticar', 'nabavni_menadzer', 
+                             'logisticki_koordinator', 'skladisni_operater', 'administrator']:
+                
+                # Map user types to their respective models
+                user_type_models = {
+                    'kontrolor_kvaliteta': KontrolorKvaliteta,
+                    'finansijski_analiticar': FinansijskiAnaliticar,
+                    'nabavni_menadzer': NabavniMenadzer,
+                    'logisticki_koordinator': LogistickiKoordinator,
+                    'skladisni_operater': SkladisniOperater,
+                    'administrator': Administrator
+                }
+                
+                # Create instance of appropriate model
+                if user.tip_k in user_type_models:
+                    user_type_models[user.tip_k].objects.create(korisnik=user)
             
             return Response({
                 'message': 'Korisnik je uspešno registrovan.',
