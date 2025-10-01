@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer
+from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -26,6 +26,7 @@ from .serializers import (
 )
 from rest_framework import generics, filters
 from django.db import transaction
+from .decorators import allowed_users
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -66,12 +67,22 @@ def register(request):
             user = serializer.save()
             
             # Create role-specific instance based on user type
-            if user.tip_k == 'kontrolor_kvaliteta':
-                KontrolorKvaliteta.objects.create(korisnik=user)
-            elif user.tip_k == 'finansijski_analiticar':
-                FinansijskiAnaliticar.objects.create(korisnik=user)
-            elif user.tip_k == 'nabavni_menadzer':
-                NabavniMenadzer.objects.create(korisnik=user)
+            if user.tip_k in ['kontrolor_kvaliteta', 'finansijski_analiticar', 'nabavni_menadzer', 
+                             'logisticki_koordinator', 'skladisni_operater', 'administrator']:
+                
+                # Map user types to their respective models
+                user_type_models = {
+                    'kontrolor_kvaliteta': KontrolorKvaliteta,
+                    'finansijski_analiticar': FinansijskiAnaliticar,
+                    'nabavni_menadzer': NabavniMenadzer,
+                    'logisticki_koordinator': LogistickiKoordinator,
+                    'skladisni_operater': SkladisniOperater,
+                    'administrator': Administrator
+                }
+                
+                # Create instance of appropriate model
+                if user.tip_k in user_type_models:
+                    user_type_models[user.tip_k].objects.create(korisnik=user)
             
             return Response({
                 'message': 'Korisnik je uspešno registrovan.',
@@ -90,6 +101,7 @@ def register(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def dashboard_finansijski_analiticar(request):
     """
     API endpoint za dashboard finansijskog analitičara
@@ -199,6 +211,7 @@ def dashboard_finansijski_analiticar(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_list(request):
     """
     API endpoint za prikaz liste faktura sa filtering i search opcijama
@@ -275,6 +288,7 @@ def invoice_list(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_filter_options(request):
     """
     API endpoint za dobijanje opcija za dropdown filtere
@@ -316,6 +330,7 @@ def invoice_filter_options(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_detail(request, invoice_id):
     """
     API endpoint za prikaz detalja pojedinačne fakture
@@ -332,6 +347,7 @@ def invoice_detail(request, invoice_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def invoice_action(request, invoice_id):
     """
     API endpoint za akcije nad fakturom (potpis, odbacivanje)
@@ -372,6 +388,7 @@ def invoice_action(request, invoice_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def reports_data(request):
     """
     API endpoint za generiranje izveštaja o troškovima i profitabilnosti
@@ -709,6 +726,7 @@ def reports_data(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
 def reports_filter_options(request):
     """
     API endpoint za dobijanje opcija za report filtere
@@ -743,6 +761,7 @@ def reports_filter_options(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def penalties_list(request):
     """
     API endpoint za prikaz liste penala sa filtering opcijama
@@ -795,6 +814,7 @@ def penalties_list(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def penalties_filter_options(request):
     """
     API endpoint za dobijanje opcija za dropdown filtere
@@ -824,6 +844,7 @@ def penalties_filter_options(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
 def penalties_analysis(request):
     """
     API endpoint za automatsku analizu saradnje sa dobavljačima na osnovu penala
@@ -900,10 +921,30 @@ def penalties_analysis(request):
 
 
 class suppliers(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     queryset = Dobavljac.objects.all()
     serializer_class = DobavljacSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['naziv', 'ime_sirovine', 'PIB_d']
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        allowed_types = ['nabavni_menadzer', 'kontrolor_kvaliteta']
+        
+        # For GET methods, both roles are allowed
+        if request.method in ['GET', 'HEAD', 'OPTIONS']:
+            if request.user.tip_k not in allowed_types:
+                self.permission_denied(
+                    request,
+                    message='Samo nabavni menadžer i kontrolor kvaliteta mogu pristupiti ovim podacima.'
+                )
+        # For PUT methods, only nabavni_menadzer is allowed
+        elif request.method == 'PUT':
+            if request.user.tip_k != 'nabavni_menadzer':
+                self.permission_denied(
+                    request,
+                    message='Samo nabavni menadžer može ažurirati dobavljača.'
+                )
 
     def get_object(self, sifra_d):
         return get_object_or_404(Dobavljac, sifra_d=sifra_d)
@@ -948,6 +989,7 @@ class suppliers(generics.ListAPIView):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def visits_list(request):
     """
     API endpoint za prikaz liste zakazanih poseta
@@ -985,6 +1027,7 @@ def visits_list(request):
 
 @api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def visit_detail(request, visit_id):
     """
     API endpoint za detalje posete i ažuriranje statusa
@@ -1012,6 +1055,7 @@ def visit_detail(request, visit_id):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def create_visit(request):
     """
     API endpoint za kreiranje nove posete
@@ -1042,6 +1086,7 @@ def create_visit(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def complaints_list(request):
     """
     API endpoint za prikaz liste reklamacija
@@ -1068,6 +1113,7 @@ def complaints_list(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
 def create_complaint(request):
     """
     API endpoint za kreiranje nove reklamacije
