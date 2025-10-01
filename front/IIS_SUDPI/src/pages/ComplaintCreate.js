@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainSideBar from "../components/MainSideBar";
-import { sidebarLinksKK } from "./DashboardKK";
 import axiosInstance from "../axiosInstance";
 import "../styles/ComplaintCreate.css";
 
@@ -43,7 +42,7 @@ const ComplaintCreate = () => {
 
   return (
     <div className="complaint-create-wrapper">
-      <MainSideBar links={sidebarLinksKK} isCollapsed={false} />
+      <MainSideBar isCollapsed={false} />
       <main className="complaint-create-main">
         <header className="complaint-header">
           <h1>Nova reklamacija za dobavljača: {supplier.naziv}</h1>

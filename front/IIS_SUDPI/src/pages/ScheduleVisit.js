@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import MainSideBar from "../components/MainSideBar";
-import { sidebarLinksKK } from "./DashboardKK";
 import axiosInstance from "../axiosInstance";
 import "../styles/ScheduleVisit.css";
 
@@ -54,7 +53,7 @@ const ScheduleVisit = () => {
 
   return (
     <div className="schedule-visit-wrapper">
-      <MainSideBar links={sidebarLinksKK} isCollapsed={false} />
+      <MainSideBar isCollapsed={false} />
       <main className="schedule-visit-main">
         <header className="schedule-visit-header">
           <h1>Zakazivanje posete za dobavljača: {supplier.naziv}</h1>

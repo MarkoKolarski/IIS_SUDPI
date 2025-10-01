@@ -1,18 +1,18 @@
 import React from "react";
 import "../styles/MainSideBar.css";
 import { useNavigate, NavLink } from "react-router-dom";
+import { sidebarLinks } from "./MainSideBarLinks";
 
-const MainSideBar = ({
-  isCollapsed,
-  toggleSidebar,
-  links,
-  icon = "★",
-  activeIcon = "⭐",
-}) => {
+const MainSideBar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
+  const userType = sessionStorage.getItem("user_type");
+  const links = sidebarLinks[userType] || [];
+
+  const icon = "★";
+  const activeIcon = "⭐";
 
   const handleLogout = () => {
-    console.log("Logout action");
+    sessionStorage.clear();
     navigate("/login");
   };
 

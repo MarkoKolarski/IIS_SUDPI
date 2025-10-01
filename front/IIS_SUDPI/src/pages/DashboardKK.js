@@ -5,24 +5,6 @@ import "react-calendar/dist/Calendar.css";
 import "../styles/DashboardKK.css";
 import axiosInstance from "../axiosInstance";
 
-export const sidebarLinksKK = [
-  {
-    href: "/dashboard-kk",
-    title: "Kontrolna tabla",
-    description: "Pregled zakazanih poseta",
-  },
-  {
-    href: "/visits",
-    title: "Planiranje poseta",
-    description: "Zakazivanje poseta dobavljačima",
-  },
-  {
-    href: "/complaints",
-    title: "Reklamacije",
-    description: "Upravljanje reklamacijama",
-  },
-];
-
 const DashboardKK = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [visits, setVisits] = useState([]);
@@ -87,7 +69,6 @@ const DashboardKK = () => {
       }`}
     >
       <MainSideBar
-        links={sidebarLinksKK}
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />
