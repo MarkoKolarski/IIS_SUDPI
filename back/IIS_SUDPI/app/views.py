@@ -23,6 +23,7 @@ from .serializers import (
     PenalSerializer,
 )
 from rest_framework import generics, filters
+from django.db import transaction
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -883,6 +884,36 @@ class suppliers(generics.ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['naziv', 'ime_sirovine', 'PIB_d']
 
+    def put(self, request, sifra_d=None):
+        try:
+            with transaction.atomic():
+                # Get the supplier we want to select using sifra_d
+                supplier = Dobavljac.objects.get(sifra_d=sifra_d)
+                
+                # First, unselect all suppliers with the same raw material
+                Dobavljac.objects.filter(
+                    ime_sirovine=supplier.ime_sirovine,
+                    izabran=True
+                ).update(izabran=False)
+                
+                # Then select our supplier
+                supplier.izabran = True
+                supplier.save()
+                
+                serializer = self.get_serializer(supplier)
+                return Response({
+                    'message': 'Dobavljač je uspešno izabran',
+                    'supplier': serializer.data
+                }, status=status.HTTP_200_OK)
+                
+        except Dobavljac.DoesNotExist:
+            return Response({
+                'error': 'Dobavljač nije pronađen'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
     def get(self, request, *args, **kwargs):
-        print("User that searched:", request.user)
         return super().get(request, *args, **kwargs)

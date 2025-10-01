@@ -16,4 +16,5 @@ urlpatterns = [
     path('penalties/filter-options/', penalties_filter_options, name='penalties_filter_options'),
     path('penalties/analysis/', penalties_analysis, name='penalties_analysis'),
     path('suppliers/', suppliers.as_view(), name='dobavljaci-list'),
+    path('suppliers/<int:sifra_d>/select/', suppliers.as_view(), name='dobavljaci-select'),
 ]

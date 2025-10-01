@@ -35,7 +35,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
 class DobavljacSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dobavljac
-        fields = ['sifra_d', 'naziv']
+        fields = ['sifra_d', 'naziv', 'email', 'PIB_d', 'ime_sirovine', 
+                 'cena', 'rok_isporuke', 'ocena', 'datum_ocenjivanja', 'izabran']
 
 class FakturaSerializer(serializers.ModelSerializer):
     dobavljac_naziv = serializers.CharField(source='ugovor.dobavljac.naziv', read_only=True)

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import "../styles/Suppliers.css";
+import "../styles/SuppliersTable.css";
 
 const SuppliersTable = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchSuppliers = async (query = "") => {
     try {
@@ -23,7 +25,6 @@ const SuppliersTable = () => {
       }
 
       const data = await response.json();
-      console.log("fetched suppliers:", data);
       setSuppliers(data || []); // assuming DRF pagination
     } catch (error) {
       console.error("Error fetching dobavljaci:", error);
@@ -43,19 +44,48 @@ const SuppliersTable = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [search]);
 
+  const handleSelect = async (supplierId) => {
+    try {
+      setIsLoading(true);
+      const token = sessionStorage.getItem("access_token");
+      const response = await fetch(`/suppliers/${supplierId}/select/`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      // Refresh the suppliers list
+      await fetchSuppliers(search);
+    } catch (error) {
+      console.error("Error selecting supplier:", error);
+      alert(error.message || "Failed to select supplier");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Dobavljaci</h1>
+    <div className="suppliers-container">
+      <h1 className="suppliers-title">Dobavljaci</h1>
       <input
         type="text"
+        className="suppliers-search"
         placeholder="Search by name, raw material, or PIB"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: "20px", padding: "8px", width: "300px" }}
       />
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
+      <table className="suppliers-table">
         <thead>
-          <tr style={{ backgroundColor: "#f2f2f2" }}>
+          <tr>
             <th>Naziv</th>
             <th>PIB</th>
             <th>Email</th>
@@ -65,11 +95,12 @@ const SuppliersTable = () => {
             <th>Ocena</th>
             <th>Datum ocenjivanja</th>
             <th>Izabran</th>
+            <th>Akcije</th>
           </tr>
         </thead>
         <tbody>
           {suppliers.map((d) => (
-            <tr key={d.id}>
+            <tr key={d.sifra_d}>
               <td>{d.naziv}</td>
               <td>{d.pib_d}</td>
               <td>{d.email}</td>
@@ -78,7 +109,18 @@ const SuppliersTable = () => {
               <td>{d.rok_isporuke}</td>
               <td>{d.ocena}</td>
               <td>{new Date(d.datum_ocenjivanja).toLocaleDateString()}</td>
-              <td>{d.izabran ? "Yes" : "No"}</td>
+              <td className={d.izabran ? "selected" : "not-selected"}>
+                {d.izabran ? "Da" : "Ne"}
+              </td>
+              <td>
+                <button
+                  className="select-button"
+                  onClick={() => handleSelect(d.sifra_d)}
+                  disabled={d.izabran || isLoading}
+                >
+                  {d.izabran ? "Izabran" : "Izaberi"}
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
