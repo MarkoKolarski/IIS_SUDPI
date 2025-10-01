@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "../styles/Suppliers.css";
 import "../styles/SuppliersTable.css";
+import axiosInstance from "../axiosInstance";
+import { FaCheck } from "react-icons/fa";
 
 const SuppliersTable = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const userType = sessionStorage.getItem("user_type");
 
   const fetchSuppliers = async (query = "") => {
     try {
@@ -44,32 +46,17 @@ const SuppliersTable = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [search]);
 
-  const handleSelect = async (supplierId) => {
+  const handleSelectSupplier = async (supplierId) => {
     try {
-      setIsLoading(true);
-      const token = sessionStorage.getItem("access_token");
-      const response = await fetch(`/suppliers/${supplierId}/select/`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
-        );
+      const response = await axiosInstance.post(
+        `/suppliers/${supplierId}/select/`
+      );
+      if (response.data.message) {
+        // Refresh the suppliers list
+        fetchSuppliers();
       }
-
-      // Refresh the suppliers list
-      await fetchSuppliers(search);
     } catch (error) {
       console.error("Error selecting supplier:", error);
-      alert(error.message || "Failed to select supplier");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -88,39 +75,39 @@ const SuppliersTable = () => {
           <tr>
             <th>Naziv</th>
             <th>PIB</th>
-            <th>Email</th>
             <th>Sirovina</th>
-            <th>Cena</th>
-            <th>Rok isporuke</th>
+            <th>Email</th>
             <th>Ocena</th>
-            <th>Datum ocenjivanja</th>
-            <th>Izabran</th>
-            <th>Akcije</th>
+            <th>Status</th>
+            {userType === "nabavni_menadzer" && <th>Akcije</th>}
           </tr>
         </thead>
         <tbody>
-          {suppliers.map((d) => (
-            <tr key={d.sifra_d}>
-              <td>{d.naziv}</td>
-              <td>{d.pib_d}</td>
-              <td>{d.email}</td>
-              <td>{d.ime_sirovine}</td>
-              <td>{d.cena}</td>
-              <td>{d.rok_isporuke}</td>
-              <td>{d.ocena}</td>
-              <td>{new Date(d.datum_ocenjivanja).toLocaleDateString()}</td>
-              <td className={d.izabran ? "selected" : "not-selected"}>
-                {d.izabran ? "Da" : "Ne"}
-              </td>
-              <td>
-                <button
-                  className="select-button"
-                  onClick={() => handleSelect(d.sifra_d)}
-                  disabled={d.izabran || isLoading}
-                >
-                  {d.izabran ? "Izabran" : "Izaberi"}
-                </button>
-              </td>
+          {suppliers.map((supplier) => (
+            <tr key={supplier.sifra_d}>
+              <td>{supplier.naziv}</td>
+              <td>{supplier.PIB_d}</td>
+              <td>{supplier.ime_sirovine}</td>
+              <td>{supplier.email}</td>
+              <td>{supplier.ocena}/10</td>
+              <td>{supplier.izabran ? "Izabran" : "Nije izabran"}</td>
+              {userType === "nabavni_menadzer" && (
+                <td>
+                  {!supplier.izabran && (
+                    <button
+                      className="select-button"
+                      onClick={() => handleSelectSupplier(supplier.sifra_d)}
+                    >
+                      Izaberi dobavljača
+                    </button>
+                  )}
+                  {supplier.izabran && (
+                    <span className="selected-badge">
+                      <FaCheck /> Izabran
+                    </span>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

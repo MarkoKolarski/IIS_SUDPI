@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint
+from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier
 
 urlpatterns = [
     path('', index, name='index'),
@@ -17,7 +17,7 @@ urlpatterns = [
     path('penalties/analysis/', penalties_analysis, name='penalties_analysis'),
     path('suppliers/', suppliers.as_view(), name='dobavljaci-list'),
     path('suppliers/<int:sifra_d>/', suppliers.as_view(), name='dobavljaci-detail'),
-    path('suppliers/<int:sifra_d>/select/', suppliers.as_view(), name='dobavljaci-select'),
+    path('suppliers/<int:sifra_d>/select/', select_supplier, name='select-supplier'),
 
     # Kontrolor Kvaliteta endpoints
     path('visits/', visits_list, name='visits-list'),

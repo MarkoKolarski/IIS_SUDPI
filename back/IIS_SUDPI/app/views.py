@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
-from django.db.models import Sum, Q, Count, Avg
+from django.db.models import Sum, Q, Count, Avg, Max
 from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
@@ -920,6 +920,42 @@ def penalties_analysis(request):
     }, status=status.HTTP_200_OK)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['nabavni_menadzer'])
+def select_supplier(request, sifra_d):
+    """
+    API endpoint for nabavni menadzer to select supplier
+    """
+    try:
+        with transaction.atomic():
+            supplier = get_object_or_404(Dobavljac, sifra_d=sifra_d)
+            
+            # First, unselect all suppliers with the same raw material
+            Dobavljac.objects.filter(
+                ime_sirovine=supplier.ime_sirovine,
+                izabran=True
+            ).update(izabran=False)
+            
+            # Then select our supplier
+            supplier.izabran = True
+            supplier.save()
+            
+            serializer = DobavljacSerializer(supplier)
+            return Response({
+                'message': 'Dobavljač je uspešno izabran',
+                'supplier': serializer.data
+            }, status=status.HTTP_200_OK)
+            
+    except Dobavljac.DoesNotExist:
+        return Response({
+            'error': 'Dobavljač nije pronađen'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+
 class suppliers(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Dobavljac.objects.all()
@@ -931,20 +967,65 @@ class suppliers(generics.ListAPIView):
         super().check_permissions(request)
         allowed_types = ['administrator', 'nabavni_menadzer', 'kontrolor_kvaliteta']
         
-        # For GET methods, both roles are allowed
+        # For GET methods, all three roles are allowed
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
             if request.user.tip_k not in allowed_types:
                 self.permission_denied(
                     request,
-                    message='Samo nabavni menadžer i kontrolor kvaliteta mogu pristupiti ovim podacima.'
+                    message='Samo administrator, nabavni menadžer i kontrolor kvaliteta mogu pristupiti ovim podacima.'
                 )
-        # For PUT methods, only nabavni_menadzer is allowed
-        elif request.method == 'PUT':
-            if request.user.tip_k != 'nabavni_menadzer':
+        # For POST, PUT, DELETE methods, only administrator is allowed
+        elif request.method in ['POST', 'PUT', 'DELETE']:
+            if request.user.tip_k != 'administrator':
                 self.permission_denied(
                     request,
-                    message='Samo nabavni menadžer može ažurirati dobavljača.'
+                    message='Samo administrator može menjati podatke dobavljača.'
                 )
+
+    def post(self, request):
+        try:
+            # Check if PIB already exists
+            if Dobavljac.objects.filter(PIB_d=request.data.get('PIB_d')).exists():
+                return Response({
+                    'error': 'Dobavljač sa ovim PIB-om već postoji'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get the max sifra_d value and increment by 1
+            max_sifra = Dobavljac.objects.aggregate(Max('sifra_d'))['sifra_d__max'] or 0
+            next_sifra = max_sifra + 1
+            
+            # Add sifra_d to request data
+            request_data = request.data.copy()
+            request_data['sifra_d'] = next_sifra
+
+            serializer = self.get_serializer(data=request_data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'message': 'Dobavljač je uspešno kreiran',
+                    'supplier': serializer.data
+                }, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, sifra_d=None):
+        try:
+            supplier = self.get_object(sifra_d)
+            supplier.delete()
+            return Response({
+                'message': 'Dobavljač je uspešno obrisan'
+            }, status=status.HTTP_200_OK)
+        except Dobavljac.DoesNotExist:
+            return Response({
+                'error': 'Dobavljač nije pronađen'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def get_object(self, sifra_d):
         return get_object_or_404(Dobavljac, sifra_d=sifra_d)
@@ -957,31 +1038,20 @@ class suppliers(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
     def put(self, request, sifra_d=None):
-        try:
-            with transaction.atomic():
-                # Get the supplier we want to select using sifra_d
-                supplier = Dobavljac.objects.get(sifra_d=sifra_d)
-                
-                # First, unselect all suppliers with the same raw material
-                Dobavljac.objects.filter(
-                    ime_sirovine=supplier.ime_sirovine,
-                    izabran=True
-                ).update(izabran=False)
-                
-                # Then select our supplier
-                supplier.izabran = True
-                supplier.save()
-                
-                serializer = self.get_serializer(supplier)
-                return Response({
-                    'message': 'Dobavljač je uspešno izabran',
-                    'supplier': serializer.data
-                }, status=status.HTTP_200_OK)
-                
-        except Dobavljac.DoesNotExist:
+        if request.user.tip_k != 'administrator':
             return Response({
-                'error': 'Dobavljač nije pronađen'
-            }, status=status.HTTP_404_NOT_FOUND)
+                'error': 'Samo administrator može ažurirati podatke dobavljača'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            supplier = self.get_object(sifra_d)
+            serializer = self.get_serializer(supplier, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         except Exception as e:
             return Response({
                 'error': str(e)

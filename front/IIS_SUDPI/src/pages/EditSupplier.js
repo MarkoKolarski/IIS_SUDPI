@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainSideBar from "../components/MainSideBar";
 import axiosInstance from "../axiosInstance";
@@ -21,13 +21,7 @@ const EditSupplier = () => {
   const [loading, setLoading] = useState(supplierId !== "new");
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (supplierId !== "new") {
-      fetchSupplier();
-    }
-  }, [supplierId]);
-
-  const fetchSupplier = async () => {
+  const fetchSupplier = useCallback(async () => {
     try {
       const response = await axiosInstance.get(`/suppliers/${supplierId}/`);
       setSupplier(response.data);
@@ -36,7 +30,13 @@ const EditSupplier = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supplierId]);
+
+  useEffect(() => {
+    if (supplierId !== "new") {
+      fetchSupplier();
+    }
+  }, [supplierId, fetchSupplier]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
