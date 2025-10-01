@@ -4,6 +4,7 @@ import MainSideBar from "../components/MainSideBar";
 import { sidebarLinksKK } from "./DashboardKK";
 import Calendar from "react-calendar";
 import axiosInstance from "../axiosInstance";
+import VisitSupplierTable from "../components/VisitSupplierTable";
 
 const Visits = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -69,6 +70,18 @@ const Visits = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const handleSupplierSelect = (supplier, selectedDate) => {
+    setNewVisit({
+      dobavljac_id: supplier.sifra_d,
+      datum_od: selectedDate.toISOString(),
+      datum_do: new Date(
+        selectedDate.getTime() + 2 * 60 * 60 * 1000
+      ).toISOString(), // 2 hours duration by default
+    });
+    // Open the form section or modal for additional details
+    // You can implement this based on your UI requirements
+  };
+
   return (
     <div
       className={`dashboard-kk-wrapper ${
@@ -86,45 +99,11 @@ const Visits = () => {
         </header>
 
         <div className="dashboard-content">
-          <div className="create-visit-form">
-            <h2>Zakaži novu posetu</h2>
-            <form onSubmit={handleCreateVisit}>
-              <select
-                value={newVisit.dobavljac_id}
-                onChange={(e) =>
-                  setNewVisit({ ...newVisit, dobavljac_id: e.target.value })
-                }
-                required
-              >
-                <option value="">Izaberite dobavljača</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.sifra_d} value={supplier.sifra_d}>
-                    {supplier.naziv}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="datetime-local"
-                value={newVisit.datum_od}
-                onChange={(e) =>
-                  setNewVisit({ ...newVisit, datum_od: e.target.value })
-                }
-                required
-              />
-
-              <input
-                type="datetime-local"
-                value={newVisit.datum_do}
-                onChange={(e) =>
-                  setNewVisit({ ...newVisit, datum_do: e.target.value })
-                }
-                required
-              />
-
-              <button type="submit">Zakaži posetu</button>
-            </form>
-          </div>
+          <VisitSupplierTable
+            suppliers={suppliers}
+            existingVisits={visits}
+            onSupplierSelect={handleSupplierSelect}
+          />
 
           <div className="visits-list">
             <h2>Zakazane posete</h2>

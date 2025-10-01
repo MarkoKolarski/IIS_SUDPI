@@ -1,0 +1,113 @@
+.visit-supplier-container {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.suppliers-search {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.suppliers-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.suppliers-table th,
+.suppliers-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.suppliers-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #374151;
+}
+
+.schedule-visit-button {
+  padding: 8px 16px;
+  background-color: #14b8a6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.schedule-visit-button:hover {
+  background-color: #0d9488;
+}
+
+.calendar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.calendar-modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 90%;
+}
+
+.calendar-modal h3 {
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.visit-calendar {
+  width: 100%;
+  border: none !important;
+  background: white;
+}
+
+.visit-calendar .react-calendar__tile {
+  position: relative;
+  padding: 1em 0.5em;
+}
+
+.visit-marker {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #14b8a6;
+}
+
+.close-calendar {
+  margin-top: 1rem;
+  padding: 8px 16px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.close-calendar:hover {
+  background-color: #dc2626;
+}

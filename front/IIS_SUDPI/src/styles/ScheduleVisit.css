@@ -1,0 +1,204 @@
+.schedule-visit-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f0fdfa;
+}
+
+.schedule-visit-main {
+  flex-grow: 1;
+  margin-left: 280px;
+  padding: 24px;
+}
+
+.schedule-visit-header {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px rgba(20, 184, 166, 0.1);
+}
+
+.schedule-visit-header h1 {
+  color: white;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.schedule-visit-content {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.schedule-visit-form {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.calendar-section {
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.calendar-section h3 {
+  margin-bottom: 20px;
+  color: #374151;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.visit-calendar {
+  width: 100% !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  background: #ffffff !important;
+}
+
+/* Calendar custom styling */
+.react-calendar {
+  border: 1px solid #e5e7eb !important;
+  padding: 16px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.react-calendar__tile {
+  padding: 12px 6px !important;
+  font-size: 14px !important;
+  border-radius: 6px !important;
+}
+
+.react-calendar__tile--active {
+  background: #14b8a6 !important;
+  color: white !important;
+}
+
+.react-calendar__tile:enabled:hover {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.visit-details {
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  display: block;
+  height: fit-content;
+  width: fit-content;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #374151;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.form-group input {
+  width: 90%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.form-actions button {
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-actions button[type="button"] {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.form-actions button[type="button"]:hover {
+  background-color: #e5e7eb;
+}
+
+.form-actions button[type="submit"] {
+  background-color: #14b8a6;
+  color: white;
+  box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1);
+}
+
+.form-actions button[type="submit"]:hover {
+  background-color: #0d9488;
+  transform: translateY(-1px);
+}
+
+.error-message {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #fecaca;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-message::before {
+  content: "⚠️";
+}
+
+@media (max-width: 1024px) {
+  .schedule-visit-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .schedule-visit-main {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .schedule-visit-main {
+    margin-left: 0;
+  }
+  
+  .schedule-visit-header h1 {
+    font-size: 22px;
+  }
+  
+  .schedule-visit-content {
+    padding: 20px;
+  }
+}

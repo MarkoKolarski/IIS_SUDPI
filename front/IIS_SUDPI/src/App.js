@@ -15,6 +15,7 @@ import DashboardKK from "./pages/DashboardKK.js";
 import Visits from "./pages/Visits.js";
 import Complaints from "./pages/Complaints.js";
 import ComplaintCreate from "./pages/ComplaintCreate.js";
+import ScheduleVisit from "./pages/ScheduleVisit.js";
 
 const App = () => {
   return (
@@ -43,6 +44,10 @@ const App = () => {
         <Route
           path="/complaints/create/:supplierId"
           element={<ComplaintCreate />}
+        />
+        <Route
+          path="/visits/schedule/:supplierId"
+          element={<ScheduleVisit />}
         />
       </Routes>
     </Router>
