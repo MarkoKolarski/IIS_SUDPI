@@ -1,18 +1,18 @@
 .edit-supplier-wrapper {
   display: flex;
   min-height: 100vh;
-}
-
-.edit-supplier-wrapper.sidebar-collapsed .edit-supplier-main-content {
-  margin-left: 60px;
+  background-color: #f0fdfa;
 }
 
 .edit-supplier-main-content {
-  flex: 1;
-  margin-left: 250px;
+  flex-grow: 1;
+  margin-left: 280px;
   padding: 20px;
   transition: margin-left 0.3s ease;
-  background-color: #f5f6fa;
+}
+
+.edit-supplier-wrapper.sidebar-collapsed .edit-supplier-main-content {
+  margin-left: 80px;
 }
 
 .supplier-form {
@@ -70,4 +70,13 @@
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .edit-supplier-main-content {
+    margin-left: 80px;
+  }
+  .edit-supplier-wrapper.sidebar-collapsed .edit-supplier-main-content {
+    margin-left: 0;
+  }
 }

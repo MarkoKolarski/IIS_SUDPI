@@ -1,19 +1,18 @@
 .register-wrapper {
   display: flex;
   min-height: 100vh;
-  transition: padding-left 0.3s ease;
-}
-
-.register-wrapper.sidebar-collapsed .register-main-content {
-  margin-left: 60px;
+  background-color: #f0fdfa;
 }
 
 .register-main-content {
-  flex: 1;
-  margin-left: 250px;
+  flex-grow: 1;
+  margin-left: 280px;
   padding: 20px;
   transition: margin-left 0.3s ease;
-  background-color: #f5f6fa;
+}
+
+.register-wrapper.sidebar-collapsed .register-main-content {
+  margin-left: 80px;
 }
 
 .register-container {
@@ -92,4 +91,13 @@
   font-size: 14px;
   margin-top: -15px;
   margin-bottom: -15px;
+}
+
+@media (max-width: 768px) {
+  .register-main-content {
+    margin-left: 80px;
+  }
+  .register-wrapper.sidebar-collapsed .register-main-content {
+    margin-left: 0;
+  }
 }

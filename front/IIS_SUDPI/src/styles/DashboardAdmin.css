@@ -1,18 +1,18 @@
 .dashboard-admin-wrapper {
   display: flex;
   min-height: 100vh;
-}
-
-.dashboard-admin-wrapper.sidebar-collapsed .dashboard-admin-main-content {
-  margin-left: 60px;
+  background-color: #f0fdfa;
 }
 
 .dashboard-admin-main-content {
-  flex: 1;
-  margin-left: 250px;
+  flex-grow: 1;
+  margin-left: 280px;
   padding: 20px;
   transition: margin-left 0.3s ease;
-  background-color: #f5f6fa;
+}
+
+.dashboard-admin-wrapper.sidebar-collapsed .dashboard-admin-main-content {
+  margin-left: 80px;
 }
 
 .dashboard-header {
@@ -80,4 +80,13 @@
   background: #ffebee;
   border-radius: 5px;
   margin: 20px 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-admin-main-content {
+    margin-left: 80px;
+  }
+  .dashboard-admin-wrapper.sidebar-collapsed .dashboard-admin-main-content {
+    margin-left: 0;
+  }
 }

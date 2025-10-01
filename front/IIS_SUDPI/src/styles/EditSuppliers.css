@@ -1,18 +1,18 @@
 .edit-suppliers-wrapper {
   display: flex;
   min-height: 100vh;
-}
-
-.edit-suppliers-wrapper.sidebar-collapsed .edit-suppliers-main-content {
-  margin-left: 60px;
+  background-color: #f0fdfa;
 }
 
 .edit-suppliers-main-content {
-  flex: 1;
-  margin-left: 250px;
+  flex-grow: 1;
+  margin-left: 280px;
   padding: 20px;
   transition: margin-left 0.3s ease;
-  background-color: #f5f6fa;
+}
+
+.edit-suppliers-wrapper.sidebar-collapsed .edit-suppliers-main-content {
+  margin-left: 80px;
 }
 
 .edit-suppliers-header {
@@ -58,4 +58,13 @@
 
 .edit-button:hover {
   background-color: #0d1657;
+}
+
+@media (max-width: 768px) {
+  .edit-suppliers-main-content {
+    margin-left: 80px;
+  }
+  .edit-suppliers-wrapper.sidebar-collapsed .edit-suppliers-main-content {
+    margin-left: 0;
+  }
 }
