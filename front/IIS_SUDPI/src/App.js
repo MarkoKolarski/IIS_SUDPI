@@ -22,6 +22,7 @@ import Visits from "./pages/Visits.js";
 import Complaints from "./pages/Complaints.js";
 import ComplaintCreate from "./pages/ComplaintCreate.js";
 import ScheduleVisit from "./pages/ScheduleVisit.js";
+import DashboardAdmin from "./pages/DashboardAdmin";
 
 const App = () => {
   return (
@@ -138,6 +139,32 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["kontrolor_kvaliteta"]}>
               <ScheduleVisit />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin routes */}
+        <Route
+          path="/dashboard-admin"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <DashboardAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <Register />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit/suppliers"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <Suppliers />
             </ProtectedRoute>
           }
         />

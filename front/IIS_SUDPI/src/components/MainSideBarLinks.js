@@ -77,6 +77,15 @@ export const sidebarLinks = {
       href: "/dashboard-admin",
       description: "Administratorski panel",
     },
-    // Add more admin specific links
+    {
+      title: "Registracija korisnika",
+      href: "/register",
+      description: "Dodavanje novih korisnika",
+    },
+    {
+      title: "Upravljanje dobavljačima",
+      href: "/edit/suppliers",
+      description: "Izmena podataka dobavljača",
+    },
   ],
 };

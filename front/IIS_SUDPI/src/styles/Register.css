@@ -1,71 +1,95 @@
+.register-wrapper {
+  display: flex;
+  min-height: 100vh;
+  transition: padding-left 0.3s ease;
+}
+
+.register-wrapper.sidebar-collapsed .register-main-content {
+  margin-left: 60px;
+}
+
+.register-main-content {
+  flex: 1;
+  margin-left: 250px;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+  background-color: #f5f6fa;
+}
+
 .register-container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 2rem;
-    background-color: #f7f7f7;
-    border-radius: 8px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-    font-family: Arial, sans-serif;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .register-container h2 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 1.5rem;
+  color: #1a237e;
+  margin-bottom: 30px;
+  text-align: center;
+  font-size: 24px;
 }
 
-.register-form input {
-    width: 100%;
-    padding: 0.75rem;
-    margin: 0.5rem 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 1rem;
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.register-form input,
+.register-form select {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.register-form input:focus,
+.register-form select:focus {
+  border-color: #1a237e;
+  outline: none;
 }
 
 .register-form button {
-    width: 100%;
-    padding: 0.75rem;
-    margin-top: 1rem;
-    background-color: #007bff;
-    color: #fff;
-    font-size: 1rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  padding: 12px;
+  background-color: #1a237e;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .register-form button:hover {
-    background-color: #0056b3;
+  background-color: #0d1657;
 }
 
 .message {
-    text-align: center;
-    font-size: 0.9rem;
-    margin-top: 1rem;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  text-align: center;
 }
 
 .message.success {
-    color: green;
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 20px;
-    text-align: center;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
 }
 
 .message.error {
-    color: red;
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 20px;
-    text-align: center;
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
 }
 
 .error-message {
-    color: red;
-    font-size: 14px;
-    margin-top: 5px;
-    text-align: center;
+  color: #c62828;
+  font-size: 14px;
+  margin-top: -15px;
+  margin-bottom: -15px;
 }
