@@ -13,6 +13,21 @@ export const sidebarLinks = {
       href: "/dashboard-so",
       description: "Pregled skladišnih operacija",
     },
+    {
+      title: "Dodaj artikal",
+      href: "/dodaj-artikal",
+      description: "Unos novih artikala",
+    },
+    {
+      title: "Dodaj skladište",
+      href: "/dodaj-skladiste",
+      description: "Kreiranje novog skladišta",
+    },
+    {
+      title: "Pretraga artikala",
+      href: "/pretraga-artikala",
+      description: "Pretražuj i upravljaj artiklima",
+    },
     // Add more SO specific links
   ],
   nabavni_menadzer: [

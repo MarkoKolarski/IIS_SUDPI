@@ -1,0 +1,148 @@
+/* General Wrapper and Main Content */
+.dashboard-so-wrapper {
+    display: flex;
+    background-color: #f0fdfa; /* Very light green from login page */
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dashboard-so-main-content {
+    flex-grow: 1;
+    margin-left: 280px; /* Default sidebar width */
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.dashboard-so-wrapper.sidebar-collapsed .dashboard-so-main-content {
+    margin-left: 80px; /* Collapsed sidebar width */
+}
+
+/* Header Section */
+.dashboard-header {
+    background-color: #14b8a6; /* Main green from login page */
+    padding: 24px;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.dashboard-header h1 {
+    font-size: 30px;
+    font-weight: 700;
+    color: #ffffff; /* White text on green background */
+    margin: 0;
+}
+
+/* Content Area */
+.dashboard-content {
+    padding: 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Grid Layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+/* Card Styling */
+.dashboard-card {
+    background-color: #ffffff; /* White background for cards */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1);
+    overflow: hidden; /* To contain header border-radius */
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #a7f3d0; /* Light green border */
+}
+
+.card-header {
+    background-color: #14b8a6; /* Main green */
+    padding: 16px 20px;
+}
+
+.card-header h3 {
+    color: #ffffff; /* White text */
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card-content {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+/* Placeholder Content */
+.placeholder-content {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 40px 20px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #d1fae5; /* Light green background */
+    border-radius: 4px;
+}
+
+.placeholder-content p {
+    margin: 0;
+    font-size: 16px;
+    color: #065f46;
+}
+
+/* Loading and Error States */
+.loading-message, .error-message {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    margin: 20px;
+    border-radius: 8px;
+}
+
+.loading-message {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.no-data {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .dashboard-content {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-so-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+    }
+    .dashboard-so-wrapper.sidebar-collapsed .dashboard-so-main-content {
+        margin-left: 0;
+    }
+    .dashboard-content {
+        padding: 16px;
+    }
+    .dashboard-header h1 {
+        font-size: 24px;
+    }
+}
