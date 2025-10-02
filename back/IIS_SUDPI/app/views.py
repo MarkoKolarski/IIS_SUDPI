@@ -1231,37 +1231,59 @@ def create_complaint(request):
 
         kontrolor = request.user.kontrolor_kvaliteta
         dobavljac_id = request.data.get('dobavljac_id')
+        jacina_zalbe = int(request.data.get('jacina_zalbe', 1))
         
-        # Get the supplier
         try:
             dobavljac = Dobavljac.objects.get(sifra_d=dobavljac_id)
+            
+            # Calculate rating penalty based on complaint strength
+            # For jacina_zalbe 1-3: small impact (0.3-0.9)
+            # For jacina_zalbe 4-7: medium impact (1.2-2.1)
+            # For jacina_zalbe 8-10: high impact (2.4-3.0)
+            if jacina_zalbe <= 3:
+                penalty = jacina_zalbe * 0.3
+            elif jacina_zalbe <= 7:
+                penalty = jacina_zalbe * 0.3
+            else:
+                penalty = jacina_zalbe * 0.3
+            
+            # Update supplier's rating
+            new_rating = max(0, min(10, float(dobavljac.ocena) - penalty))
+            dobavljac.ocena = new_rating
+            dobavljac.datum_ocenjivanja = timezone.now().date()
+            dobavljac.save()
+
+            # Create complaint data
+            complaint_data = {
+                'dobavljac': dobavljac.sifra_d,
+                'opis_problema': request.data.get('opis_problema'),
+                'jacina_zalbe': jacina_zalbe,
+                'vreme_trajanja': request.data.get('vreme_trajanja', 1)
+            }
+            
+            serializer = ComplaintSerializer(data=complaint_data)
+            if serializer.is_valid():
+                serializer.save(
+                    kontrolor=kontrolor,
+                    status='prijem'
+                )
+                return Response({
+                    'message': 'Reklamacija je uspešno kreirana',
+                    'complaint': serializer.data,
+                    'new_rating': new_rating
+                }, status=status.HTTP_201_CREATED)
+                
+            return Response(
+                {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         except Dobavljac.DoesNotExist:
             return Response(
                 {'error': 'Dobavljač nije pronađen'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-
-        # Create complaint data
-        complaint_data = {
-            'dobavljac': dobavljac.sifra_d,
-            'opis_problema': request.data.get('opis_problema'),
-            'jacina_zalbe': request.data.get('jacina_zalbe'),
-            'vreme_trajanja': request.data.get('vreme_trajanja', 1)
-        }
-        
-        serializer = ComplaintSerializer(data=complaint_data)
-        if serializer.is_valid():
-            serializer.save(
-                kontrolor=kontrolor,
-                status='prijem'
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
             
-        return Response(
-            {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
-        
     except Exception as e:
         return Response(
             {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
