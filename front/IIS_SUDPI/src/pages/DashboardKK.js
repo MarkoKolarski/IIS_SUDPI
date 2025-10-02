@@ -81,6 +81,36 @@ const DashboardKK = () => {
     return `${hours} ${hours === 1 ? "sat" : "sati"}`;
   };
 
+  // Update the calendar tile class function
+  const getTileClassName = ({ date }) => {
+    const dayVisits = getVisitsForDate(date);
+    if (dayVisits.length === 0) return null;
+
+    // If multiple visits exist, return classes for all statuses
+    const statusClasses = dayVisits.map((visit) => `has-visits ${visit.status}`);
+    return statusClasses.join(" ");
+  };
+
+  // Update the calendar tile content function
+  const getTileContent = ({ date }) => {
+    const dayVisits = getVisitsForDate(date);
+    if (dayVisits.length === 0) return null;
+
+    return (
+      <div className="calendar-visits-info">
+        <div className="visit-count">{dayVisits.length}</div>
+        {dayVisits.map((visit, index) => (
+          <div key={index} className={`visit-time ${visit.status}`}>
+            {new Date(visit.datum_od).toLocaleTimeString("sr-RS", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div
       className={`dashboard-kk-wrapper ${
@@ -108,15 +138,8 @@ const DashboardKK = () => {
               <h2>Kalendar poseta</h2>
               <Calendar
                 className="visits-calendar"
-                tileClassName={({ date }) =>
-                  hasVisits(date) ? "has-visits" : null
-                }
-                tileContent={({ date }) => {
-                  const dayVisits = getVisitsForDate(date);
-                  return dayVisits.length > 0 ? (
-                    <div className="visit-indicator">{dayVisits.length}</div>
-                  ) : null;
-                }}
+                tileClassName={getTileClassName}
+                tileContent={getTileContent}
               />
             </div>
 

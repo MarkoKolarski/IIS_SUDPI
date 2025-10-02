@@ -441,6 +441,87 @@ form button:hover {
   text-transform: uppercase;
 }
 
+/* Calendar Visit Styling */
+.react-calendar__tile {
+  position: relative;
+  height: 80px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 8px !important;
+}
+
+.calendar-visits-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.visit-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #14b8a6;
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.visit-time {
+  font-size: 10px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  width: 90%;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* Status-specific colors for calendar tiles */
+.has-visits.zakazana {
+  background-color: #dbeafe !important;
+}
+
+.has-visits.u_toku {
+  background-color: #dcfce7 !important;
+}
+
+.has-visits.zavrsena {
+  background-color: #f1f5f9 !important;
+}
+
+.has-visits.otkazana {
+  background-color: #fee2e2 !important;
+}
+
+/* Status-specific colors for visit times */
+.visit-time.zakazana {
+  background-color: #1e40af;
+  color: white;
+}
+
+.visit-time.u_toku {
+  background-color: #166534;
+  color: white;
+}
+
+.visit-time.zavrsena {
+  background-color: #475569;
+  color: white;
+}
+
+.visit-time.otkazana {
+  background-color: #b91c1c;
+  color: white;
+}
+
 /* Responsive design */
 @media (max-width: 1400px) {
   .dashboard-grid {
