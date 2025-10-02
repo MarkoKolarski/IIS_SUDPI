@@ -243,38 +243,46 @@ form button:hover {
 
 /* Dashboard Grid Layout */
 .dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: 250px 1fr 350px;
+  gap: 20px;
+  padding: 20px;
 }
 
 /* Status Cards */
 .status-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 20%;
+  gap: 12px;
 }
 
 .status-card {
   background: white;
-  padding: 16px;
+  padding: 12px;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   text-align: center;
+  transition: transform 0.2s;
 }
 
-.status-card h3 {
-  color: #374151;
-  font-size: 14px;
-  margin-bottom: 8px;
-  font-weight: 500;
+.status-card.today { 
+  border-left: 4px solid #14b8a6; 
 }
 
-.card-number {
-  font-size: 24px;
-  font-weight: bold;
-  color: #14b8a6;
+.status-card.scheduled { 
+  border-left: 4px solid #1e40af;
+  .card-number { color: #1e40af; }
+}
+
+.status-card.in-progress { 
+  border-left: 4px solid #166534;
+  .card-number { color: #166534; }
+}
+
+.status-card.completed { 
+  border-left: 4px solid #475569;
+  .card-number { color: #475569; }
 }
 
 /* Main Grid */
@@ -290,21 +298,17 @@ form button:hover {
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  flex: 1.5;
 }
 
-.calendar-container h2 {
-  color: #374151;
-  margin-bottom: 20px;
-  font-size: 20px;
-}
-
-/* Upcoming Visits Timeline */
+/* Upcoming Visits Container */
 .upcoming-visits-container {
   background: white;
-  padding: 24px;
+  padding: 16px;
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  width: 100%;
 }
 
 .upcoming-visits-container h2 {
@@ -336,6 +340,26 @@ form button:hover {
 .timeline-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.timeline-item.zakazana {
+  border-left: 4px solid #1e40af;
+  background-color: #dbeafe25;
+}
+
+.timeline-item.u_toku {
+  border-left: 4px solid #166534;
+  background-color: #dcfce725;
+}
+
+.timeline-item.zavrsena {
+  border-left: 4px solid #475569;
+  background-color: #f1f5f925;
+}
+
+.timeline-item.otkazana {
+  border-left: 4px solid #b91c1c;
+  background-color: #fee2e225;
 }
 
 .timeline-content {
@@ -418,9 +442,26 @@ form button:hover {
 }
 
 /* Responsive design */
+@media (max-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: 200px 1fr 300px;
+  }
+}
+
 @media (max-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
   .status-cards {
-    grid-template-columns: repeat(2, 1fr);
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .status-card {
+    flex: 1;
+    min-width: 150px;
   }
 }
 
@@ -430,20 +471,14 @@ form button:hover {
   }
   
   .status-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-    .dashboard-kk-main-content {
-        margin-left: 80px;
-    }
-    
-    .dashboard-kk-wrapper.sidebar-collapsed .dashboard-kk-main-content {
-        margin-left: 0;
-    }
-
-    .status-cards {
     grid-template-columns: 1fr;
+  }
+  
+  .dashboard-kk-main-content {
+    margin-left: 80px;
+  }
+  
+  .dashboard-kk-wrapper.sidebar-collapsed .dashboard-kk-main-content {
+    margin-left: 0;
   }
 }
