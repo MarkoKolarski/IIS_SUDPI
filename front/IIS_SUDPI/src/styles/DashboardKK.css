@@ -447,79 +447,83 @@ form button:hover {
   height: 80px !important;
   display: flex;
   flex-direction: column;
+  padding: 8px !important;
+  background: white !important;
+}
+
+.react-calendar__tile abbr {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
   align-items: center;
-  padding-top: 8px !important;
+  justify-content: center;
+  font-size: 12px;
+  background-color: transparent;
 }
 
 .calendar-visits-info {
   width: 100%;
+  padding-top: 28px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 2px;
   font-size: 11px;
 }
 
 .visit-count {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #14b8a6;
-  color: white;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
+  display: none; /* Hide the count since we show times */
 }
 
 .visit-time {
-  font-size: 10px;
-  padding: 1px 3px;
+  padding: 2px 4px;
   border-radius: 3px;
-  width: 90%;
   text-align: center;
-  margin-top: 2px;
+  margin: 1px 0;
+  font-size: 10px;
+  width: 100%;
+  white-space: nowrap;
 }
 
 /* Status-specific colors for calendar tiles */
-.has-visits.zakazana {
-  background-color: #dbeafe !important;
+.has-visits.zakazana abbr {
+  background-color: #dbeafe;
 }
 
-.has-visits.u_toku {
-  background-color: #dcfce7 !important;
+.has-visits.u_toku abbr {
+  background-color: #dcfce7;
 }
 
-.has-visits.zavrsena {
-  background-color: #f1f5f9 !important;
+.has-visits.zavrsena abbr {
+  background-color: #f1f5f9;
 }
 
-.has-visits.otkazana {
-  background-color: #fee2e2 !important;
+.has-visits.otkazana abbr {
+  background-color: #fee2e2;
 }
 
-/* Status-specific colors for visit times */
+/* Visit time status colors */
 .visit-time.zakazana {
-  background-color: #1e40af;
-  color: white;
+  background-color: #dbeafe;
+  color: #1e40af;
 }
 
 .visit-time.u_toku {
-  background-color: #166534;
-  color: white;
+  background-color: #dcfce7;
+  color: #166534;
 }
 
 .visit-time.zavrsena {
-  background-color: #475569;
-  color: white;
+  background-color: #f1f5f9;
+  color: #475569;
 }
 
 .visit-time.otkazana {
-  background-color: #b91c1c;
-  color: white;
+  background-color: #fee2e2;
+  color: #b91c1c;
 }
 
 /* Responsive design */
@@ -533,6 +537,34 @@ form button:hover {
   .dashboard-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+  
+  .status-cards {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .status-card {
+    flex: 1;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-kk-main-content {
+    margin-left: 80px;
+  }
+  
+  .dashboard-kk-wrapper.sidebar-collapsed .dashboard-kk-main-content {
+    margin-left: 0;
   }
   
   .status-cards {
