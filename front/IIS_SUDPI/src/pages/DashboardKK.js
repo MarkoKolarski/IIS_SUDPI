@@ -62,6 +62,25 @@ const DashboardKK = () => {
     return visits.filter((visit) => visit.status === status);
   };
 
+  const updateVisitStatus = async (visitId, newStatus) => {
+    try {
+      await axiosInstance.put(`/visits/${visitId}/`, { status: newStatus });
+      const response = await axiosInstance.get("/visits/");
+      setVisits(response.data);
+    } catch (err) {
+      setError("Greška pri ažuriranju statusa posete");
+      console.error("Error updating visit status:", err);
+    }
+  };
+
+  // Helper function to calculate duration
+  const calculateDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const hours = Math.round((end - start) / (1000 * 60 * 60));
+    return `${hours} ${hours === 1 ? "sat" : "sati"}`;
+  };
+
   return (
     <div
       className={`dashboard-kk-wrapper ${
@@ -174,9 +193,28 @@ const DashboardKK = () => {
                                 }
                               )}
                             </div>
-                            <span className={`visit-badge ${visit.status}`}>
-                              {visit.status}
-                            </span>
+                            <div className="visit-duration">
+                              Trajanje:{" "}
+                              {calculateDuration(
+                                visit.datum_od,
+                                visit.datum_do
+                              )}
+                            </div>
+                            <select
+                              className="visit-status-select"
+                              value={visit.status}
+                              onChange={(e) =>
+                                updateVisitStatus(
+                                  visit.poseta_id,
+                                  e.target.value
+                                )
+                              }
+                            >
+                              <option value="zakazana">Zakazana</option>
+                              <option value="u_toku">U toku</option>
+                              <option value="zavrsena">Završena</option>
+                              <option value="otkazana">Otkazana</option>
+                            </select>
                           </div>
                         </div>
                       ))}
