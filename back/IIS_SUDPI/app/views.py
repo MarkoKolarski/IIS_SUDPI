@@ -1128,6 +1128,23 @@ def visit_detail(request, visit_id):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
+def busy_visit_slots(request):
+    """
+    API endpoint za dobijanje zauzetih termina
+    """
+    try:
+        # Get all visits that are not cancelled
+        busy_slots = Poseta.objects.exclude(status='otkazana').values('datum_od', 'datum_do')
+        return Response(list(busy_slots), status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju zauzetih termina', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['kontrolor_kvaliteta'])
@@ -1140,6 +1157,18 @@ def create_visit(request):
         datum_od = request.data.get('datum_od')
         datum_do = request.data.get('datum_do')
         dobavljac_id = request.data.get('dobavljac_id')
+        
+        # Check for overlapping visits
+        overlapping_visits = Poseta.objects.filter(
+            datum_od__lt=datum_do,
+            datum_do__gt=datum_od
+        ).exclude(status='otkazana')
+        
+        if overlapping_visits.exists():
+            return Response(
+                {'error': 'Termin je već zauzet'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         dobavljac = get_object_or_404(Dobavljac, sifra_d=dobavljac_id)
         

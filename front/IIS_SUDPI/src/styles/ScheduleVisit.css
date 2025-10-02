@@ -87,6 +87,27 @@
   color: #065f46 !important;
 }
 
+/* Busy time slots styling */
+.react-calendar__tile--busy {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+  cursor: not-allowed !important;
+}
+
+.react-calendar__tile--busy:hover {
+  background-color: #fecaca !important;
+}
+
+.time-slot-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #ffeeba;
+  font-size: 14px;
+}
+
 .visit-details {
   padding: 24px;
   background: #ffffff;
@@ -162,21 +183,24 @@
   transform: translateY(-1px);
 }
 
+/* Error message enhancement */
 .error-message {
   background-color: #fee2e2;
   color: #dc2626;
   padding: 16px;
   border-radius: 8px;
-  margin-bottom: 24px;
+  margin: 16px 0;
   border: 1px solid #fecaca;
-  font-size: 15px;
   display: flex;
   align-items: center;
   gap: 8px;
+  animation: shake 0.5s ease-in-out;
 }
 
-.error-message::before {
-  content: "⚠️";
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
 }
 
 @media (max-width: 1024px) {
