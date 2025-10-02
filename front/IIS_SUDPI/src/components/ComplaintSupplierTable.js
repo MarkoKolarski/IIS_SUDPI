@@ -40,7 +40,7 @@ const ComplaintSupplierTable = ({ suppliers }) => {
           {filteredSuppliers.map((d) => (
             <tr key={d.sifra_d}>
               <td>{d.naziv}</td>
-              <td>{d.pib_d}</td>
+              <td>{d.PIB_d}</td>
               <td>{d.email}</td>
               <td>{d.ime_sirovine}</td>
               <td>
