@@ -87,7 +87,9 @@ const DashboardKK = () => {
     if (dayVisits.length === 0) return null;
 
     // If multiple visits exist, return classes for all statuses
-    const statusClasses = dayVisits.map((visit) => `has-visits ${visit.status}`);
+    const statusClasses = dayVisits.map(
+      (visit) => `has-visits ${visit.status}`
+    );
     return statusClasses.join(" ");
   };
 
@@ -133,16 +135,6 @@ const DashboardKK = () => {
 
         {!loading && !error && (
           <div className="dashboard-grid">
-            {/* Calendar Column */}
-            <div className="calendar-container">
-              <h2>Kalendar poseta</h2>
-              <Calendar
-                className="visits-calendar"
-                tileClassName={getTileClassName}
-                tileContent={getTileContent}
-              />
-            </div>
-
             {/* Status Cards Column */}
             <div className="status-cards">
               <div className="status-card today">
@@ -169,67 +161,78 @@ const DashboardKK = () => {
               </div>
             </div>
 
-            {/* Upcoming Visits Column */}
-            <div className="upcoming-visits-container">
-              <h2>Predstojeće posete</h2>
-              <div className="visits-timeline">
-                {visits
-                  .filter((visit) => new Date(visit.datum_od) >= new Date())
-                  .sort((a, b) => new Date(a.datum_od) - new Date(b.datum_od))
-                  .slice(0, 5)
-                  .map((visit) => (
-                    <div
-                      key={visit.poseta_id}
-                      className={`timeline-item ${visit.status}`}
-                    >
-                      <div className="timeline-date">
-                        <div className="date-day">
-                          {new Date(visit.datum_od).toLocaleDateString(
-                            "sr-RS",
-                            {
-                              day: "numeric",
-                            }
-                          )}
+            <div className="vists-container">
+              {/* Calendar Column */}
+              <div className="calendar-container">
+                <h2>Kalendar poseta</h2>
+                <Calendar
+                  className="visits-calendar"
+                  tileClassName={getTileClassName}
+                  tileContent={getTileContent}
+                />
+              </div>
+              {/* Upcoming Visits Column */}
+              <div className="upcoming-visits-container">
+                <h2>Predstojeće posete</h2>
+                <div className="visits-timeline">
+                  {visits
+                    .filter((visit) => new Date(visit.datum_od) >= new Date())
+                    .sort((a, b) => new Date(a.datum_od) - new Date(b.datum_od))
+                    .slice(0, 5)
+                    .map((visit) => (
+                      <div
+                        key={visit.poseta_id}
+                        className={`timeline-item ${visit.status}`}
+                      >
+                        <div className="timeline-date">
+                          <div className="date-day">
+                            {new Date(visit.datum_od).toLocaleDateString(
+                              "sr-RS",
+                              {
+                                day: "numeric",
+                              }
+                            )}
+                          </div>
+                          <div className="date-month">
+                            {new Date(visit.datum_od).toLocaleDateString(
+                              "sr-RS",
+                              {
+                                month: "short",
+                              }
+                            )}
+                          </div>
                         </div>
-                        <div className="date-month">
-                          {new Date(visit.datum_od).toLocaleDateString(
-                            "sr-RS",
-                            {
-                              month: "short",
+                        <div className="timeline-content">
+                          <h4>{visit.dobavljac}</h4>
+                          <div className="timeline-time">
+                            {new Date(visit.datum_od).toLocaleTimeString(
+                              "sr-RS",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </div>
+                          <div className="visit-duration">
+                            Trajanje:{" "}
+                            {calculateDuration(visit.datum_od, visit.datum_do)}
+                          </div>
+                          <select
+                            className="visit-status-select"
+                            value={visit.status}
+                            onChange={(e) =>
+                              updateVisitStatus(visit.poseta_id, e.target.value)
                             }
-                          )}
+                          >
+                            <option value="zakazana">Zakazana</option>
+                            <option value="u_toku">U toku</option>
+                            <option value="zavrsena">Završena</option>
+                            <option value="otkazana">Otkazana</option>
+                          </select>
                         </div>
                       </div>
-                      <div className="timeline-content">
-                        <h4>{visit.dobavljac}</h4>
-                        <div className="timeline-time">
-                          {new Date(visit.datum_od).toLocaleTimeString(
-                            "sr-RS",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </div>
-                        <div className="visit-duration">
-                          Trajanje:{" "}
-                          {calculateDuration(visit.datum_od, visit.datum_do)}
-                        </div>
-                        <select
-                          className="visit-status-select"
-                          value={visit.status}
-                          onChange={(e) =>
-                            updateVisitStatus(visit.poseta_id, e.target.value)
-                          }
-                        >
-                          <option value="zakazana">Zakazana</option>
-                          <option value="u_toku">U toku</option>
-                          <option value="zavrsena">Završena</option>
-                          <option value="otkazana">Otkazana</option>
-                        </select>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
             </div>
           </div>
