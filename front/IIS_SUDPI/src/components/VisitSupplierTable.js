@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/VisitSupplierTable.css";
+import "../styles/SuppliersTable.css";
 
 const VisitSupplierTable = ({ suppliers }) => {
   const [search, setSearch] = useState("");
