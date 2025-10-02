@@ -1,6 +1,8 @@
-.suppliers-container {
+.suppliers-container, .visit-supplier-container {
   position: relative;
   margin-bottom: 2rem;
+  width: 100%;
+  padding: 20px;
 }
 
 .suppliers-title {
@@ -9,12 +11,13 @@
 }
 
 .suppliers-search {
-  width: 100%;
+  width: 90%;
   padding: 12px;
   margin-bottom: 1rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 1rem;
+  max-width: none; /* Remove any max-width constraints */
 }
 
 .suppliers-table {
@@ -24,6 +27,7 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 0; /* Remove any default margins */
 }
 
 .suppliers-table th,
