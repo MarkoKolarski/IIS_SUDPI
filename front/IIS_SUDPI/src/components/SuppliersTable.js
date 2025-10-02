@@ -95,7 +95,7 @@ const SuppliersTable = () => {
                 <td>
                   {!supplier.izabran && (
                     <button
-                      className="select-button"
+                      className="supplier-action-button select"
                       onClick={() => handleSelectSupplier(supplier.sifra_d)}
                     >
                       Izaberi dobavljača

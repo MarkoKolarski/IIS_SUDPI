@@ -12,7 +12,6 @@ const ComplaintCreate = () => {
     dobavljac_id: supplierId,
     opis_problema: "",
     jacina_zalbe: 5,
-    vreme_trajanja: 1,
   });
   const [error, setError] = useState(null);
 
@@ -86,22 +85,6 @@ const ComplaintCreate = () => {
                 <span>5</span>
                 <span>10</span>
               </div>
-            </div>
-
-            <div className="form-group">
-              <label>Vreme trajanja (dana):</label>
-              <input
-                type="number"
-                min="1"
-                value={complaint.vreme_trajanja}
-                onChange={(e) =>
-                  setComplaint({
-                    ...complaint,
-                    vreme_trajanja: parseInt(e.target.value),
-                  })
-                }
-                required
-              />
             </div>
 
             <div className="form-actions">

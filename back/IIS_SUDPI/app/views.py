@@ -1128,6 +1128,23 @@ def visit_detail(request, visit_id):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
+def busy_visit_slots(request):
+    """
+    API endpoint za dobijanje zauzetih termina
+    """
+    try:
+        # Get all visits that are not cancelled
+        busy_slots = Poseta.objects.exclude(status='otkazana').values('datum_od', 'datum_do')
+        return Response(list(busy_slots), status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju zauzetih termina', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['kontrolor_kvaliteta'])
@@ -1140,6 +1157,18 @@ def create_visit(request):
         datum_od = request.data.get('datum_od')
         datum_do = request.data.get('datum_do')
         dobavljac_id = request.data.get('dobavljac_id')
+        
+        # Check for overlapping visits
+        overlapping_visits = Poseta.objects.filter(
+            datum_od__lt=datum_do,
+            datum_do__gt=datum_od
+        ).exclude(status='otkazana')
+        
+        if overlapping_visits.exists():
+            return Response(
+                {'error': 'Termin je već zauzet'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         dobavljac = get_object_or_404(Dobavljac, sifra_d=dobavljac_id)
         
@@ -1202,37 +1231,59 @@ def create_complaint(request):
 
         kontrolor = request.user.kontrolor_kvaliteta
         dobavljac_id = request.data.get('dobavljac_id')
+        jacina_zalbe = int(request.data.get('jacina_zalbe', 1))
         
-        # Get the supplier
         try:
             dobavljac = Dobavljac.objects.get(sifra_d=dobavljac_id)
+            
+            # Calculate rating penalty based on complaint strength
+            # For jacina_zalbe 1-3: small impact (0.3-0.9)
+            # For jacina_zalbe 4-7: medium impact (1.2-2.1)
+            # For jacina_zalbe 8-10: high impact (2.4-3.0)
+            if jacina_zalbe <= 3:
+                penalty = jacina_zalbe * 0.3
+            elif jacina_zalbe <= 7:
+                penalty = jacina_zalbe * 0.3
+            else:
+                penalty = jacina_zalbe * 0.3
+            
+            # Update supplier's rating
+            new_rating = max(0, min(10, float(dobavljac.ocena) - penalty))
+            dobavljac.ocena = new_rating
+            dobavljac.datum_ocenjivanja = timezone.now().date()
+            dobavljac.save()
+
+            # Create complaint data
+            complaint_data = {
+                'dobavljac': dobavljac.sifra_d,
+                'opis_problema': request.data.get('opis_problema'),
+                'jacina_zalbe': jacina_zalbe,
+                'vreme_trajanja': request.data.get('vreme_trajanja', 1)
+            }
+            
+            serializer = ComplaintSerializer(data=complaint_data)
+            if serializer.is_valid():
+                serializer.save(
+                    kontrolor=kontrolor,
+                    status='prijem'
+                )
+                return Response({
+                    'message': 'Reklamacija je uspešno kreirana',
+                    'complaint': serializer.data,
+                    'new_rating': new_rating
+                }, status=status.HTTP_201_CREATED)
+                
+            return Response(
+                {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         except Dobavljac.DoesNotExist:
             return Response(
                 {'error': 'Dobavljač nije pronađen'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-
-        # Create complaint data
-        complaint_data = {
-            'dobavljac': dobavljac.sifra_d,
-            'opis_problema': request.data.get('opis_problema'),
-            'jacina_zalbe': request.data.get('jacina_zalbe'),
-            'vreme_trajanja': request.data.get('vreme_trajanja', 1)
-        }
-        
-        serializer = ComplaintSerializer(data=complaint_data)
-        if serializer.is_valid():
-            serializer.save(
-                kontrolor=kontrolor,
-                status='prijem'
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
             
-        return Response(
-            {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
-        
     except Exception as e:
         return Response(
             {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
