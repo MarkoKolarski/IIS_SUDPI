@@ -59,6 +59,37 @@ const ScheduleVisit = () => {
     });
   };
 
+  const isDateDisabled = ({ date }) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  const handleDateChange = (date) => {
+    const now = new Date();
+    if (date < now) {
+      setError("Ne možete zakazati posetu u prošlosti");
+      return;
+    }
+    setSelectedDate(date);
+    setError(null);
+  };
+
+  const handleTimeChange = (e) => {
+    const selectedDateTime = new Date(selectedDate);
+    const [hours, minutes] = e.target.value.split(":");
+    selectedDateTime.setHours(parseInt(hours), parseInt(minutes));
+
+    const now = new Date();
+    if (selectedDateTime < now) {
+      setError("Ne možete zakazati posetu u prošlosti");
+      return;
+    }
+    setVisitTime(e.target.value);
+    setError(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -113,11 +144,12 @@ const ScheduleVisit = () => {
           <form onSubmit={handleSubmit} className="schedule-visit-form">
             <div className="calendar-section">
               <Calendar
-                onChange={setSelectedDate}
+                onChange={handleDateChange}
                 value={selectedDate}
                 minDate={new Date()}
                 className="visit-calendar"
                 tileClassName={tileClassName}
+                tileDisabled={isDateDisabled}
               />
               {isDateBusy(selectedDate) && (
                 <div className="time-slot-warning">
@@ -133,7 +165,7 @@ const ScheduleVisit = () => {
                 <input
                   type="time"
                   value={visitTime}
-                  onChange={(e) => setVisitTime(e.target.value)}
+                  onChange={handleTimeChange}
                   required
                 />
               </div>
