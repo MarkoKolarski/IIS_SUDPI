@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija
+from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -239,3 +239,84 @@ class ComplaintSerializer(serializers.ModelSerializer):
             'dobavljac_naziv'
         ]
         read_only_fields = ['reklamacija_id', 'datum_prijema', 'status']
+
+# Serializers za skladište, artikal i zalihe
+class SkladisteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Skladiste
+        fields = ['sifra_s', 'mesto_s', 'status_rizika_s']
+
+class ArtikalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Artikal
+        fields = ['sifra_a', 'naziv_a', 'osnovna_cena_a', 'rok_trajanja_a', 'status_trajanja']
+
+class ZaliheSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Zalihe
+        fields = ['trenutna_kolicina_a', 'datum_azuriranja', 'artikal', 'skladiste']
+
+class DodajSkladisteSerializer(serializers.Serializer):
+    mesto_s = serializers.CharField(max_length=200)
+    status_rizika_s = serializers.ChoiceField(
+        choices=[
+            ('nizak', 'Nizak rizik'),
+            ('umeren', 'Umeren rizik'),
+            ('visok', 'Visok rizik')
+        ]
+    )
+    
+    def validate_mesto_s(self, value):
+        if Skladiste.objects.filter(mesto_s=value).exists():
+            raise serializers.ValidationError("Skladište sa ovim mestom već postoji.")
+        return value
+    
+    def create(self, validated_data):
+        # Automatski generiši šifru skladišta
+        from django.db.models import Max
+        max_sifra = Skladiste.objects.aggregate(Max('sifra_s'))['sifra_s__max'] or 0
+        nova_sifra = max_sifra + 1
+        
+        skladiste = Skladiste.objects.create(
+            sifra_s=nova_sifra,
+            mesto_s=validated_data['mesto_s'],
+            status_rizika_s=validated_data['status_rizika_s']
+        )
+        
+        return skladiste
+
+class DodajArtikalSerializer(serializers.Serializer):
+    naziv_a = serializers.CharField(max_length=200)
+    osnovna_cena_a = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.01)
+    rok_trajanja_a = serializers.DateField()
+    sifra_s = serializers.IntegerField(min_value=1)
+    trenutna_kolicina_a = serializers.IntegerField(min_value=0)
+    
+    def validate_sifra_s(self, value):
+        if not Skladiste.objects.filter(sifra_s=value).exists():
+            raise serializers.ValidationError("Skladište sa ovom šifrom ne postoji.")
+        return value
+    
+    def create(self, validated_data):
+        from django.db import transaction
+        
+        with transaction.atomic():
+            # Kreiranje artikla
+            artikal = Artikal.objects.create(
+                naziv_a=validated_data['naziv_a'],
+                osnovna_cena_a=validated_data['osnovna_cena_a'],
+                rok_trajanja_a=validated_data['rok_trajanja_a']
+            )
+            
+            # Kreiranje zaliha
+            skladiste = Skladiste.objects.get(sifra_s=validated_data['sifra_s'])
+            zalihe = Zalihe.objects.create(
+                artikal=artikal,
+                skladiste=skladiste,
+                trenutna_kolicina_a=validated_data['trenutna_kolicina_a']
+            )
+            
+            return {
+                'artikal': artikal,
+                'zalihe': zalihe
+            }

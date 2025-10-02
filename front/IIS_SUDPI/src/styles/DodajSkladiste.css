@@ -1,0 +1,206 @@
+/* Wrapper and Main Content for Sidebar Layout */
+.dodaj-skladiste-wrapper {
+    display: flex;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dodaj-skladiste-main-content {
+    flex-grow: 1;
+    margin-left: 280px; /* Default sidebar width */
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.dodaj-skladiste-wrapper.sidebar-collapsed .dodaj-skladiste-main-content {
+    margin-left: 80px; /* Collapsed sidebar width */
+}
+
+.dodaj-skladiste-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+.dodaj-skladiste-header {
+    background-color: #e0e0e0;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    border-radius: 8px;
+}
+
+.dodaj-skladiste-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+    font-weight: 500;
+}
+
+.dodaj-skladiste-header p {
+    margin: 8px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+    font-size: 14px;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+    font-size: 14px;
+}
+
+.dodaj-skladiste-form {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #f9f9f9;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background-color: white;
+}
+
+.form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+.form-group input:disabled,
+.form-group select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.submit-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    min-width: 160px;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.submit-btn:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-info {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
+
+.form-info h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.form-info ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.form-info li {
+    margin-bottom: 8px;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.form-info li strong {
+    color: #333;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dodaj-skladiste-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+        padding: 0;
+    }
+    .dodaj-skladiste-wrapper.sidebar-collapsed .dodaj-skladiste-main-content {
+        margin-left: 0;
+    }
+    
+    .dodaj-skladiste-container {
+        padding: 15px;
+    }
+    
+    .dodaj-skladiste-form {
+        padding: 20px;
+    }
+    
+    .form-info {
+        padding: 15px;
+    }
+    
+    .submit-btn {
+        width: 100%;
+    }
+}

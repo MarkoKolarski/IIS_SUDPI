@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator
+from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -23,6 +23,11 @@ from .serializers import (
     PenalSerializer,
     VisitSerializer,
     ComplaintSerializer,
+    SkladisteSerializer,
+    ArtikalSerializer,
+    ZaliheSerializer,
+    DodajSkladisteSerializer,
+    DodajArtikalSerializer,
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -1231,5 +1236,199 @@ def create_complaint(request):
     except Exception as e:
         return Response(
             {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+# API endpoints za Artikal i Skladište
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def skladista_list(request):
+    """
+    API endpoint za dobijanje liste svih skladišta
+    """
+    try:
+        skladista = Skladiste.objects.all().order_by('sifra_s')
+        serializer = SkladisteSerializer(skladista, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju skladišta', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def dodaj_skladiste(request):
+    """
+    API endpoint za dodavanje novog skladišta
+    """
+    try:
+        serializer = DodajSkladisteSerializer(data=request.data)
+        if serializer.is_valid():
+            skladiste = serializer.save()
+            
+            return Response({
+                'message': 'Skladište je uspešno dodato!',
+                'skladiste': SkladisteSerializer(skladiste).data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(
+            {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dodavanju skladišta', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def dodaj_artikal(request):
+    """
+    API endpoint za dodavanje novog artikla i zaliha
+    """
+    try:
+        serializer = DodajArtikalSerializer(data=request.data)
+        if serializer.is_valid():
+            result = serializer.save()
+            
+            return Response({
+                'message': 'Artikal je uspešno dodat!',
+                'artikal': ArtikalSerializer(result['artikal']).data,
+                'zalihe': ZaliheSerializer(result['zalihe']).data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(
+            {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dodavanju artikla', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikli_list(request):
+    """
+    API endpoint za dobijanje liste svih artikala
+    """
+    try:
+        artikli = Artikal.objects.all().order_by('sifra_a')
+        serializer = ArtikalSerializer(artikli, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju artikala', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikal_detail(request, sifra_a):
+    """
+    API endpoint za dobijanje jednog artikla po šifri
+    """
+    try:
+        artikal = Artikal.objects.get(sifra_a=sifra_a)
+        serializer = ArtikalSerializer(artikal)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Artikal.DoesNotExist:
+        return Response(
+            {'error': f'Artikal sa šifrom {sifra_a} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju artikla', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def izmeni_artikal(request, sifra_a):
+    """
+    API endpoint za ažuriranje artikla po šifri
+    """
+    try:
+        artikal = Artikal.objects.get(sifra_a=sifra_a)
+        
+        # Ažuriraj samo prosleđena polja
+        if 'naziv_a' in request.data:
+            artikal.naziv_a = request.data['naziv_a']
+        if 'osnovna_cena_a' in request.data:
+            artikal.osnovna_cena_a = request.data['osnovna_cena_a']
+        if 'rok_trajanja_a' in request.data:
+            artikal.rok_trajanja_a = request.data['rok_trajanja_a']
+        
+        # Validacija pre čuvanja
+        artikal.full_clean()
+        artikal.save()
+        
+        serializer = ArtikalSerializer(artikal)
+        return Response(
+            {
+                'message': f'Artikal "{artikal.naziv_a}" je uspešno ažuriran',
+                'artikal': serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+        
+    except Artikal.DoesNotExist:
+        return Response(
+            {'error': f'Artikal sa šifrom {sifra_a} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri ažuriranju artikla', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def obrisi_artikal(request, sifra_a):
+    """
+    API endpoint za brisanje artikla po šifri
+    """
+    try:
+        # Pronađi artikal po šifri
+        artikal = Artikal.objects.get(sifra_a=sifra_a)
+        
+        # Proveri da li postoje povezane zalihe (koristimo 'artikal' umesto 'sifra_a')
+        zalihe = Zalihe.objects.filter(artikal=artikal)
+        if zalihe.exists():
+            # Obriši povezane zalihe
+            zalihe.delete()
+        
+        # Obriši artikal
+        naziv_artikla = artikal.naziv_a
+        artikal.delete()
+        
+        return Response(
+            {'message': f'Artikal "{naziv_artikla}" je uspešno obrisan'},
+            status=status.HTTP_200_OK
+        )
+        
+    except Artikal.DoesNotExist:
+        return Response(
+            {'error': f'Artikal sa šifrom {sifra_a} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri brisanju artikla', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
