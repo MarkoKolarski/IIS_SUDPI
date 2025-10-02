@@ -18,15 +18,15 @@
 }
 
 .dodaj-skladiste-container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 20px;
-    background-color: #f5f5f5;
+    padding: 40px 20px;
+    background-color: #f0fdfa;
     min-height: 100vh;
 }
 
 .dodaj-skladiste-header {
-    background-color: #e0e0e0;
+    background-color: #e5e7eb;
     padding: 20px;
     text-align: center;
     margin-bottom: 30px;
@@ -57,13 +57,14 @@
 }
 
 .error-message {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: #fee2e2;
+    color: #dc2626;
     padding: 12px 16px;
     border-radius: 4px;
     margin-bottom: 20px;
-    border: 1px solid #f5c6cb;
+    border: 1px solid #fecaca;
     font-size: 14px;
+    animation: slideDown 0.3s ease-out;
 }
 
 .dodaj-skladiste-form {
@@ -79,9 +80,9 @@
 
 .form-group label {
     display: block;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 8px;
-    color: #333;
+    color: #374151;
     font-size: 14px;
 }
 
@@ -89,19 +90,20 @@
 .form-group select {
     width: 100%;
     padding: 12px;
-    border: 2px solid #ddd;
+    border: 2px solid #d1d5db;
     border-radius: 4px;
-    font-size: 14px;
-    background-color: #f9f9f9;
-    transition: border-color 0.3s ease;
+    font-size: 16px;
+    background-color: #f9fafb;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
     box-sizing: border-box;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #4CAF50;
+    border-color: #14b8a6;
     background-color: white;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
 }
 
 .form-group select {
@@ -111,6 +113,13 @@
     background-position: right 12px center;
     background-size: 16px;
     padding-right: 40px;
+    cursor: pointer;
+}
+
+.form-group select option {
+    padding: 8px;
+    background-color: white;
+    color: #374151;
 }
 
 .form-group input:disabled,
@@ -134,12 +143,12 @@
     cursor: pointer;
     transition: background-color 0.3s ease;
     min-width: 160px;
-    background-color: #4CAF50;
+    background-color: #14b8a6;
     color: white;
 }
 
 .submit-btn:hover:not(:disabled) {
-    background-color: #45a049;
+    background-color: #0f766e;
 }
 
 .submit-btn:disabled {
@@ -178,6 +187,18 @@
     color: #333;
 }
 
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .dodaj-skladiste-main-content {
@@ -189,11 +210,11 @@
     }
     
     .dodaj-skladiste-container {
-        padding: 15px;
+        padding: 20px 15px;
     }
     
     .dodaj-skladiste-form {
-        padding: 20px;
+        padding: 25px 20px;
     }
     
     .form-info {
@@ -202,5 +223,26 @@
     
     .submit-btn {
         width: 100%;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .dodaj-skladiste-main-content {
+        margin-left: 0;
+    }
+    
+    .dodaj-skladiste-container {
+        padding: 15px 10px;
+    }
+    
+    .dodaj-skladiste-form {
+        padding: 20px 15px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        font-size: 14px;
+        padding: 10px 12px;
     }
 }

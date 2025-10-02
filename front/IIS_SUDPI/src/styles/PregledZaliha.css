@@ -1,0 +1,267 @@
+/* Wrapper and Main Content for Sidebar Layout */
+.pregled-zaliha-wrapper {
+    display: flex;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.pregled-zaliha-main-content {
+    flex-grow: 1;
+    margin-left: 280px; /* Default sidebar width */
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.pregled-zaliha-wrapper.sidebar-collapsed .pregled-zaliha-main-content {
+    margin-left: 80px; /* Collapsed sidebar width */
+}
+
+.pregled-zaliha-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+}
+
+.pregled-zaliha-header {
+    background-color: #e5e7eb;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    border-radius: 8px;
+}
+
+.pregled-zaliha-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Messages */
+.loading-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    font-size: 16px;
+    font-style: italic;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #fecaca;
+    font-size: 14px;
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Skladiste Selection */
+.skladiste-selection {
+    margin-bottom: 30px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.skladiste-selection label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.skladiste-dropdown {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: #f9fafb;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.skladiste-dropdown:focus {
+    outline: none;
+    border-color: #14b8a6;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
+.skladiste-dropdown option {
+    padding: 8px;
+    background-color: white;
+    color: #374151;
+}
+
+/* Table Container - Scrollable */
+.table-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Table Styling */
+.zalihe-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.zalihe-table thead {
+    background-color: #f3f4f6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.zalihe-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.zalihe-table th:last-child {
+    text-align: center;
+    width: 120px;
+}
+
+.zalihe-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease;
+}
+
+.zalihe-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.zalihe-table td {
+    padding: 14px 12px;
+    color: #1f2937;
+    vertical-align: middle;
+}
+
+.zalihe-table td:last-child {
+    text-align: center;
+}
+
+/* Azuriraj Button */
+.azuriraj-button {
+    background-color: #14b8a6;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 70px;
+}
+
+.azuriraj-button:hover {
+    background-color: #0f766e;
+}
+
+.azuriraj-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #9ca3af;
+}
+
+/* No Results */
+.no-results {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .pregled-zaliha-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+        padding: 0;
+    }
+    .pregled-zaliha-wrapper.sidebar-collapsed .pregled-zaliha-main-content {
+        margin-left: 0;
+    }
+    
+    .pregled-zaliha-container {
+        padding: 20px 15px;
+    }
+    
+    .table-container {
+        max-height: 500px;
+    }
+    
+    .zalihe-table {
+        font-size: 12px;
+    }
+    
+    .zalihe-table th,
+    .zalihe-table td {
+        padding: 10px 8px;
+    }
+    
+    .azuriraj-button {
+        min-width: 60px;
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .pregled-zaliha-main-content {
+        margin-left: 0;
+    }
+    
+    .pregled-zaliha-container {
+        padding: 15px 10px;
+    }
+    
+    .table-container {
+        max-height: 400px;
+    }
+    
+    /* Hide date column on very small screens */
+    .zalihe-table th:nth-child(3),
+    .zalihe-table td:nth-child(3) {
+        display: none;
+    }
+    
+    .skladiste-selection {
+        padding: 15px;
+    }
+    
+    .skladiste-dropdown {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+}

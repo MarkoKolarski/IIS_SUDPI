@@ -28,6 +28,11 @@ export const sidebarLinks = {
       href: "/pretraga-artikala",
       description: "Pretražuj i upravljaj artiklima",
     },
+    {
+      title: "Pregled zaliha",
+      href: "/pregled-zaliha",
+      description: "Stanje zaliha po skladištima",
+    },
     // Add more SO specific links
   ],
   nabavni_menadzer: [

@@ -57,8 +57,8 @@ const DodajArtikal = () => {
             setError('Naziv artikla je obavezan');
             return;
         }
-        if (!formData.osnovna_cena_a || parseFloat(formData.osnovna_cena_a) <= 0) {
-            setError('Osnovna cena mora biti pozitivna vrednost');
+        if (!formData.osnovna_cena_a || parseFloat(formData.osnovna_cena_a) < 10) {
+            setError('Osnovna cena mora biti najmanje 10 dinara');
             return;
         }
         if (!formData.rok_trajanja_a) {
@@ -190,8 +190,8 @@ const DodajArtikal = () => {
                         </label>
                         <input
                             type="number"
-                            step="0.01"
-                            min="0.01"
+                            step="10"
+                            min="10"
                             id="osnovna_cena_a"
                             name="osnovna_cena_a"
                             value={formData.osnovna_cena_a}

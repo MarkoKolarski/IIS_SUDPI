@@ -29,6 +29,8 @@ import DodajArtikal from "./pages/DodajArtikal";
 import DodajSkladiste from "./pages/DodajSkladiste";
 import PretragaArtikala from "./pages/PretragaArtikala";
 import IzmeniArtikal from "./pages/IzmeniArtikal";
+import PregledZaliha from "./pages/PregledZaliha";
+import IzmenaZaliha from "./pages/IzmenaZaliha";
 import DashboardSO from "./pages/DashboardSO";
 
 const App = () => {
@@ -188,6 +190,22 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["skladisni_operater"]}>
               <IzmeniArtikal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pregled-zaliha"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <PregledZaliha />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/izmena-zaliha/:zalihaId"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <IzmenaZaliha />
             </ProtectedRoute>
           }
         />

@@ -1,0 +1,236 @@
+/* Wrapper and Main Content for Sidebar Layout */
+.izmena-zaliha-wrapper {
+    display: flex;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.izmena-zaliha-main-content {
+    flex-grow: 1;
+    margin-left: 280px; /* Default sidebar width */
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.izmena-zaliha-wrapper.sidebar-collapsed .izmena-zaliha-main-content {
+    margin-left: 80px; /* Collapsed sidebar width */
+}
+
+.izmena-zaliha-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+}
+
+.izmena-zaliha-header {
+    background-color: #e5e7eb;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    border-radius: 8px;
+}
+
+.izmena-zaliha-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+    font-weight: 500;
+}
+
+.izmena-zaliha-header p {
+    margin: 8px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.loading-message {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    color: #666;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #c3e6cb;
+    font-size: 14px;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
+    font-size: 14px;
+}
+
+/* Article Display */
+.artikal-display {
+    background-color: white;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.artikal-display h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+    font-weight: 600;
+}
+
+/* Form Styles */
+.izmena-zaliha-form {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 16px;
+    background-color: #f9fafb;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: #10b981;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-input:disabled,
+.form-select:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Button Styles */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.cancel-button,
+.submit-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.cancel-button {
+    background-color: #6b7280;
+    color: white;
+}
+
+.cancel-button:hover:not(:disabled) {
+    background-color: #4b5563;
+}
+
+.submit-button {
+    background-color: #10b981;
+    color: white;
+}
+
+.submit-button:hover:not(:disabled) {
+    background-color: #059669;
+}
+
+.cancel-button:disabled,
+.submit-button:disabled {
+    background-color: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .izmena-zaliha-wrapper {
+        flex-direction: column;
+    }
+
+    .izmena-zaliha-main-content {
+        margin-left: 0;
+    }
+
+    .izmena-zaliha-wrapper.sidebar-collapsed .izmena-zaliha-main-content {
+        margin-left: 0;
+    }
+
+    .izmena-zaliha-container {
+        padding: 20px 10px;
+    }
+
+    .izmena-zaliha-form {
+        padding: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .cancel-button,
+    .submit-button {
+        width: 100%;
+    }
+}

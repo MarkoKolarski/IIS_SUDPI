@@ -1396,6 +1396,141 @@ def izmeni_artikal(request, sifra_a):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def zalihe_list(request):
+    """
+    API endpoint za dobijanje zaliha - sve ili po skladištu
+    Query parametar: skladiste (opcionalno)
+    """
+    try:
+        skladiste_filter = request.GET.get('skladiste', None)
+        
+        if skladiste_filter:
+            # Filtriraj po skladištu
+            zalihe = Zalihe.objects.filter(skladiste__sifra_s=skladiste_filter).select_related(
+                'artikal', 'skladiste'
+            ).order_by('artikal__naziv_a')
+        else:
+            # Sve zalihe
+            zalihe = Zalihe.objects.all().select_related(
+                'artikal', 'skladiste'
+            ).order_by('skladiste__mesto_s', 'artikal__naziv_a')
+        
+        # Ručno kreiranje response data sa dodatnim poljima
+        zalihe_data = []
+        for zaliha in zalihe:
+            zalihe_data.append({
+                'id': zaliha.id,
+                'trenutna_kolicina_a': zaliha.trenutna_kolicina_a,
+                'datum_azuriranja': zaliha.datum_azuriranja,
+                'artikal_naziv': zaliha.artikal.naziv_a if zaliha.artikal else 'N/A',
+                'artikal_sifra': zaliha.artikal.sifra_a if zaliha.artikal else None,
+                'skladiste_naziv': zaliha.skladiste.mesto_s if zaliha.skladiste else 'N/A',
+                'skladiste_sifra': zaliha.skladiste.sifra_s if zaliha.skladiste else None,
+            })
+        
+        return Response(zalihe_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"Greška u zalihe_list: {str(e)}")  # Debug info
+        return Response(
+            {'error': 'Greška pri dohvatanju zaliha', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def zaliha_detail(request, zaliha_id):
+    """
+    API endpoint za dobijanje jedne zalihe po ID-u
+    """
+    try:
+        zaliha = Zalihe.objects.select_related('artikal', 'skladiste').get(id=zaliha_id)
+        
+        zaliha_data = {
+            'id': zaliha.id,
+            'trenutna_kolicina_a': zaliha.trenutna_kolicina_a,
+            'datum_azuriranja': zaliha.datum_azuriranja,
+            'artikal_naziv': zaliha.artikal.naziv_a if zaliha.artikal else 'N/A',
+            'artikal_sifra': zaliha.artikal.sifra_a if zaliha.artikal else None,
+            'skladiste_naziv': zaliha.skladiste.mesto_s if zaliha.skladiste else 'N/A',
+            'skladiste_sifra': zaliha.skladiste.sifra_s if zaliha.skladiste else None,
+        }
+        
+        return Response(zaliha_data, status=status.HTTP_200_OK)
+        
+    except Zalihe.DoesNotExist:
+        return Response(
+            {'error': f'Zaliha sa ID {zaliha_id} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        print(f"Greška u zaliha_detail: {str(e)}")
+        return Response(
+            {'error': 'Greška pri dohvatanju zalihe', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def izmeni_zalihu(request, zaliha_id):
+    """
+    API endpoint za ažuriranje zalihe po ID-u
+    """
+    try:
+        zaliha = Zalihe.objects.get(id=zaliha_id)
+        
+        # Ažuriraj polja
+        if 'trenutna_kolicina_a' in request.data:
+            zaliha.trenutna_kolicina_a = request.data['trenutna_kolicina_a']
+        
+        if 'skladiste' in request.data:
+            try:
+                skladiste = Skladiste.objects.get(sifra_s=request.data['skladiste'])
+                zaliha.skladiste = skladiste
+            except Skladiste.DoesNotExist:
+                return Response(
+                    {'error': 'Skladište ne postoji'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Validacija pre čuvanja
+        zaliha.full_clean()
+        zaliha.save()
+        
+        # Vraćaj ažurirane podatke
+        zaliha_data = {
+            'id': zaliha.id,
+            'trenutna_kolicina_a': zaliha.trenutna_kolicina_a,
+            'datum_azuriranja': zaliha.datum_azuriranja,
+            'artikal_naziv': zaliha.artikal.naziv_a if zaliha.artikal else 'N/A',
+            'skladiste_naziv': zaliha.skladiste.mesto_s if zaliha.skladiste else 'N/A',
+        }
+        
+        return Response(
+            {
+                'message': f'Stanje zalihe za "{zaliha.artikal.naziv_a}" je uspešno ažurirano',
+                'zaliha': zaliha_data
+            },
+            status=status.HTTP_200_OK
+        )
+        
+    except Zalihe.DoesNotExist:
+        return Response(
+            {'error': f'Zaliha sa ID {zaliha_id} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        print(f"Greška u izmeni_zalihu: {str(e)}")
+        return Response(
+            {'error': 'Greška pri ažuriranju zalihe', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['skladisni_operater', 'administrator'])
