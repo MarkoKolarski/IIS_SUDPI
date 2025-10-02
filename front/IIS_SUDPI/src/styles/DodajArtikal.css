@@ -51,13 +51,14 @@
 }
 
 .error-message {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: #fee2e2;
+    color: #dc2626;
     padding: 12px 16px;
     border-radius: 4px;
     margin-bottom: 20px;
-    border: 1px solid #f5c6cb;
+    border: 1px solid #fecaca;
     font-size: 14px;
+    animation: slideDown 0.3s ease-out;
 }
 
 .dodaj-artikal-form {
@@ -86,10 +87,10 @@
 }
 
 .form-group label {
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 8px;
-    color: #333;
-    font-size: 16px;
+    color: #374151;
+    font-size: 14px;
 }
 
 .form-group input,
@@ -108,6 +109,7 @@
     outline: none;
     border-color: #14b8a6;
     background-color: white;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
 }
 
 .form-group select {
@@ -117,6 +119,13 @@
     background-position: right 12px center;
     background-size: 16px;
     padding-right: 40px;
+    cursor: pointer;
+}
+
+.form-group select option {
+    padding: 8px;
+    background-color: white;
+    color: #374151;
 }
 
 .form-group input:disabled,
@@ -177,9 +186,22 @@
 
 .loading-message {
     text-align: center;
-    padding: 20px;
+    padding: 40px 20px;
     color: #666;
+    font-size: 16px;
     font-style: italic;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive design */
@@ -217,5 +239,30 @@
     .submit-btn,
     .cancel-btn {
         width: 100%;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .dodaj-artikal-main-content {
+        margin-left: 0;
+    }
+    
+    .dodaj-artikal-container {
+        padding: 15px 10px;
+    }
+    
+    .dodaj-artikal-form {
+        padding: 20px 15px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+    
+    .form-actions {
+        margin-top: 30px;
     }
 }

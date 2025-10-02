@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal
+from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu
 
 urlpatterns = [
     path('', index, name='index'),
@@ -34,4 +34,7 @@ urlpatterns = [
     path('artikli/<int:sifra_a>', artikal_detail, name='artikal-detail'),
     path('artikli/<int:sifra_a>/izmeni', izmeni_artikal, name='izmeni-artikal'),
     path('artikli/<int:sifra_a>/obrisi', obrisi_artikal, name='obrisi-artikal'),
+    path('zalihe/', zalihe_list, name='zalihe-list'),
+    path('zalihe/<int:zaliha_id>/', zaliha_detail, name='zaliha-detail'),
+    path('zalihe/<int:zaliha_id>/izmeni/', izmeni_zalihu, name='izmeni-zalihu'),
 ]

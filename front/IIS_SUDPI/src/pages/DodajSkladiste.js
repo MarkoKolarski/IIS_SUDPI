@@ -91,8 +91,7 @@ const DodajSkladiste = () => {
             <main className="dodaj-skladiste-main-content">
                 <div className="dodaj-skladiste-container">
                     <div className="dodaj-skladiste-header">
-                        <h1>Dodaj Novo Skladište</h1>
-                        <p>Unesite podatke o novom skladištu</p>
+                        <h1>Dodaj novo skladište</h1>
                     </div>
 
             {message && (
@@ -110,7 +109,7 @@ const DodajSkladiste = () => {
             <form onSubmit={handleSubmit} className="dodaj-skladiste-form">
                 <div className="form-group">
                     <label htmlFor="mesto_s">
-                        Mesto skladišta *
+                        Mesto skladišta
                     </label>
                     <input
                         type="text"
@@ -126,7 +125,7 @@ const DodajSkladiste = () => {
 
                 <div className="form-group">
                     <label htmlFor="status_rizika_s">
-                        Status rizika *
+                        Status rizika
                     </label>
                     <select
                         id="status_rizika_s"
