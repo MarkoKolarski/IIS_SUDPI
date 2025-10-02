@@ -45,7 +45,7 @@ const ComplaintSupplierTable = ({ suppliers }) => {
               <td>{d.ime_sirovine}</td>
               <td>
                 <button
-                  className="complaint-button"
+                  className="supplier-action-button complaint"
                   onClick={() => handleSupplierClick(d.sifra_d)}
                 >
                   Podnesi reklamaciju

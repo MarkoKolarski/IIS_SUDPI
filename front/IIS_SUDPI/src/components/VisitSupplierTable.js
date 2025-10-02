@@ -45,7 +45,7 @@ const VisitSupplierTable = ({ suppliers }) => {
               <td>{d.ime_sirovine}</td>
               <td>
                 <button
-                  className="schedule-visit-button"
+                  className="supplier-action-button visit"
                   onClick={() => handleSupplierClick(d.sifra_d)}
                 >
                   Zakaži posetu
