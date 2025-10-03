@@ -3,14 +3,100 @@ from django.dispatch import receiver
 from django.apps import apps
 from datetime import date, timedelta
 from decimal import Decimal
-from .models import Artikal, Popust
+from .models import Artikal, Popust, Skladiste, Temperatura
 import logging
 
 # Postavi logging
 logger = logging.getLogger(__name__)
 
 
+def check_and_update_skladiste_status(skladiste):
+    """
+    Proveri i ažuriraj status rizika skladišta na osnovu poslednje temperature
+    """
+    # Dobij poslednju temperaturu za ovo skladište
+    poslednja_temp = Temperatura.objects.filter(
+        skladiste=skladiste
+    ).order_by('-vreme_merenja').first()
+    
+    if not poslednja_temp:
+        return False
+    
+    stari_status = skladiste.status_rizika_s
+    
+    # Odredi novi status na osnovu temperature
+    if poslednja_temp.vrednost > 6:
+        novi_status = 'visok'
+    elif poslednja_temp.vrednost >= 4:
+        novi_status = 'umeren'
+    else:
+        novi_status = 'nizak'
+    
+    # Promeni status ako je potrebno
+    if stari_status != novi_status:
+        # Direktno ažuriranje u bazi
+        Skladiste.objects.filter(sifra_s=skladiste.sifra_s).update(status_rizika_s=novi_status)
+        logger.info(f"Skladište {skladiste.sifra_s} ({skladiste.mesto_s}): {stari_status} → {novi_status} (temperatura: {poslednja_temp.vrednost}°C)")
+        return True
+    
+    return False
+
+
+def update_all_skladista_status():
+    """
+    Manuelno ažuriranje statusa svih skladišta na osnovu poslednje temperature
+    Poziva se kada god treba da se proveri stanje svih skladišta
+    """
+    skladista = Skladiste.objects.all()
+    updated_count = 0
+    
+    for skladiste in skladista:
+        try:
+            was_changed = check_and_update_skladiste_status(skladiste)
+            if was_changed:
+                updated_count += 1
+        except Exception as e:
+            logger.error(f"Greška pri proveri skladišta {skladiste.sifra_s}: {str(e)}")
+    
+    return updated_count
+
+
+def check_all_skladista_status():
+    """
+    Proveri i ažuriraj status rizika za sva skladišta
+    """
+    skladista = Skladiste.objects.all()
+    promenjenih_skladista = 0
+    
+    for skladiste in skladista:
+        try:
+            was_changed = check_and_update_skladiste_status(skladiste)
+            if was_changed:
+                promenjenih_skladista += 1
+        except Exception as e:
+            logger.error(f"Greška pri proveri skladišta {skladiste.sifra_s}: {str(e)}")
+    
+    return promenjenih_skladista
+
+
+@receiver(post_save, sender=Temperatura)
+def check_skladiste_on_temperatura_save(sender, instance, created, **kwargs):
+    """
+    Signal koji se pokreće kada se doda nova temperatura
+    Automatski ažurira status rizika skladišta
+    """
+    try:
+        was_changed = check_and_update_skladiste_status(instance.skladiste)
+        
+        if created and was_changed:
+            logger.info(f"Status skladišta {instance.skladiste.mesto_s} ažuriran nakon dodavanja temperature {instance.vrednost}°C")
+            
+    except Exception as e:
+        logger.error(f"Greška pri proveri skladišta nakon temperature: {str(e)}")
+
+
 def check_and_update_artikel_status(artikal):
+
     """
     Proveri i ažuriraj status artikla na osnovu roka trajanja
     """
@@ -109,14 +195,14 @@ def check_artikel_on_save(sender, instance, created, **kwargs):
 def check_all_artikli_on_startup(sender, **kwargs):
     """
     Signal koji se pokreće nakon migracija (pri pokretanju aplikacije)
-    Proverava sve artikle u bazi
+    Proverava sve artikle i skladišta u bazi
     """
     # Proveri da li je signal poslat od naše app
     if sender.name == 'app':
         try:
-            logger.info("=== POKRETANJE AUTOMATSKE PROVERE SVIH ARTIKALA ===")
+            logger.info("=== POKRETANJE AUTOMATSKE PROVERE SVIH ARTIKALA I SKLADIŠTA ===")
             
-            # Dobij sve artikle
+            # Proveri artikle
             artikli = Artikal.objects.all()
             promenjenih_artikala = 0
             kreiranih_popusta = 0
@@ -134,47 +220,27 @@ def check_all_artikli_on_startup(sender, **kwargs):
                 except Exception as e:
                     logger.error(f"Greška pri proveri artikla {artikal.sifra_a}: {str(e)}")
             
-            # Statistike
+            # Proveri skladišta
+            promenjenih_skladista = check_all_skladista_status()
+            
+            # Statistike za artikle
             aktivni = Artikal.objects.filter(status_trajanja='aktivan').count()
             isticu = Artikal.objects.filter(status_trajanja='istice').count()
             istekli = Artikal.objects.filter(status_trajanja='istekao').count()
             
-            logger.info(f"Automatska provera završena: {promenjenih_artikala} artikala promenjeno")
-            logger.info(f"Kreiran{'' if kreiranih_popusta == 1 else 'o'} {kreiranih_popusta} popust{'a' if kreiranih_popusta != 1 else ''}")
-            logger.info(f"Trenutno stanje - Aktivni: {aktivni}, Ističu: {isticu}, Istekli: {istekli}")
+            # Statistike za skladišta
+            nizak_rizik = Skladiste.objects.filter(status_rizika_s='nizak').count()
+            umeren_rizik = Skladiste.objects.filter(status_rizika_s='umeren').count()
+            visok_rizik = Skladiste.objects.filter(status_rizika_s='visok').count()
+            
+            logger.info(f"Automatska provera završena:")
+            logger.info(f"- Artikli: {promenjenih_artikala} promenjeno, {kreiranih_popusta} popusta kreirano")
+            logger.info(f"- Skladišta: {promenjenih_skladista} promenjeno")
+            logger.info(f"Trenutno stanje artikala - Aktivni: {aktivni}, Ističu: {isticu}, Istekli: {istekli}")
+            logger.info(f"Trenutno stanje skladišta - Nizak rizik: {nizak_rizik}, Umeren: {umeren_rizik}, Visok: {visok_rizik}")
             logger.info("=== ZAVRŠETAK AUTOMATSKE PROVERE ===")
             
         except Exception as e:
             logger.error(f"Greška pri automatskoj proveri na startup-u: {str(e)}")
 
 
-def manual_check_all_artikli():
-    """
-    Funkcija za ručno pokretanje provere svih artikala (za testiranje)
-    """
-    logger.info("=== RUČNO POKRETANJE PROVERE SVIH ARTIKALA ===")
-    
-    artikli = Artikal.objects.all()
-    promenjenih_artikala = 0
-    kreiranih_popusta = 0
-    
-    for artikal in artikli:
-        try:
-            was_changed = check_and_update_artikel_status(artikal)
-            if was_changed:
-                promenjenih_artikala += 1
-                
-                if artikal.status_trajanja == 'istice':
-                    kreiranih_popusta += 1
-                    
-        except Exception as e:
-            logger.error(f"Greška pri proveri artikla {artikal.sifra_a}: {str(e)}")
-    
-    logger.info(f"Ručna provera završena: {promenjenih_artikala} artikala promenjeno")
-    logger.info(f"Kreiran{'' if kreiranih_popusta == 1 else 'o'} {kreiranih_popusta} popust{'a' if kreiranih_popusta != 1 else ''}")
-    logger.info("=== ZAVRŠETAK RUČNE PROVERE ===")
-    
-    return {
-        'promenjenih_artikala': promenjenih_artikala,
-        'kreiranih_popusta': kreiranih_popusta
-    }

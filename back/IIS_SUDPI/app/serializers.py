@@ -243,9 +243,23 @@ class ComplaintSerializer(serializers.ModelSerializer):
 
 # Serializers za skladište, artikal i zalihe
 class SkladisteSerializer(serializers.ModelSerializer):
+    poslednja_temperatura = serializers.SerializerMethodField()
+    
     class Meta:
         model = Skladiste
-        fields = ['sifra_s', 'mesto_s', 'status_rizika_s']
+        fields = ['sifra_s', 'mesto_s', 'status_rizika_s', 'poslednja_temperatura']
+    
+    def get_poslednja_temperatura(self, obj):
+        """Vraća poslednju izmerenu temperaturu za skladište"""
+        from .models import Temperatura
+        
+        poslednja_temp = Temperatura.objects.filter(
+            skladiste=obj
+        ).order_by('-vreme_merenja').first()
+        
+        if poslednja_temp:
+            return float(poslednja_temp.vrednost)
+        return None
 
 class ArtikalSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()

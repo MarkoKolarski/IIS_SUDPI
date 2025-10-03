@@ -52,7 +52,6 @@
     background-color: #ffffff; /* White background for cards */
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1);
-    overflow: hidden; /* To contain header border-radius */
     display: flex;
     flex-direction: column;
     border: 1px solid #a7f3d0; /* Light green border */
@@ -122,6 +121,91 @@
     padding: 20px;
 }
 
+/* Skladista Table Styles */
+.skladista-table-container {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    height: 200px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    background: white;
+}
+
+.skladista-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+    background-color: white;
+    min-width: 400px;
+    height: auto;
+}
+
+.skladista-table th {
+    padding: 8px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    background-color: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: 40px;
+    vertical-align: middle;
+}
+
+.skladista-table th:nth-child(2) {
+    text-align: center;
+}
+
+.skladista-table td {
+    padding: 8px 16px;
+    color: #1f2937;
+    border-bottom: 1px solid #f3f4f6;
+    height: 40px;
+    vertical-align: middle;
+}
+
+.skladista-table tbody tr {
+    height: 40px;
+}
+
+.skladista-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.skladista-table th:nth-child(2),
+.skladista-table td:nth-child(2) {
+    text-align: center;
+}
+
+.skladista-table .no-data {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 20px;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.loading {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+.error {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .dashboard-grid {
@@ -130,6 +214,37 @@
     .dashboard-content {
         padding: 24px;
     }
+}
+
+/* Force scrollbar to always be visible */
+.skladista-table-container {
+    scrollbar-width: auto;
+    scrollbar-color: #14b8a6 #f1f5f9;
+}
+
+.skladista-table-container::-webkit-scrollbar {
+    width: 16px;
+    background: #f1f5f9;
+}
+
+.skladista-table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.skladista-table-container::-webkit-scrollbar-thumb {
+    background: #14b8a6;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+    min-height: 20px;
+}
+
+.skladista-table-container::-webkit-scrollbar-thumb:hover {
+    background: #0f766e;
+}
+
+.skladista-table-container::-webkit-scrollbar-corner {
+    background: #f1f5f9;
 }
 
 @media (max-width: 768px) {

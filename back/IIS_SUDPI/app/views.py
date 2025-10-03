@@ -1298,8 +1298,14 @@ def create_complaint(request):
 def skladista_list(request):
     """
     API endpoint za dobijanje liste svih skladišta
+    Automatski proverava i ažurira status rizika pre slanja odgovora
     """
     try:
+        # Prvo ažuriraj status svih skladišta na osnovu najnovijih temperatura
+        from .signals import update_all_skladista_status
+        updated_count = update_all_skladista_status()
+        
+        # Zatim vrati ažurirane podatke
         skladista = Skladiste.objects.all().order_by('sifra_s')
         serializer = SkladisteSerializer(skladista, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
