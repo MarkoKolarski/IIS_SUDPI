@@ -105,6 +105,35 @@
     overflow: hidden;
     max-height: 600px;
     overflow-y: auto;
+    /* Scroll bar stilizovanje kao u dashboard-u */
+    scrollbar-width: auto;
+    scrollbar-color: #14b8a6 #f1f5f9;
+}
+
+/* Webkit scroll bar stilizovanje */
+.table-container::-webkit-scrollbar {
+    width: 16px;
+    background: #f1f5f9;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #14b8a6;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+    min-height: 20px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #0f766e;
+}
+
+.table-container::-webkit-scrollbar-corner {
+    background: #f1f5f9;
 }
 
 /* Table Styling */

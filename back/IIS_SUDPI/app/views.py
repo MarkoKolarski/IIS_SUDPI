@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe
+from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -28,10 +28,15 @@ from .serializers import (
     ZaliheSerializer,
     DodajSkladisteSerializer,
     DodajArtikalSerializer,
+    RizicniArtikalSerializer,
 )
 from rest_framework import generics, filters
 from django.db import transaction
 from .decorators import allowed_users
+import logging
+
+# Postavi logging
+logger = logging.getLogger(__name__)
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -1298,12 +1303,23 @@ def create_complaint(request):
 def skladista_list(request):
     """
     API endpoint za dobijanje liste svih skladišta
+    Automatski proverava i ažurira status rizika pre slanja odgovora
     """
+    # Debug informacije
+    logger.info(f"Skladista API pozvan od strane korisnika: {request.user}")
+    logger.info(f"Tip korisnika: {request.user.tip_k if hasattr(request.user, 'tip_k') else 'N/A'}")
+    
     try:
+        # Prvo ažuriraj status svih skladišta na osnovu najnovijih temperatura
+        from .signals import update_all_skladista_status
+        updated_count = update_all_skladista_status()
+        
+        # Zatim vrati ažurirane podatke
         skladista = Skladiste.objects.all().order_by('sifra_s')
         serializer = SkladisteSerializer(skladista, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
+        logger.error(f"Greška u skladista_list: {str(e)}")
         return Response(
             {'error': 'Greška pri dohvatanju skladišta', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1616,5 +1632,161 @@ def obrisi_artikal(request, sifra_a):
     except Exception as e:
         return Response(
             {'error': 'Greška pri brisanju artikla', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def rizicni_artikli_list(request):
+    """
+    API endpoint za dobijanje liste rizičnih artikala (koji ističu) sa popustima
+    """
+    try:
+        # Prvo ažuriraj status svih artikala
+        from .signals import update_all_artikli_status
+        update_all_artikli_status()
+        
+        # Dobij artikle koji ističu (status 'istice')
+        rizicni_artikli = Artikal.objects.filter(
+            status_trajanja='istice'
+        ).order_by('rok_trajanja_a')
+        
+        serializer = RizicniArtikalSerializer(rizicni_artikli, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška u rizicni_artikli_list: {str(e)}")
+        return Response(
+            {'error': 'Greška pri dohvatanju rizičnih artikala', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikli_statistike(request):
+    """
+    API endpoint za statistike artikala za treće mesto dashboarda
+    """
+    try:
+        # Prvo ažuriraj status svih artikala
+        from .signals import update_all_artikli_status
+        update_all_artikli_status()
+        
+        # 1. Ukupan broj artikala
+        ukupno_artikala = Artikal.objects.count()
+        
+        # 2. Broj rizičnih artikala (koji ističu)
+        rizicni_artikli = Artikal.objects.filter(status_trajanja='istice').count()
+        
+        # 3. Broj propali articala (istekli)
+        propali_artikli = Artikal.objects.filter(status_trajanja='istekao').count()
+        
+        # 4. Šteta za propale artikle (osnovna_cena * trenutna_kolicina iz zaliha)
+        propali_artikli_data = Artikal.objects.filter(
+            status_trajanja='istekao'
+        ).prefetch_related('zalihe')
+        
+        ukupna_steta = 0
+        for artikal in propali_artikli_data:
+            try:
+                # Sumiranje količina iz svih skladišta za ovaj artikal
+                ukupna_kolicina = sum([zaliha.trenutna_kolicina_a for zaliha in artikal.zalihe.all()])
+                if ukupna_kolicina > 0 and artikal.osnovna_cena_a:
+                    steta_artikal = float(artikal.osnovna_cena_a) * ukupna_kolicina
+                    ukupna_steta += steta_artikal
+            except Exception as artikal_error:
+                logger.warning(f"Greška pri računanju štete za artikal {artikal.sifra_a}: {str(artikal_error)}")
+                continue
+        
+        statistike = {
+            'ukupno_artikala': ukupno_artikala,
+            'rizicni_artikli': rizicni_artikli,
+            'propali_artikli': propali_artikli,
+            'ukupna_steta': round(ukupna_steta, 2)
+        }
+        
+        return Response(statistike, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška u artikli_statistike: {str(e)}")
+        return Response(
+            {'error': 'Greška pri dobijanju statistika artikala', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikli_grafikon_po_nedeljama(request):
+    """
+    API endpoint za grafikon - broj artikala koji ističu po nedeljama
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        # Prvo ažuriraj status svih artikala
+        from .signals import update_all_artikli_status
+        update_all_artikli_status()
+        
+        danas = datetime.now().date()
+        
+        # Definiši početak svake nedelje (ponedeljak)
+        dana_do_ponedeljka = danas.weekday()  # 0=ponedeljak, 6=nedelja
+        pocetak_ove_nedelje = danas - timedelta(days=dana_do_ponedeljka)
+        
+        # Definiši opsege nedelja
+        nedelje = [
+            {
+                'naziv': 'Ova nedelja',
+                'pocetak': pocetak_ove_nedelje,
+                'kraj': pocetak_ove_nedelje + timedelta(days=6)
+            },
+            {
+                'naziv': 'Naredna nedelja', 
+                'pocetak': pocetak_ove_nedelje + timedelta(days=7),
+                'kraj': pocetak_ove_nedelje + timedelta(days=13)
+            },
+            {
+                'naziv': 'Za 2 nedelje',
+                'pocetak': pocetak_ove_nedelje + timedelta(days=14),
+                'kraj': pocetak_ove_nedelje + timedelta(days=20)
+            },
+            {
+                'naziv': 'Za 3 nedelje',
+                'pocetak': pocetak_ove_nedelje + timedelta(days=21),
+                'kraj': pocetak_ove_nedelje + timedelta(days=27)
+            }
+        ]
+        
+        grafikon_data = []
+        
+        for nedelja in nedelje:
+            # Broj artikala koji ističu u ovoj nedelji (samo oni koji još nisu istekli)
+            broj_artikala = Artikal.objects.filter(
+                rok_trajanja_a__gte=nedelja['pocetak'],
+                rok_trajanja_a__lte=nedelja['kraj'],
+                rok_trajanja_a__gt=danas  # Isključi artikle koji su već istekli
+            ).exclude(
+                status_trajanja='istekao'  # Dodatno isključi artikle sa statusom istekao
+            ).count()
+            
+            grafikon_data.append({
+                'nedelja': nedelja['naziv'],
+                'broj_artikala': broj_artikala,
+                'pocetak': nedelja['pocetak'].isoformat(),
+                'kraj': nedelja['kraj'].isoformat()
+            })
+        
+        return Response({
+            'grafikon_data': grafikon_data,
+            'datum_generisanja': danas.isoformat()
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška u artikli_grafikon_po_nedeljama: {str(e)}")
+        return Response(
+            {'error': 'Greška pri generisanju grafikona', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe
+from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -243,9 +243,23 @@ class ComplaintSerializer(serializers.ModelSerializer):
 
 # Serializers za skladište, artikal i zalihe
 class SkladisteSerializer(serializers.ModelSerializer):
+    poslednja_temperatura = serializers.SerializerMethodField()
+    
     class Meta:
         model = Skladiste
-        fields = ['sifra_s', 'mesto_s', 'status_rizika_s']
+        fields = ['sifra_s', 'mesto_s', 'status_rizika_s', 'poslednja_temperatura']
+    
+    def get_poslednja_temperatura(self, obj):
+        """Vraća poslednju izmerenu temperaturu za skladište"""
+        from .models import Temperatura
+        
+        poslednja_temp = Temperatura.objects.filter(
+            skladiste=obj
+        ).order_by('-vreme_merenja').first()
+        
+        if poslednja_temp:
+            return float(poslednja_temp.vrednost)
+        return None
 
 class ArtikalSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
@@ -332,3 +346,34 @@ class DodajArtikalSerializer(serializers.Serializer):
                 'artikal': artikal,
                 'zalihe': zalihe
             }
+
+class RizicniArtikalSerializer(serializers.ModelSerializer):
+    popust_cena = serializers.SerializerMethodField()
+    dani_do_isteka = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Artikal
+        fields = ['sifra_a', 'naziv_a', 'osnovna_cena_a', 'rok_trajanja_a', 'status_trajanja', 'popust_cena', 'dani_do_isteka']
+    
+    def get_popust_cena(self, obj):
+        """Vraća cenu sa popustom ako postoji aktivan popust"""
+        from datetime import date
+        from .models import Popust
+        
+        danas = date.today()
+        aktivan_popust = Popust.objects.filter(
+            artikli=obj,
+            datum_pocetka_vazenja_p__lte=danas,
+            datum_kraja_vazenja_p__gte=danas
+        ).first()
+        
+        if aktivan_popust:
+            return float(aktivan_popust.predlozena_cena_a)
+        return None
+    
+    def get_dani_do_isteka(self, obj):
+        """Računa broj dana do isteka roka trajanja"""
+        from datetime import date
+        danas = date.today()
+        razlika = obj.rok_trajanja_a - danas
+        return razlika.days
