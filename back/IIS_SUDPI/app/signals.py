@@ -61,6 +61,25 @@ def update_all_skladista_status():
     return updated_count
 
 
+def update_all_artikli_status():
+    """
+    Manuelno ažuriranje statusa svih artikala na osnovu roka trajanja
+    Poziva se kada god treba da se proveri stanje svih artikala
+    """
+    artikli = Artikal.objects.all()
+    updated_count = 0
+    
+    for artikal in artikli:
+        try:
+            was_changed = check_and_update_artikel_status(artikal)
+            if was_changed:
+                updated_count += 1
+        except Exception as e:
+            logger.error(f"Greška pri proveri artikla {artikal.sifra_a}: {str(e)}")
+    
+    return updated_count
+
+
 def check_all_skladista_status():
     """
     Proveri i ažuriraj status rizika za sva skladišta
