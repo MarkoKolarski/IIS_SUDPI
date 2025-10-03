@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import MainSideBar from '../components/MainSideBar';
@@ -26,13 +26,7 @@ const IzmenaZaliha = () => {
         setSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Učitaj postojeće podatke zalihe i skladišta
-    useEffect(() => {
-        fetchZaliha();
-        fetchSkladista();
-    }, [zalihaId]);
-
-    const fetchZaliha = async () => {
+    const fetchZaliha = useCallback(async () => {
         try {
             setFetchLoading(true);
             const response = await axiosInstance.get(`/zalihe/${zalihaId}/`);
@@ -54,7 +48,7 @@ const IzmenaZaliha = () => {
         } finally {
             setFetchLoading(false);
         }
-    };
+    }, [zalihaId]);
 
     const fetchSkladista = async () => {
         try {
@@ -68,6 +62,12 @@ const IzmenaZaliha = () => {
             setSkladistaLoading(false);
         }
     };
+
+    // Učitaj postojeće podatke zalihe i skladišta
+    useEffect(() => {
+        fetchZaliha();
+        fetchSkladista();
+    }, [fetchZaliha]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -104,7 +104,7 @@ const IzmenaZaliha = () => {
                 skladiste: formData.skladiste
             };
             
-            const response = await axiosInstance.put(`/zalihe/${zalihaId}/izmeni/`, updateData);
+            await axiosInstance.put(`/zalihe/${zalihaId}/izmeni/`, updateData);
             
             setSuccessMessage('Stanje zalihe je uspešno ažurirano!');
             

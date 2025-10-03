@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import MainSideBar from '../components/MainSideBar';
@@ -24,12 +24,13 @@ const IzmeniArtikal = () => {
         setSidebarCollapsed(!isSidebarCollapsed);
     };
 
-    // Učitaj postojeće podatke artikla
-    useEffect(() => {
-        fetchArtikal();
-    }, [sifra_a]);
+    const formatDateForInput = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    };
 
-    const fetchArtikal = async () => {
+    const fetchArtikal = useCallback(async () => {
         try {
             setFetchLoading(true);
             const response = await axiosInstance.get(`/artikli/${sifra_a}`);
@@ -51,13 +52,12 @@ const IzmeniArtikal = () => {
         } finally {
             setFetchLoading(false);
         }
-    };
+    }, [sifra_a]);
 
-    const formatDateForInput = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toISOString().split('T')[0]; // YYYY-MM-DD format
-    };
+    // Učitaj postojeće podatke artikla
+    useEffect(() => {
+        fetchArtikal();
+    }, [fetchArtikal]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -94,7 +94,7 @@ const IzmeniArtikal = () => {
             setLoading(true);
             setError('');
             
-            const response = await axiosInstance.put(`/artikli/${sifra_a}/izmeni`, formData);
+            await axiosInstance.put(`/artikli/${sifra_a}/izmeni`, formData);
             
             setSuccessMessage('Artikal je uspešno ažuriran!');
             

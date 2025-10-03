@@ -32,14 +32,6 @@ const DashboardKK = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  // Function to check if a date has visits
-  const hasVisits = (date) => {
-    return visits.some((visit) => {
-      const visitDate = new Date(visit.datum_od);
-      return visitDate.toDateString() === date.toDateString();
-    });
-  };
-
   // Function to get visits for a specific date
   const getVisitsForDate = (date) => {
     return visits.filter((visit) => {

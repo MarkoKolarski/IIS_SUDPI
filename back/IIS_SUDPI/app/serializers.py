@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from decimal import Decimal
 from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -287,7 +288,7 @@ class DodajSkladisteSerializer(serializers.Serializer):
 
 class DodajArtikalSerializer(serializers.Serializer):
     naziv_a = serializers.CharField(max_length=200)
-    osnovna_cena_a = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.01)
+    osnovna_cena_a = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal('0.01'))
     rok_trajanja_a = serializers.DateField()
     sifra_s = serializers.IntegerField(min_value=1)
     trenutna_kolicina_a = serializers.IntegerField(min_value=0)
