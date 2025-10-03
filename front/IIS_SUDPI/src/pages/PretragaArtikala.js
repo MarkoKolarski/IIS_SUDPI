@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../axiosInstance';
 import MainSideBar from '../components/MainSideBar';
@@ -22,10 +22,24 @@ const PretragaArtikala = () => {
         setSidebarCollapsed(!isSidebarCollapsed);
     };
 
+    const fetchArtikli = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get('/artikli/');
+            setArtikli(response.data);
+            setError('');
+        } catch (error) {
+            console.error('Greška pri učitavanju artikala:', error);
+            setError('Nije moguće učitati artikle');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     // Učitavanje artikala na početku
     useEffect(() => {
         fetchArtikli();
-    }, []);
+    }, [fetchArtikli]);
 
     // Filtriranje artikala kada se promeni search term
     useEffect(() => {
@@ -38,20 +52,6 @@ const PretragaArtikala = () => {
             setFilteredArtikli(filtered);
         }
     }, [searchTerm, artikli]);
-
-    const fetchArtikli = async () => {
-        try {
-            setLoading(true);
-            const response = await axiosInstance.get('/artikli/');
-            setArtikli(response.data);
-            setError('');
-        } catch (error) {
-            console.error('Greška pri učitavanju artikala:', error);
-            setError('Nije moguće učitati artikle');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleSearchChange = (e) => {
         setSearchTerm(e.target.value);
@@ -150,6 +150,24 @@ const PretragaArtikala = () => {
         }
     };
 
+    const getStatusLabel = (status) => {
+        switch(status) {
+            case 'ok': return 'Aktivan';
+            case 'isteklo': return 'Istekao';
+            case 'rizik': return 'Ističe';
+            default: return 'Nepoznat';
+        }
+    };
+
+    // Auto-refresh funkcionalnost
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchArtikli();
+        }, 30000); // Osvežava svakih 30 sekundi
+
+        return () => clearInterval(interval);
+    }, [fetchArtikli]);
+
     return (
         <div className={`pretraga-artikala-wrapper ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             <MainSideBar
@@ -205,11 +223,11 @@ const PretragaArtikala = () => {
                                         filteredArtikli.map((artikal) => (
                                             <tr key={artikal.sifra_a}>
                                                 <td>{artikal.naziv_a}</td>
-                                                <td>{artikal.osnovna_cena_a}</td>
+                                                <td>{artikal.osnovna_cena_a} RSD</td>
                                                 <td>{formatDate(artikal.rok_trajanja_a)}</td>
-                                                <td>
+                                                <td className="status-cell">
                                                     <span className={`status-badge ${getStatusClass(artikal.status || 'ok')}`}>
-                                                        {artikal.status || 'ok'}
+                                                        {getStatusLabel(artikal.status || 'ok')}
                                                     </span>
                                                 </td>
                                                 <td className="actions-cell">

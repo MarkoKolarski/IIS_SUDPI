@@ -248,9 +248,20 @@ class SkladisteSerializer(serializers.ModelSerializer):
         fields = ['sifra_s', 'mesto_s', 'status_rizika_s']
 
 class ArtikalSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+    
     class Meta:
         model = Artikal
-        fields = ['sifra_a', 'naziv_a', 'osnovna_cena_a', 'rok_trajanja_a', 'status_trajanja']
+        fields = ['sifra_a', 'naziv_a', 'osnovna_cena_a', 'rok_trajanja_a', 'status_trajanja', 'status']
+    
+    def get_status(self, obj):
+        """Mapira backend status na frontend status"""
+        status_map = {
+            'aktivan': 'ok',
+            'istice': 'rizik', 
+            'istekao': 'isteklo'
+        }
+        return status_map.get(obj.status_trajanja, 'ok')
 
 class ZaliheSerializer(serializers.ModelSerializer):
     class Meta:

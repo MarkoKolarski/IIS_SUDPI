@@ -129,9 +129,26 @@
     border-bottom: 2px solid #e5e7eb;
 }
 
+.artikli-table th:nth-child(1) {
+    width: 25%;
+}
+
+.artikli-table th:nth-child(2) {
+    width: 15%;
+}
+
+.artikli-table th:nth-child(3) {
+    width: 20%;
+}
+
+.artikli-table th:nth-child(4) {
+    text-align: center;
+    width: 15%;
+}
+
 .artikli-table th:last-child {
     text-align: center;
-    width: 180px;
+    width: 25%;
 }
 
 .artikli-table tbody tr {
@@ -149,20 +166,45 @@
     vertical-align: middle;
 }
 
+.artikli-table td:nth-child(1) {
+    width: 25%;
+}
+
+.artikli-table td:nth-child(2) {
+    width: 15%;
+}
+
+.artikli-table td:nth-child(3) {
+    width: 20%;
+}
+
+.artikli-table td:nth-child(4) {
+    width: 15%;
+}
+
 .artikli-table td:last-child {
     text-align: center;
-    width: 180px;
+    width: 25%;
     vertical-align: middle;
 }
 
 /* Status Badge */
 .status-badge {
     display: inline-block;
-    padding: 4px 8px;
+    padding: 6px 12px;
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
     text-transform: lowercase;
+    min-width: 70px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.status-cell {
+    text-align: center !important;
+    vertical-align: middle;
+    padding: 14px 12px;
 }
 
 .status-ok {
