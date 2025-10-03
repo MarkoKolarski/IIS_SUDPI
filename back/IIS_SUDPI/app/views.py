@@ -32,6 +32,10 @@ from .serializers import (
 from rest_framework import generics, filters
 from django.db import transaction
 from .decorators import allowed_users
+import logging
+
+# Postavi logging
+logger = logging.getLogger(__name__)
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -1300,6 +1304,10 @@ def skladista_list(request):
     API endpoint za dobijanje liste svih skladišta
     Automatski proverava i ažurira status rizika pre slanja odgovora
     """
+    # Debug informacije
+    logger.info(f"Skladista API pozvan od strane korisnika: {request.user}")
+    logger.info(f"Tip korisnika: {request.user.tip_k if hasattr(request.user, 'tip_k') else 'N/A'}")
+    
     try:
         # Prvo ažuriraj status svih skladišta na osnovu najnovijih temperatura
         from .signals import update_all_skladista_status
@@ -1310,6 +1318,7 @@ def skladista_list(request):
         serializer = SkladisteSerializer(skladista, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
+        logger.error(f"Greška u skladista_list: {str(e)}")
         return Response(
             {'error': 'Greška pri dohvatanju skladišta', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR

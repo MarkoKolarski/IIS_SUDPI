@@ -17,11 +17,32 @@ const DashboardSO = () => {
         try {
             setLoading(true);
             setError('');
+            
+            // Debug token pre poziva
+            const token = sessionStorage.getItem('access_token');
+            console.log('Token za skladista API:', token ? 'Postoji' : 'Ne postoji');
+            
             const response = await axiosInstance.get('/skladista/');
             setSkladista(response.data);
         } catch (error) {
             console.error('Greška pri učitavanju skladišta:', error);
-            setError('Greška pri učitavanju skladišta');
+            console.error('Error response:', error.response);
+            
+            if (error.response?.status === 401) {
+                console.log('Token expired ili nemate dozvolu - redirect na login');
+                setError('Sesija je istekla. Molimo prijavite se ponovo.');
+                
+                // Ukloni token iz sessionStorage
+                sessionStorage.removeItem('access_token');
+                sessionStorage.removeItem('refresh_token');
+                
+                // Redirect na login nakon 3 sekunde
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+            } else {
+                setError('Greška pri učitavanju skladišta');
+            }
         } finally {
             setLoading(false);
         }
