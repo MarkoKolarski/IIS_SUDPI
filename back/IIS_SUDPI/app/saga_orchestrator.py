@@ -7,7 +7,7 @@ Scenario: Kreiranje fakture sa plaćanjem
 - Korak 1: Kreiraj fakturu u Oracle bazi
 - Korak 2: Kreiraj transakciju u Oracle bazi  
 - Korak 3: Pošalji događaj u InfluxDB
-- Ako neki korak ne uspe → Rollback (kompenzacione transakcije)
+- Ako neki korak ne uspe -> Rollback (kompenzacione transakcije)
 """
 
 import httpx
@@ -35,7 +35,7 @@ class SagaOrchestrator:
     
     def __init__(self, mikroservis_url: str = "http://localhost:8001"):
         self.mikroservis_url = mikroservis_url
-        self.saga_log = []  # Log svih koraka za debugging
+        self.saga_log = []
         
     def log_step(self, step: str, status: str, details: str = ""):
         """Loguje korak Saga transakcije"""
@@ -79,13 +79,9 @@ class SagaOrchestrator:
         self.log_step("SAGA_START", "INFO", "Pokretanje Saga transakcije")
         
         try:
-            # ============================================================
-            # KORAK 1: Kreiraj fakturu u Oracle bazi (Django)
-            # ============================================================
             self.log_step("STEP_1_START", "INFO", "Kreiranje fakture u Oracle DB")
             
             with db_transaction.atomic():
-                # Dohvati ugovor
                 try:
                     ugovor = Ugovor.objects.get(sifra_u=ugovor_id)
                 except Ugovor.DoesNotExist:
@@ -94,14 +90,12 @@ class SagaOrchestrator:
                         "error": "Ugovor ne postoji",
                         "saga_log": self.saga_log
                     }
-                
-                # Hardkoduj ID - Dobavi MAX(sifra_f) i dodaj 1
+
                 max_faktura_id = Faktura.objects.aggregate(
                     Max('sifra_f')
                 )['sifra_f__max'] or 0
                 next_faktura_id = max_faktura_id + 1
                 
-                # Kreiraj fakturu sa eksplicitnim ID-em
                 faktura = Faktura(
                     sifra_f=next_faktura_id,
                     iznos_f=iznos,
@@ -118,19 +112,14 @@ class SagaOrchestrator:
                     f"Faktura {faktura.sifra_f} kreirana u Oracle DB"
                 )
             
-            # ============================================================
-            # KORAK 2: Kreiraj transakciju u Oracle bazi (Django)
-            # ============================================================
             self.log_step("STEP_2_START", "INFO", "Kreiranje transakcije u Oracle DB")
             
             with db_transaction.atomic():
-                # Hardkoduj ID - Dobavi MAX(sifra_t) i dodaj 1
                 max_transakcija_id = Transakcija.objects.aggregate(
                     Max('sifra_t')
                 )['sifra_t__max'] or 0
                 next_transakcija_id = max_transakcija_id + 1
                 
-                # Kreiraj transakciju sa eksplicitnim ID-em
                 transakcija = Transakcija(
                     sifra_t=next_transakcija_id,
                     potvrda_t=potvrda_transakcije,
@@ -154,10 +143,8 @@ class SagaOrchestrator:
                     "SUCCESS", 
                     f"Transakcija {transakcija.sifra_t} kreirana u Oracle DB"
                 )
-            
-            # ============================================================
-            # KORAK 3: Pošalji događaj u InfluxDB mikroservis
-            # ============================================================
+
+            # Pošalji događaj u InfluxDB mikroservis
             self.log_step("STEP_3_START", "INFO", "Slanje događaja u InfluxDB mikroservis")
             
             mikroservis_data = {
@@ -189,9 +176,8 @@ class SagaOrchestrator:
                 self.log_step("STEP_3_FAILED", "ERROR", f"HTTP greška: {str(e)}")
                 raise Exception(f"Greška pri komunikaciji sa mikroservisom: {str(e)}")
             
-            # ============================================================
-            # SAGA USPEŠNA - Svi koraci prošli
-            # ============================================================
+
+            # SAGA USPEŠNA   
             self.log_step("SAGA_SUCCESS", "SUCCESS", "Saga transakcija uspešno završena")
             
             return True, {
@@ -203,13 +189,12 @@ class SagaOrchestrator:
             }
             
         except Exception as e:
-            # ============================================================
-            # SAGA NEUSPEŠNA - Rollback (kompenzacione transakcije)
-            # ============================================================
+
+            # SAGA NEUSPEŠNA
             self.log_step("SAGA_FAILED", "ERROR", f"Greška: {str(e)}")
             self.log_step("ROLLBACK_START", "INFO", "Pokretanje kompenzacionih transakcija")
             
-            # Kompenzaciona transakcija 1: Obriši transakciju iz Oracle DB
+            # Obriši transakciju iz Oracle DB
             if transakcija:
                 try:
                     with db_transaction.atomic():
@@ -218,7 +203,7 @@ class SagaOrchestrator:
                 except Exception as rollback_error:
                     self.log_step("ROLLBACK_STEP_1", "ERROR", f"Rollback greška: {str(rollback_error)}")
             
-            # Kompenzaciona transakcija 2: Obriši fakturu iz Oracle DB
+            # Obriši fakturu iz Oracle DB
             if faktura:
                 try:
                     with db_transaction.atomic():
@@ -227,7 +212,7 @@ class SagaOrchestrator:
                 except Exception as rollback_error:
                     self.log_step("ROLLBACK_STEP_2", "ERROR", f"Rollback greška: {str(rollback_error)}")
             
-            # Kompenzaciona transakcija 3: Obriši događaj iz InfluxDB (ako je poslat)
+            # Obriši događaj iz InfluxDB (ako je poslat)
             if influx_sent:
                 try:
                     # InfluxDB ne podržava tačno brisanje pojedinačnog događaja,
@@ -265,7 +250,7 @@ class PenalSagaOrchestrator:
     Scenario: Kreiranje penala zbog kršenja ugovora
     - Korak 1: Kreiraj penal u Oracle bazi
     - Korak 2: Pošalji događaj u InfluxDB
-    - Ako neki korak ne uspe → Rollback
+    - Ako neki korak ne uspe -> Rollback
     """
     
     def __init__(self, mikroservis_url: str = "http://localhost:8001"):
@@ -307,9 +292,8 @@ class PenalSagaOrchestrator:
         self.log_step("SAGA_START", "INFO", "Pokretanje Saga transakcije za penal")
         
         try:
-            # ============================================================
-            # KORAK 1: Kreiraj penal u Oracle bazi
-            # ============================================================
+
+            # Kreiraj penal u Oracle bazi
             self.log_step("STEP_1_START", "INFO", "Kreiranje penala u Oracle DB")
             
             with db_transaction.atomic():
@@ -324,13 +308,11 @@ class PenalSagaOrchestrator:
                         "saga_log": self.saga_log
                     }
                 
-                # Hardkoduj ID - Dobavi MAX(sifra_p) i dodaj 1
                 max_penal_id = Penal.objects.aggregate(
                     Max('sifra_p')
                 )['sifra_p__max'] or 0
                 next_penal_id = max_penal_id + 1
                 
-                # Kreiraj penal sa eksplicitnim ID-em
                 penal = Penal(
                     sifra_p=next_penal_id,
                     razlog_p=razlog,
@@ -345,9 +327,7 @@ class PenalSagaOrchestrator:
                     f"Penal {penal.sifra_p} kreiran u Oracle DB"
                 )
             
-            # ============================================================
-            # KORAK 2: Pošalji događaj u InfluxDB
-            # ============================================================
+            # Pošalji događaj u InfluxDB
             self.log_step("STEP_2_START", "INFO", "Slanje događaja u InfluxDB")
             
             mikroservis_data = {
@@ -374,9 +354,8 @@ class PenalSagaOrchestrator:
                 self.log_step("STEP_2_FAILED", "ERROR", f"HTTP greška: {str(e)}")
                 raise Exception(f"Greška pri komunikaciji sa mikroservisom: {str(e)}")
             
-            # ============================================================
+
             # SAGA USPEŠNA
-            # ============================================================
             self.log_step("SAGA_SUCCESS", "SUCCESS", "Saga transakcija uspešno završena")
             
             return True, {
@@ -387,9 +366,8 @@ class PenalSagaOrchestrator:
             }
             
         except Exception as e:
-            # ============================================================
+
             # ROLLBACK
-            # ============================================================
             self.log_step("SAGA_FAILED", "ERROR", f"Greška: {str(e)}")
             self.log_step("ROLLBACK_START", "INFO", "Pokretanje rollback-a")
             
