@@ -1,0 +1,376 @@
+/* Wrapper and Main Content for Sidebar Layout */
+.pretraga-artikala-wrapper {
+    display: flex;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.pretraga-artikala-main-content {
+    flex-grow: 1;
+    margin-left: 280px; /* Default sidebar width */
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.pretraga-artikala-wrapper.sidebar-collapsed .pretraga-artikala-main-content {
+    margin-left: 80px; /* Collapsed sidebar width */
+}
+
+.pretraga-artikala-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background-color: #f0fdfa;
+    min-height: 100vh;
+}
+
+.pretraga-artikala-header {
+    background-color: #e5e7eb;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    border-radius: 8px;
+}
+
+.pretraga-artikala-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Search Section */
+.search-section {
+    margin-bottom: 30px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: #f9fafb;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #14b8a6;
+    background-color: white;
+}
+
+.search-input::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Messages */
+.loading-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    font-size: 16px;
+    font-style: italic;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #fecaca;
+    font-size: 14px;
+}
+
+.success-message {
+    background-color: #d1fae5;
+    color: #065f46;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #a7f3d0;
+    font-size: 14px;
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Table Container - Scrollable */
+.table-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-height: 600px;
+    overflow-y: auto;
+    /* Scroll bar stilizovanje kao u dashboard-u */
+    scrollbar-width: auto;
+    scrollbar-color: #14b8a6 #f1f5f9;
+}
+
+/* Webkit scroll bar stilizovanje */
+.table-container::-webkit-scrollbar {
+    width: 16px;
+    background: #f1f5f9;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #14b8a6;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+    min-height: 20px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #0f766e;
+}
+
+.table-container::-webkit-scrollbar-corner {
+    background: #f1f5f9;
+}
+
+/* Table Styling */
+.artikli-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.artikli-table thead {
+    background-color: #f3f4f6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.artikli-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.artikli-table th:nth-child(1) {
+    width: 25%;
+}
+
+.artikli-table th:nth-child(2) {
+    width: 15%;
+}
+
+.artikli-table th:nth-child(3) {
+    width: 20%;
+}
+
+.artikli-table th:nth-child(4) {
+    text-align: center;
+    width: 15%;
+}
+
+.artikli-table th:last-child {
+    text-align: center;
+    width: 25%;
+}
+
+.artikli-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease;
+}
+
+.artikli-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.artikli-table td {
+    padding: 14px 12px;
+    color: #1f2937;
+    vertical-align: middle;
+}
+
+.artikli-table td:nth-child(1) {
+    width: 25%;
+}
+
+.artikli-table td:nth-child(2) {
+    width: 15%;
+}
+
+.artikli-table td:nth-child(3) {
+    width: 20%;
+}
+
+.artikli-table td:nth-child(4) {
+    width: 15%;
+}
+
+.artikli-table td:last-child {
+    text-align: center;
+    width: 25%;
+    vertical-align: middle;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: lowercase;
+    min-width: 70px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.status-cell {
+    text-align: center !important;
+    vertical-align: middle;
+    padding: 14px 12px;
+}
+
+.status-ok {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-expired {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.status-risk {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-unknown {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Action Buttons */
+.actions-cell {
+    text-align: center !important;
+    width: 180px !important;
+    vertical-align: middle !important;
+}
+
+.actions-cell .btn-edit,
+.actions-cell .btn-delete {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 70px;
+    white-space: nowrap;
+    margin: 0 4px;
+    display: inline-block;
+}
+
+.actions-cell .btn-edit {
+    background-color: #14b8a6;
+    color: white;
+}
+
+.actions-cell .btn-edit:hover {
+    background-color: #0f766e;
+}
+
+.actions-cell .btn-delete {
+    background-color: #ef4444;
+    color: white;
+}
+
+.actions-cell .btn-delete:hover {
+    background-color: #dc2626;
+}
+
+/* No Results */
+.no-results {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .pretraga-artikala-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+        padding: 0;
+    }
+    .pretraga-artikala-wrapper.sidebar-collapsed .pretraga-artikala-main-content {
+        margin-left: 0;
+    }
+    
+    .pretraga-artikala-container {
+        padding: 20px 15px;
+    }
+    
+    .table-container {
+        max-height: 500px;
+    }
+    
+    .artikli-table {
+        font-size: 12px;
+    }
+    
+    .artikli-table th,
+    .artikli-table td {
+        padding: 10px 8px;
+    }
+    
+    .actions-cell .btn-edit,
+    .actions-cell .btn-delete {
+        min-width: 60px;
+        font-size: 11px;
+        padding: 4px 8px;
+        margin: 2px 0;
+        display: block;
+        width: 100%;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .pretraga-artikala-main-content {
+        margin-left: 0;
+    }
+    
+    .pretraga-artikala-container {
+        padding: 15px 10px;
+    }
+    
+    .table-container {
+        max-height: 400px;
+    }
+    
+    /* Hide some columns on very small screens */
+    .artikli-table th:nth-child(3),
+    .artikli-table td:nth-child(3) {
+        display: none;
+    }
+}
+
+/* Success message animation */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

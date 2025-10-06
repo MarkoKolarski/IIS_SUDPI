@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/VisitSupplierTable.css";
+import "../styles/SuppliersTable.css";
 
 const VisitSupplierTable = ({ suppliers }) => {
   const [search, setSearch] = useState("");
@@ -45,7 +45,7 @@ const VisitSupplierTable = ({ suppliers }) => {
               <td>{d.ime_sirovine}</td>
               <td>
                 <button
-                  className="schedule-visit-button"
+                  className="supplier-action-button visit"
                   onClick={() => handleSupplierClick(d.sifra_d)}
                 >
                   Zakaži posetu

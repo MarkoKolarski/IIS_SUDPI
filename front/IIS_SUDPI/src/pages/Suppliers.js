@@ -26,9 +26,7 @@ const Suppliers = () => {
         </header>
 
         <div className="dashboard-content">
-          <div className="dashboard-grid">
-            <SuppliersTable />
-          </div>
+          <SuppliersTable />
         </div>
       </main>
     </div>

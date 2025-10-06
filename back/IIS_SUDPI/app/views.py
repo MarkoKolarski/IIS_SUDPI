@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator
+from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -23,10 +23,20 @@ from .serializers import (
     PenalSerializer,
     VisitSerializer,
     ComplaintSerializer,
+    SkladisteSerializer,
+    ArtikalSerializer,
+    ZaliheSerializer,
+    DodajSkladisteSerializer,
+    DodajArtikalSerializer,
+    RizicniArtikalSerializer,
 )
 from rest_framework import generics, filters
 from django.db import transaction
 from .decorators import allowed_users
+import logging
+
+# Postavi logging
+logger = logging.getLogger(__name__)
 
 def index(request):
     html = render_to_string("index.js", {})
@@ -1123,6 +1133,23 @@ def visit_detail(request, visit_id):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['kontrolor_kvaliteta'])
+def busy_visit_slots(request):
+    """
+    API endpoint za dobijanje zauzetih termina
+    """
+    try:
+        # Get all visits that are not cancelled
+        busy_slots = Poseta.objects.exclude(status='otkazana').values('datum_od', 'datum_do')
+        return Response(list(busy_slots), status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju zauzetih termina', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['kontrolor_kvaliteta'])
@@ -1135,6 +1162,18 @@ def create_visit(request):
         datum_od = request.data.get('datum_od')
         datum_do = request.data.get('datum_do')
         dobavljac_id = request.data.get('dobavljac_id')
+        
+        # Check for overlapping visits
+        overlapping_visits = Poseta.objects.filter(
+            datum_od__lt=datum_do,
+            datum_do__gt=datum_od
+        ).exclude(status='otkazana')
+        
+        if overlapping_visits.exists():
+            return Response(
+                {'error': 'Termin je već zauzet'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         dobavljac = get_object_or_404(Dobavljac, sifra_d=dobavljac_id)
         
@@ -1197,32 +1236,112 @@ def create_complaint(request):
 
         kontrolor = request.user.kontrolor_kvaliteta
         dobavljac_id = request.data.get('dobavljac_id')
+        jacina_zalbe = int(request.data.get('jacina_zalbe', 1))
         
-        # Get the supplier
         try:
             dobavljac = Dobavljac.objects.get(sifra_d=dobavljac_id)
+            
+            # Calculate rating penalty based on complaint strength
+            # For jacina_zalbe 1-3: small impact (0.3-0.9)
+            # For jacina_zalbe 4-7: medium impact (1.2-2.1)
+            # For jacina_zalbe 8-10: high impact (2.4-3.0)
+            if jacina_zalbe <= 3:
+                penalty = jacina_zalbe * 0.3
+            elif jacina_zalbe <= 7:
+                penalty = jacina_zalbe * 0.3
+            else:
+                penalty = jacina_zalbe * 0.3
+            
+            # Update supplier's rating
+            new_rating = max(0, min(10, float(dobavljac.ocena) - penalty))
+            dobavljac.ocena = new_rating
+            dobavljac.datum_ocenjivanja = timezone.now().date()
+            dobavljac.save()
+
+            # Create complaint data
+            complaint_data = {
+                'dobavljac': dobavljac.sifra_d,
+                'opis_problema': request.data.get('opis_problema'),
+                'jacina_zalbe': jacina_zalbe,
+                'vreme_trajanja': request.data.get('vreme_trajanja', 1)
+            }
+            
+            serializer = ComplaintSerializer(data=complaint_data)
+            if serializer.is_valid():
+                serializer.save(
+                    kontrolor=kontrolor,
+                    status='prijem'
+                )
+                return Response({
+                    'message': 'Reklamacija je uspešno kreirana',
+                    'complaint': serializer.data,
+                    'new_rating': new_rating
+                }, status=status.HTTP_201_CREATED)
+                
+            return Response(
+                {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         except Dobavljac.DoesNotExist:
             return Response(
                 {'error': 'Dobavljač nije pronađen'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
-
-        # Create complaint data
-        complaint_data = {
-            'dobavljac': dobavljac.sifra_d,
-            'opis_problema': request.data.get('opis_problema'),
-            'jacina_zalbe': request.data.get('jacina_zalbe'),
-            'vreme_trajanja': request.data.get('vreme_trajanja', 1)
-        }
-        
-        serializer = ComplaintSerializer(data=complaint_data)
-        if serializer.is_valid():
-            serializer.save(
-                kontrolor=kontrolor,
-                status='prijem'
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
             
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+# API endpoints za Artikal i Skladište
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def skladista_list(request):
+    """
+    API endpoint za dobijanje liste svih skladišta
+    Automatski proverava i ažurira status rizika pre slanja odgovora
+    """
+    # Debug informacije
+    logger.info(f"Skladista API pozvan od strane korisnika: {request.user}")
+    logger.info(f"Tip korisnika: {request.user.tip_k if hasattr(request.user, 'tip_k') else 'N/A'}")
+    
+    try:
+        # Prvo ažuriraj status svih skladišta na osnovu najnovijih temperatura
+        from .signals import update_all_skladista_status
+        updated_count = update_all_skladista_status()
+        
+        # Zatim vrati ažurirane podatke
+        skladista = Skladiste.objects.all().order_by('sifra_s')
+        serializer = SkladisteSerializer(skladista, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Greška u skladista_list: {str(e)}")
+        return Response(
+            {'error': 'Greška pri dohvatanju skladišta', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def dodaj_skladiste(request):
+    """
+    API endpoint za dodavanje novog skladišta
+    """
+    try:
+        serializer = DodajSkladisteSerializer(data=request.data)
+        if serializer.is_valid():
+            skladiste = serializer.save()
+            
+            return Response({
+                'message': 'Skladište je uspešno dodato!',
+                'skladiste': SkladisteSerializer(skladiste).data
+            }, status=status.HTTP_201_CREATED)
+        
         return Response(
             {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
             status=status.HTTP_400_BAD_REQUEST
@@ -1230,6 +1349,444 @@ def create_complaint(request):
         
     except Exception as e:
         return Response(
-            {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
+            {'error': 'Greška pri dodavanju skladišta', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def dodaj_artikal(request):
+    """
+    API endpoint za dodavanje novog artikla i zaliha
+    """
+    try:
+        serializer = DodajArtikalSerializer(data=request.data)
+        if serializer.is_valid():
+            result = serializer.save()
+            
+            return Response({
+                'message': 'Artikal je uspešno dodat!',
+                'artikal': ArtikalSerializer(result['artikal']).data,
+                'zalihe': ZaliheSerializer(result['zalihe']).data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(
+            {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dodavanju artikla', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikli_list(request):
+    """
+    API endpoint za dobijanje liste svih artikala
+    """
+    try:
+        artikli = Artikal.objects.all().order_by('sifra_a')
+        serializer = ArtikalSerializer(artikli, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju artikala', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikal_detail(request, sifra_a):
+    """
+    API endpoint za dobijanje jednog artikla po šifri
+    """
+    try:
+        artikal = Artikal.objects.get(sifra_a=sifra_a)
+        serializer = ArtikalSerializer(artikal)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Artikal.DoesNotExist:
+        return Response(
+            {'error': f'Artikal sa šifrom {sifra_a} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju artikla', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def izmeni_artikal(request, sifra_a):
+    """
+    API endpoint za ažuriranje artikla po šifri
+    """
+    try:
+        artikal = Artikal.objects.get(sifra_a=sifra_a)
+        
+        # Ažuriraj samo prosleđena polja
+        if 'naziv_a' in request.data:
+            artikal.naziv_a = request.data['naziv_a']
+        if 'osnovna_cena_a' in request.data:
+            artikal.osnovna_cena_a = request.data['osnovna_cena_a']
+        if 'rok_trajanja_a' in request.data:
+            artikal.rok_trajanja_a = request.data['rok_trajanja_a']
+        
+        # Validacija pre čuvanja
+        artikal.full_clean()
+        artikal.save()
+        
+        serializer = ArtikalSerializer(artikal)
+        return Response(
+            {
+                'message': f'Artikal "{artikal.naziv_a}" je uspešno ažuriran',
+                'artikal': serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+        
+    except Artikal.DoesNotExist:
+        return Response(
+            {'error': f'Artikal sa šifrom {sifra_a} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri ažuriranju artikla', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def zalihe_list(request):
+    """
+    API endpoint za dobijanje zaliha - sve ili po skladištu
+    Query parametar: skladiste (opcionalno)
+    """
+    try:
+        skladiste_filter = request.GET.get('skladiste', None)
+        
+        if skladiste_filter:
+            # Filtriraj po skladištu
+            zalihe = Zalihe.objects.filter(skladiste__sifra_s=skladiste_filter).select_related(
+                'artikal', 'skladiste'
+            ).order_by('artikal__naziv_a')
+        else:
+            # Sve zalihe
+            zalihe = Zalihe.objects.all().select_related(
+                'artikal', 'skladiste'
+            ).order_by('skladiste__mesto_s', 'artikal__naziv_a')
+        
+        # Ručno kreiranje response data sa dodatnim poljima
+        zalihe_data = []
+        for zaliha in zalihe:
+            zalihe_data.append({
+                'id': zaliha.id,
+                'trenutna_kolicina_a': zaliha.trenutna_kolicina_a,
+                'datum_azuriranja': zaliha.datum_azuriranja,
+                'artikal_naziv': zaliha.artikal.naziv_a if zaliha.artikal else 'N/A',
+                'artikal_sifra': zaliha.artikal.sifra_a if zaliha.artikal else None,
+                'skladiste_naziv': zaliha.skladiste.mesto_s if zaliha.skladiste else 'N/A',
+                'skladiste_sifra': zaliha.skladiste.sifra_s if zaliha.skladiste else None,
+            })
+        
+        return Response(zalihe_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"Greška u zalihe_list: {str(e)}")  # Debug info
+        return Response(
+            {'error': 'Greška pri dohvatanju zaliha', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def zaliha_detail(request, zaliha_id):
+    """
+    API endpoint za dobijanje jedne zalihe po ID-u
+    """
+    try:
+        zaliha = Zalihe.objects.select_related('artikal', 'skladiste').get(id=zaliha_id)
+        
+        zaliha_data = {
+            'id': zaliha.id,
+            'trenutna_kolicina_a': zaliha.trenutna_kolicina_a,
+            'datum_azuriranja': zaliha.datum_azuriranja,
+            'artikal_naziv': zaliha.artikal.naziv_a if zaliha.artikal else 'N/A',
+            'artikal_sifra': zaliha.artikal.sifra_a if zaliha.artikal else None,
+            'skladiste_naziv': zaliha.skladiste.mesto_s if zaliha.skladiste else 'N/A',
+            'skladiste_sifra': zaliha.skladiste.sifra_s if zaliha.skladiste else None,
+        }
+        
+        return Response(zaliha_data, status=status.HTTP_200_OK)
+        
+    except Zalihe.DoesNotExist:
+        return Response(
+            {'error': f'Zaliha sa ID {zaliha_id} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        print(f"Greška u zaliha_detail: {str(e)}")
+        return Response(
+            {'error': 'Greška pri dohvatanju zalihe', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def izmeni_zalihu(request, zaliha_id):
+    """
+    API endpoint za ažuriranje zalihe po ID-u
+    """
+    try:
+        zaliha = Zalihe.objects.get(id=zaliha_id)
+        
+        # Ažuriraj polja
+        if 'trenutna_kolicina_a' in request.data:
+            zaliha.trenutna_kolicina_a = request.data['trenutna_kolicina_a']
+        
+        if 'skladiste' in request.data:
+            try:
+                skladiste = Skladiste.objects.get(sifra_s=request.data['skladiste'])
+                zaliha.skladiste = skladiste
+            except Skladiste.DoesNotExist:
+                return Response(
+                    {'error': 'Skladište ne postoji'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Validacija pre čuvanja
+        zaliha.full_clean()
+        zaliha.save()
+        
+        # Vraćaj ažurirane podatke
+        zaliha_data = {
+            'id': zaliha.id,
+            'trenutna_kolicina_a': zaliha.trenutna_kolicina_a,
+            'datum_azuriranja': zaliha.datum_azuriranja,
+            'artikal_naziv': zaliha.artikal.naziv_a if zaliha.artikal else 'N/A',
+            'skladiste_naziv': zaliha.skladiste.mesto_s if zaliha.skladiste else 'N/A',
+        }
+        
+        return Response(
+            {
+                'message': f'Stanje zalihe za "{zaliha.artikal.naziv_a}" je uspešno ažurirano',
+                'zaliha': zaliha_data
+            },
+            status=status.HTTP_200_OK
+        )
+        
+    except Zalihe.DoesNotExist:
+        return Response(
+            {'error': f'Zaliha sa ID {zaliha_id} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        print(f"Greška u izmeni_zalihu: {str(e)}")
+        return Response(
+            {'error': 'Greška pri ažuriranju zalihe', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def obrisi_artikal(request, sifra_a):
+    """
+    API endpoint za brisanje artikla po šifri
+    """
+    try:
+        # Pronađi artikal po šifri
+        artikal = Artikal.objects.get(sifra_a=sifra_a)
+        
+        # Proveri da li postoje povezane zalihe (koristimo 'artikal' umesto 'sifra_a')
+        zalihe = Zalihe.objects.filter(artikal=artikal)
+        if zalihe.exists():
+            # Obriši povezane zalihe
+            zalihe.delete()
+        
+        # Obriši artikal
+        naziv_artikla = artikal.naziv_a
+        artikal.delete()
+        
+        return Response(
+            {'message': f'Artikal "{naziv_artikla}" je uspešno obrisan'},
+            status=status.HTTP_200_OK
+        )
+        
+    except Artikal.DoesNotExist:
+        return Response(
+            {'error': f'Artikal sa šifrom {sifra_a} ne postoji'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri brisanju artikla', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def rizicni_artikli_list(request):
+    """
+    API endpoint za dobijanje liste rizičnih artikala (koji ističu) sa popustima
+    """
+    try:
+        # Prvo ažuriraj status svih artikala
+        from .signals import update_all_artikli_status
+        update_all_artikli_status()
+        
+        # Dobij artikle koji ističu (status 'istice')
+        rizicni_artikli = Artikal.objects.filter(
+            status_trajanja='istice'
+        ).order_by('rok_trajanja_a')
+        
+        serializer = RizicniArtikalSerializer(rizicni_artikli, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška u rizicni_artikli_list: {str(e)}")
+        return Response(
+            {'error': 'Greška pri dohvatanju rizičnih artikala', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikli_statistike(request):
+    """
+    API endpoint za statistike artikala za treće mesto dashboarda
+    """
+    try:
+        # Prvo ažuriraj status svih artikala
+        from .signals import update_all_artikli_status
+        update_all_artikli_status()
+        
+        # 1. Ukupan broj artikala
+        ukupno_artikala = Artikal.objects.count()
+        
+        # 2. Broj rizičnih artikala (koji ističu)
+        rizicni_artikli = Artikal.objects.filter(status_trajanja='istice').count()
+        
+        # 3. Broj propali articala (istekli)
+        propali_artikli = Artikal.objects.filter(status_trajanja='istekao').count()
+        
+        # 4. Šteta za propale artikle (osnovna_cena * trenutna_kolicina iz zaliha)
+        propali_artikli_data = Artikal.objects.filter(
+            status_trajanja='istekao'
+        ).prefetch_related('zalihe')
+        
+        ukupna_steta = 0
+        for artikal in propali_artikli_data:
+            try:
+                # Sumiranje količina iz svih skladišta za ovaj artikal
+                ukupna_kolicina = sum([zaliha.trenutna_kolicina_a for zaliha in artikal.zalihe.all()])
+                if ukupna_kolicina > 0 and artikal.osnovna_cena_a:
+                    steta_artikal = float(artikal.osnovna_cena_a) * ukupna_kolicina
+                    ukupna_steta += steta_artikal
+            except Exception as artikal_error:
+                logger.warning(f"Greška pri računanju štete za artikal {artikal.sifra_a}: {str(artikal_error)}")
+                continue
+        
+        statistike = {
+            'ukupno_artikala': ukupno_artikala,
+            'rizicni_artikli': rizicni_artikli,
+            'propali_artikli': propali_artikli,
+            'ukupna_steta': round(ukupna_steta, 2)
+        }
+        
+        return Response(statistike, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška u artikli_statistike: {str(e)}")
+        return Response(
+            {'error': 'Greška pri dobijanju statistika artikala', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['skladisni_operater', 'administrator'])
+def artikli_grafikon_po_nedeljama(request):
+    """
+    API endpoint za grafikon - broj artikala koji ističu po nedeljama
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        # Prvo ažuriraj status svih artikala
+        from .signals import update_all_artikli_status
+        update_all_artikli_status()
+        
+        danas = datetime.now().date()
+        
+        # Definiši početak svake nedelje (ponedeljak)
+        dana_do_ponedeljka = danas.weekday()  # 0=ponedeljak, 6=nedelja
+        pocetak_ove_nedelje = danas - timedelta(days=dana_do_ponedeljka)
+        
+        # Definiši opsege nedelja
+        nedelje = [
+            {
+                'naziv': 'Ova nedelja',
+                'pocetak': pocetak_ove_nedelje,
+                'kraj': pocetak_ove_nedelje + timedelta(days=6)
+            },
+            {
+                'naziv': 'Naredna nedelja', 
+                'pocetak': pocetak_ove_nedelje + timedelta(days=7),
+                'kraj': pocetak_ove_nedelje + timedelta(days=13)
+            },
+            {
+                'naziv': 'Za 2 nedelje',
+                'pocetak': pocetak_ove_nedelje + timedelta(days=14),
+                'kraj': pocetak_ove_nedelje + timedelta(days=20)
+            },
+            {
+                'naziv': 'Za 3 nedelje',
+                'pocetak': pocetak_ove_nedelje + timedelta(days=21),
+                'kraj': pocetak_ove_nedelje + timedelta(days=27)
+            }
+        ]
+        
+        grafikon_data = []
+        
+        for nedelja in nedelje:
+            # Broj artikala koji ističu u ovoj nedelji (samo oni koji još nisu istekli)
+            broj_artikala = Artikal.objects.filter(
+                rok_trajanja_a__gte=nedelja['pocetak'],
+                rok_trajanja_a__lte=nedelja['kraj'],
+                rok_trajanja_a__gt=danas  # Isključi artikle koji su već istekli
+            ).exclude(
+                status_trajanja='istekao'  # Dodatno isključi artikle sa statusom istekao
+            ).count()
+            
+            grafikon_data.append({
+                'nedelja': nedelja['naziv'],
+                'broj_artikala': broj_artikala,
+                'pocetak': nedelja['pocetak'].isoformat(),
+                'kraj': nedelja['kraj'].isoformat()
+            })
+        
+        return Response({
+            'grafikon_data': grafikon_data,
+            'datum_generisanja': danas.isoformat()
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška u artikli_grafikon_po_nedeljama: {str(e)}")
+        return Response(
+            {'error': 'Greška pri generisanju grafikona', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

@@ -73,7 +73,6 @@ const Complaints = () => {
                   <th>Status</th>
                   <th>Opis problema</th>
                   <th>Jačina žalbe</th>
-                  <th>Vreme trajanja</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,7 +85,6 @@ const Complaints = () => {
                     <td>{complaint.status}</td>
                     <td>{complaint.opis_problema}</td>
                     <td>{complaint.jacina_zalbe}/10</td>
-                    <td>{complaint.vreme_trajanja} dana</td>
                   </tr>
                 ))}
               </tbody>

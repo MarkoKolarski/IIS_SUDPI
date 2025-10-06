@@ -1,4 +1,7 @@
-.suppliers-container {
+.suppliers-container, .visit-supplier-container {
+  position: relative;
+  margin-bottom: 2rem;
+  width: 100%;
   padding: 20px;
 }
 
@@ -8,30 +11,36 @@
 }
 
 .suppliers-search {
-  margin-bottom: 20px;
+  width: 90%;
   padding: 12px;
-  width: 300px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  margin-bottom: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  max-width: none; /* Remove any max-width constraints */
 }
 
 .suppliers-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: white;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 0; /* Remove any default margins */
+}
+
+.suppliers-table th,
+.suppliers-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .suppliers-table th {
   background-color: #f8f9fa;
-  padding: 12px;
-  text-align: left;
   font-weight: 600;
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
+  color: #374151;
 }
 
 .suppliers-table td {
@@ -52,22 +61,63 @@
   color: #dc3545;
 }
 
-.select-button {
+/* Unified button styles */
+.supplier-action-button {
   padding: 8px 16px;
-  background-color: #007bff;
+  background-color: #14b8a6;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: all 0.2s ease;
   font-size: 14px;
-  transition: background-color 0.2s;
+  font-weight: 500;
 }
 
-.select-button:hover {
-  background-color: #0056b3;
+.supplier-action-button:hover {
+  background-color: #0d9488;
+  transform: translateY(-1px);
 }
 
-.select-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
+/* Specific button variations */
+.supplier-action-button.select {
+  background-color: #1e40af;
+}
+
+.supplier-action-button.select:hover {
+  background-color: #1e3a8a;
+}
+
+.supplier-action-button.visit {
+  background-color: #14b8a6;
+}
+
+.supplier-action-button.visit:hover {
+  background-color: #0d9488;
+}
+
+.supplier-action-button.complaint {
+  background-color: #dc2626;
+}
+
+.supplier-action-button.complaint:hover {
+  background-color: #b91c1c;
+}
+
+/* Selected supplier badge */
+.selected-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #dcfce7;
+  color: #166534;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.selected-badge svg {
+  width: 16px;
+  height: 16px;
 }

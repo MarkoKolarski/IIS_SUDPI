@@ -25,6 +25,13 @@ import ScheduleVisit from "./pages/ScheduleVisit.js";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import EditSuppliers from "./pages/EditSuppliers";
 import EditSupplier from "./pages/EditSupplier";
+import DodajArtikal from "./pages/DodajArtikal";
+import DodajSkladiste from "./pages/DodajSkladiste";
+import PretragaArtikala from "./pages/PretragaArtikala";
+import IzmeniArtikal from "./pages/IzmeniArtikal";
+import PregledZaliha from "./pages/PregledZaliha";
+import IzmenaZaliha from "./pages/IzmenaZaliha";
+import DashboardSO from "./pages/DashboardSO";
 
 const App = () => {
   return (
@@ -141,6 +148,64 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["kontrolor_kvaliteta"]}>
               <ScheduleVisit />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Skladisni operater routes */}
+        <Route
+          path="/dashboard-so"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <DashboardSO />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dodaj-artikal"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <DodajArtikal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dodaj-skladiste"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <DodajSkladiste />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pretraga-artikala"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <PretragaArtikala />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/izmeni-artikal/:sifra_a"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <IzmeniArtikal />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pregled-zaliha"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <PregledZaliha />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/izmena-zaliha/:zalihaId"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <IzmenaZaliha />
             </ProtectedRoute>
           }
         />

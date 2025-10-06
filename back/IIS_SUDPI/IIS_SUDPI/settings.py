@@ -201,3 +201,32 @@ BACKEND_URL = 'http://localhost:8000'
 # MIKROSERVIS - InfluxDB Financial Events Analysis Service
 MIKROSERVIS_URL = env('MIKROSERVIS_URL', default='http://localhost:8001')
 
+# Logging konfiguracija za automatsku proveru artikala
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '[{levelname}] {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'app.signals': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+        },
+    },
+}
+

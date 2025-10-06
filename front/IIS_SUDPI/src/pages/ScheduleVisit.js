@@ -14,6 +14,7 @@ const ScheduleVisit = () => {
   const [visitTime, setVisitTime] = useState("09:00");
   const [duration, setDuration] = useState(2);
   const [error, setError] = useState(null);
+  const [busySlots, setBusySlots] = useState([]);
 
   useEffect(() => {
     const fetchSupplier = async () => {
@@ -24,8 +25,70 @@ const ScheduleVisit = () => {
         setError("Greška pri učitavanju dobavljača");
       }
     };
+
+    const fetchBusySlots = async () => {
+      try {
+        const response = await axiosInstance.get("/visits/busy-slots/");
+        setBusySlots(
+          response.data.map((slot) => ({
+            start: new Date(slot.datum_od),
+            end: new Date(slot.datum_do),
+          }))
+        );
+      } catch (err) {
+        console.error("Error fetching busy slots:", err);
+      }
+    };
+
     fetchSupplier();
+    fetchBusySlots();
   }, [supplierId]);
+
+  const isDateBusy = (date) => {
+    return busySlots.some((slot) => {
+      const slotDate = new Date(slot.start);
+      return slotDate.toDateString() === date.toDateString();
+    });
+  };
+
+  const isTimeSlotBusy = (selectedDateTime) => {
+    return busySlots.some((slot) => {
+      const startTime = new Date(slot.start);
+      const endTime = new Date(slot.end);
+      return selectedDateTime >= startTime && selectedDateTime <= endTime;
+    });
+  };
+
+  const isDateDisabled = ({ date }) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  const handleDateChange = (date) => {
+    const now = new Date();
+    if (date < now) {
+      setError("Ne možete zakazati posetu u prošlosti");
+      return;
+    }
+    setSelectedDate(date);
+    setError(null);
+  };
+
+  const handleTimeChange = (e) => {
+    const selectedDateTime = new Date(selectedDate);
+    const [hours, minutes] = e.target.value.split(":");
+    selectedDateTime.setHours(parseInt(hours), parseInt(minutes));
+
+    const now = new Date();
+    if (selectedDateTime < now) {
+      setError("Ne možete zakazati posetu u prošlosti");
+      return;
+    }
+    setVisitTime(e.target.value);
+    setError(null);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +100,14 @@ const ScheduleVisit = () => {
       const endDate = new Date(visitDate);
       endDate.setHours(endDate.getHours() + duration);
 
+      // Check if the selected time slot is busy
+      if (isTimeSlotBusy(visitDate)) {
+        setError(
+          "Izabrani termin je već zauzet. Molimo izaberite drugi termin."
+        );
+        return;
+      }
+
       await axiosInstance.post("/visits/create/", {
         dobavljac_id: supplierId,
         datum_od: visitDate.toISOString(),
@@ -45,8 +116,16 @@ const ScheduleVisit = () => {
 
       navigate("/visits");
     } catch (err) {
-      setError("Greška pri zakazivanju posete");
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Greška pri zakazivanju posete");
+      }
     }
+  };
+
+  const tileClassName = ({ date }) => {
+    return isDateBusy(date) ? "busy" : "";
   };
 
   if (!supplier) return <div>Učitavanje...</div>;
@@ -65,11 +144,19 @@ const ScheduleVisit = () => {
           <form onSubmit={handleSubmit} className="schedule-visit-form">
             <div className="calendar-section">
               <Calendar
-                onChange={setSelectedDate}
+                onChange={handleDateChange}
                 value={selectedDate}
                 minDate={new Date()}
                 className="visit-calendar"
+                tileClassName={tileClassName}
+                tileDisabled={isDateDisabled}
               />
+              {isDateBusy(selectedDate) && (
+                <div className="time-slot-warning">
+                  Izabrani datum ima već zakazane posete. Proverite dostupne
+                  termine.
+                </div>
+              )}
             </div>
 
             <div className="visit-details">
@@ -78,7 +165,7 @@ const ScheduleVisit = () => {
                 <input
                   type="time"
                   value={visitTime}
-                  onChange={(e) => setVisitTime(e.target.value)}
+                  onChange={handleTimeChange}
                   required
                 />
               </div>

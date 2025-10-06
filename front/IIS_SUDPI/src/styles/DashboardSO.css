@@ -1,0 +1,500 @@
+/* General Wrapper and Main Content */
+.dashboard-so-wrapper {
+    display: flex;
+    background-color: #f0fdfa; /* Very light green from login page */
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dashboard-so-main-content {
+    flex-grow: 1;
+    margin-left: 280px; /* Default sidebar width */
+    transition: margin-left 0.3s ease;
+    padding: 0;
+}
+
+.dashboard-so-wrapper.sidebar-collapsed .dashboard-so-main-content {
+    margin-left: 80px; /* Collapsed sidebar width */
+}
+
+/* Header Section */
+.dashboard-header {
+    background-color: #14b8a6; /* Main green from login page */
+    padding: 24px;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.dashboard-header h1 {
+    font-size: 30px;
+    font-weight: 700;
+    color: #ffffff; /* White text on green background */
+    margin: 0;
+}
+
+/* Content Area */
+.dashboard-content {
+    padding: 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Grid Layout */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+/* Card Styling */
+.dashboard-card {
+    background-color: #ffffff; /* White background for cards */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #a7f3d0; /* Light green border */
+}
+
+.card-header {
+    background-color: #14b8a6; /* Main green */
+    padding: 16px 20px;
+}
+
+.card-header h3 {
+    color: #ffffff; /* White text */
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card-content {
+    padding: 20px;
+    flex-grow: 1;
+}
+
+/* Placeholder Content */
+.placeholder-content {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 40px 20px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #d1fae5; /* Light green background */
+    border-radius: 4px;
+}
+
+.placeholder-content p {
+    margin: 0;
+    font-size: 16px;
+    color: #065f46;
+}
+
+/* Loading and Error States */
+.loading-message, .error-message {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    margin: 20px;
+    border-radius: 8px;
+}
+
+.loading-message {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.no-data {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Skladista Table Styles */
+.skladista-table-container {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    height: 200px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    background: white;
+}
+
+.skladista-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+    background-color: white;
+    min-width: 400px;
+    height: auto;
+}
+
+.skladista-table th {
+    padding: 8px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    background-color: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: 40px;
+    vertical-align: middle;
+}
+
+.skladista-table th:nth-child(2) {
+    text-align: center;
+}
+
+.skladista-table td {
+    padding: 8px 16px;
+    color: #1f2937;
+    border-bottom: 1px solid #f3f4f6;
+    height: 40px;
+    vertical-align: middle;
+}
+
+.skladista-table tbody tr {
+    height: 40px;
+}
+
+.skladista-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.skladista-table th:nth-child(2),
+.skladista-table td:nth-child(2) {
+    text-align: center;
+}
+
+.skladista-table .no-data {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 20px;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 20px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+.loading {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+.error {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .dashboard-content {
+        padding: 24px;
+    }
+}
+
+/* Force scrollbar to always be visible */
+.skladista-table-container {
+    scrollbar-width: auto;
+    scrollbar-color: #14b8a6 #f1f5f9;
+}
+
+.skladista-table-container::-webkit-scrollbar {
+    width: 16px;
+    background: #f1f5f9;
+}
+
+.skladista-table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.skladista-table-container::-webkit-scrollbar-thumb {
+    background: #14b8a6;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+    min-height: 20px;
+}
+
+.skladista-table-container::-webkit-scrollbar-thumb:hover {
+    background: #0f766e;
+}
+
+.skladista-table-container::-webkit-scrollbar-corner {
+    background: #f1f5f9;
+}
+
+@media (max-width: 768px) {
+    .dashboard-so-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+    }
+    .dashboard-so-wrapper.sidebar-collapsed .dashboard-so-main-content {
+        margin-left: 0;
+    }
+    .dashboard-content {
+        padding: 16px;
+    }
+    .dashboard-header h1 {
+        font-size: 24px;
+    }
+}
+
+/* Artikli Table Styles */
+.artikli-table-container {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    background: white;
+}
+
+.artikli-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+    background-color: white;
+    min-width: 500px;
+    height: auto;
+}
+
+.artikli-table th {
+    padding: 8px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    background-color: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    height: 40px;
+    vertical-align: middle;
+}
+
+.artikli-table th:nth-child(2),
+.artikli-table th:nth-child(3) {
+    text-align: right;
+}
+
+.artikli-table th:nth-child(4) {
+    text-align: center;
+}
+
+.artikli-table td {
+    padding: 8px 16px;
+    color: #1f2937;
+    border-bottom: 1px solid #f3f4f6;
+    height: 40px;
+    vertical-align: middle;
+}
+
+.artikli-table tbody tr {
+    height: 40px;
+}
+
+.artikli-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+.price-cell {
+    text-align: right;
+    font-weight: normal;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.discount-price .discounted {
+    color: #dc2626;
+    font-weight: normal;
+}
+
+.discount-price .no-discount {
+    color: #6b7280;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.artikli-table .no-data {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* Card subtitle styling */
+.card-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: normal;
+}
+
+/* Scrollbar styling for artikli table - isti kao skladista */
+.artikli-table-container {
+    scrollbar-width: auto;
+    scrollbar-color: #14b8a6 #f1f5f9;
+}
+
+.artikli-table-container::-webkit-scrollbar {
+    width: 16px;
+    background: #f1f5f9;
+}
+
+.artikli-table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.artikli-table-container::-webkit-scrollbar-thumb {
+    background: #14b8a6;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+    min-height: 20px;
+}
+
+.artikli-table-container::-webkit-scrollbar-thumb:hover {
+    background: #0f766e;
+}
+
+.artikli-table-container::-webkit-scrollbar-corner {
+    background: #f1f5f9;
+}
+
+/* Statistike styles */
+.statistike-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px;
+}
+
+.statistika-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f8fafc;
+    border-radius: 6px;
+    border-left: 4px solid #14b8a6;
+    transition: background-color 0.2s ease;
+}
+
+.statistika-item:hover {
+    background-color: #f1f5f9;
+}
+
+.statistika-label {
+    font-size: 13px;
+    color: #374151;
+    font-weight: 500;
+}
+
+.statistika-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    min-width: 60px;
+    text-align: right;
+}
+
+.statistika-value.rizicni {
+    color: #f97316; /* orange for risky */
+}
+
+.statistika-value.propali {
+    color: #dc2626; /* red for expired */
+}
+
+.statistika-value.steta {
+    color: #7c2d12; /* dark red for damage */
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Grafikon styles */
+.grafikon-container {
+    padding: 16px;
+    height: 180px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.grafikon-stubici {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    height: 140px;
+    width: 100%;
+    justify-content: space-around;
+    padding: 0 10px;
+}
+
+.grafikon-stubic-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.grafikon-vrednost {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.grafikon-stubic {
+    width: 100%;
+    max-width: 60px;
+    background: linear-gradient(to top, #14b8a6, #06d6a0);
+    border-radius: 4px 4px 0 0;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.2);
+    min-height: 5px;
+}
+
+.grafikon-stubic:hover {
+    background: linear-gradient(to top, #0f766e, #059669);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(20, 184, 166, 0.3);
+}
+
+.grafikon-label {
+    font-size: 11px;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.2;
+    word-wrap: break-word;
+    max-width: 80px;
+}
