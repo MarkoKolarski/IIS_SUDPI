@@ -198,3 +198,6 @@ SIMPLE_JWT = {
 FRONTEND_URL = 'http://localhost:3000'
 BACKEND_URL = 'http://localhost:8000'
 
+# MIKROSERVIS - InfluxDB Financial Events Analysis Service
+MIKROSERVIS_URL = env('MIKROSERVIS_URL', default='http://localhost:8001')
+
