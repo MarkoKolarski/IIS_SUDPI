@@ -478,3 +478,25 @@ class Notifikacija(models.Model):
     
     def __str__(self):
         return f"Notifikacija za {self.korisnik.ime_k} {self.korisnik.prz_k} - {self.datum_n.strftime('%d.%m.%Y')}"
+    
+
+class Vozilo(models.Model):
+    sifra_v = models.AutoField(primary_key=True)
+    marka = models.CharField(max_length=50)
+    model = models.CharField(max_length=50)
+    registracija = models.DateTimeField(auto_now_add=True)
+    kapacitet = models.DecimalField(max_digits=10, decimal_places=2)
+    status_choices = [
+        ('zauzeto', 'Zauzeto'),
+        ('slobodno', 'Slobodno'),
+        ('u_kvaru', 'U kvaru'),
+        ('na_servisu', 'Na servisu'),
+    ]
+    status = models.CharField(max_length=20, choices=status_choices, default='aktivno')
+
+    def __str__(self):
+        return f"{self.marka} {self.model} ({self.registracija})"
+    
+    class Meta:
+        db_table = 'vozilo'
+
