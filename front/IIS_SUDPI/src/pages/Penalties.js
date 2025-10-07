@@ -14,6 +14,8 @@ const Penalties = () => {
     dobavljac: "svi",
     status: "svi",
   });
+  const [checkingViolations, setCheckingViolations] = useState(false);
+  const [violationMessage, setViolationMessage] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
@@ -82,6 +84,47 @@ const Penalties = () => {
     }));
   };
 
+  // Handler za automatsku proveru kršenja i kreiranje penala
+  const handleCheckViolations = async () => {
+    try {
+      setCheckingViolations(true);
+      setViolationMessage(null);
+
+      const response = await axiosInstance.post("penalties/auto-create/");
+      
+      const { message, penalties_created, violations_found } = response.data;
+      
+      // Prikaži success poruku
+      setViolationMessage({
+        type: "success",
+        text: `${message} Pronađeno: ${violations_found}, Kreirano: ${penalties_created} penala.`,
+      });
+
+      // Refresh penala i analize
+      await fetchPenalties();
+      await fetchAnalysis();
+      
+      // Sakrij poruku nakon 5 sekundi
+      setTimeout(() => {
+        setViolationMessage(null);
+      }, 5000);
+      
+    } catch (err) {
+      console.error("Greška pri proveri kršenja:", err);
+      setViolationMessage({
+        type: "error",
+        text: err.response?.data?.error || "Greška pri proveri kršenja ugovora",
+      });
+      
+      // Sakrij poruku nakon 5 sekundi
+      setTimeout(() => {
+        setViolationMessage(null);
+      }, 5000);
+    } finally {
+      setCheckingViolations(false);
+    }
+  };
+
   // Formatiranje datuma
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -148,7 +191,33 @@ const Penalties = () => {
               ))}
             </select>
           </div>
+          <div className="filter-dropdown" style={{ marginLeft: 'auto' }}>
+            <label>&nbsp;</label>
+            <button
+              className="check-violations-btn"
+              onClick={handleCheckViolations}
+              disabled={checkingViolations}
+            >
+              {checkingViolations ? (
+                <>
+                  <span className="spinner"></span>
+                  Proveravam...
+                </>
+              ) : (
+                <>
+                  <span>🔍</span>
+                  Proveri kršenja ugovora
+                </>
+              )}
+            </button>
+          </div>
         </section>
+
+        {violationMessage && (
+          <div className={`violation-message ${violationMessage.type}`}>
+            {violationMessage.text}
+          </div>
+        )}
 
         <section className="penalties-table-section">
           <div className="table-container">

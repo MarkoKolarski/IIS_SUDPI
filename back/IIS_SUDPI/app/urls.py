@@ -1,6 +1,6 @@
 from django.urls import path
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment, busy_visit_slots
+from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment, busy_visit_slots
 
 urlpatterns = [
     path('', index, name='index'),
@@ -17,6 +17,8 @@ urlpatterns = [
     path('penalties/', penalties_list, name='penalties_list'),
     path('penalties/filter-options/', penalties_filter_options, name='penalties_filter_options'),
     path('penalties/analysis/', penalties_analysis, name='penalties_analysis'),
+    path('penalties/check-violations/', preview_contract_violations, name='preview_contract_violations'),
+    path('penalties/auto-create/', check_and_create_penalties, name='check_and_create_penalties'),
     path('suppliers/', suppliers.as_view(), name='dobavljaci-list'),
     path('suppliers/<int:sifra_d>/', suppliers.as_view(), name='dobavljaci-detail'),
     path('suppliers/<int:sifra_d>/select/', select_supplier, name='select-supplier'),

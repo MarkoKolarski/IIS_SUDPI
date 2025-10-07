@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+from .models import Faktura, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -1007,6 +1007,296 @@ def send_confirmation_notification(dobavljac_email, transakcija, faktura):
     except Exception as e:
         logger.error(f"Greška pri slanju email potvrde: {str(e)}")
         return False
+
+def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji=""):
+    """
+    Slanje email notifikacije dobavljaču o kršenju ugovora i dodeljenom penalu
+    """
+    try:
+        subject = f"OBAVEŠTENJE: Kršenje ugovora {ugovor.sifra_u} - Dodeljen penal"
+        message = f"""
+        Poštovani,
+        
+        Obaveštavamo Vas da je evidentirano kršenje uslova ugovora, te je na osnovu toga dodeljen penal.
+        
+        ═══════════════════════════════════════════════
+        DETALJI UGOVORA:
+        ═══════════════════════════════════════════════
+        - Broj ugovora: {ugovor.sifra_u}
+        - Datum potpisa: {ugovor.datum_potpisa_u.strftime('%d.%m.%Y')}
+        - Datum isteka: {ugovor.datum_isteka_u.strftime('%d.%m.%Y')}
+        - Status ugovora: {ugovor.get_status_u_display()}
+        
+        ═══════════════════════════════════════════════
+        DETALJI PENALA:
+        ═══════════════════════════════════════════════
+        - Broj penala: {penal.sifra_p}
+        - Razlog: {penal.razlog_p}
+        - Iznos penala: {penal.iznos_p} RSD
+        - Datum evidentiranja: {penal.datum_p.strftime('%d.%m.%Y')}
+        
+        {razlog_detalji}
+        
+        ═══════════════════════════════════════════════
+        SLEDEĆI KORACI:
+        ═══════════════════════════════════════════════
+        1. Iznos penala će biti odbijen od naredne isplate
+        2. Molimo Vas da preduzmete mere kako bi se ovakve situacije izbegavale u budućnosti
+        3. Za dodatna pitanja ili žalbe, kontaktirajte našeg nabavnog menadžera
+        
+        NAPOMENA: Učestala kršenja ugovora mogu dovesti do prekida poslovne saradnje.
+        
+        Srdačan pozdrav,
+        Sistem za upravljanje nabavkom
+        """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [dobavljac_email],
+            fail_silently=False,
+        )
+        logger.info(f"Email o penalu poslat na {dobavljac_email} za ugovor {ugovor.sifra_u}, penal {penal.sifra_p}")
+        return True
+    except Exception as e:
+        logger.error(f"Greška pri slanju email obaveštenja o penalu: {str(e)}")
+        return False
+
+
+def check_contract_violations():
+    """
+    Proverava sve aktivne ugovore i detektuje kršenja:
+    - Istekli ugovori koji nisu označeni kao istekli
+    - Ugovori koji su prešli rok isporuke (ako postoje fakture koje kasne)
+    
+    Returns:
+        list: Lista dictionary-ja sa detaljima o prekršajima
+    """
+    violations = []
+    danas = date.today()
+    
+    try:
+        # 1. PROVERA: Aktivni ugovori koji su istekli
+        istekli_ugovori = Ugovor.objects.filter(
+            status_u='aktivan',
+            datum_isteka_u__lt=danas
+        ).select_related('dobavljac')
+        
+        for ugovor in istekli_ugovori:
+            violations.append({
+                'ugovor': ugovor,
+                'tip_krsenja': 'istek_ugovora',
+                'razlog': f'Ugovor je istekao {ugovor.datum_isteka_u.strftime("%d.%m.%Y")}, ali nije zatvoren',
+                'iznos_penala': Decimal('5000.00'),  # Fiksni penal za neažurirane ugovore
+                'detalji': f'Ugovor br. {ugovor.sifra_u} je trebao biti zatvoren pre {(danas - ugovor.datum_isteka_u).days} dana.'
+            })
+        
+        # 2. PROVERA: Fakture koje kasne više od 30 dana sa rokom plaćanja
+        pre_30_dana = danas - timedelta(days=30)
+        fakture_koje_kasne = Faktura.objects.filter(
+            status_f__in=['primljena', 'verifikovana'],
+            rok_placanja_f__lt=pre_30_dana
+        ).select_related('ugovor__dobavljac')
+        
+        for faktura in fakture_koje_kasne:
+            # Proveri da li već postoji penal za ovu fakturu
+            vec_penalizovano = Penal.objects.filter(
+                ugovor=faktura.ugovor,
+                razlog_p__icontains=f'Faktura {faktura.sifra_f}'
+            ).exists()
+            
+            if not vec_penalizovano:
+                dana_kasnjenja = (danas - faktura.rok_placanja_f).days
+                iznos_penala = Decimal('1000.00') + (Decimal('100.00') * dana_kasnjenja)  # 1000 + 100 RSD po danu
+                
+                violations.append({
+                    'ugovor': faktura.ugovor,
+                    'tip_krsenja': 'kasnjenje_placanja',
+                    'razlog': f'Faktura {faktura.sifra_f} kasni {dana_kasnjenja} dana sa rokom plaćanja',
+                    'iznos_penala': min(iznos_penala, Decimal('50000.00')),  # Maksimalno 50,000 RSD
+                    'detalji': f'Rok plaćanja je bio {faktura.rok_placanja_f.strftime("%d.%m.%Y")}, a danas je {danas.strftime("%d.%m.%Y")}. Ukupno kašnjenje: {dana_kasnjenja} dana.',
+                    'faktura': faktura
+                })
+        
+        logger.info(f"Provera kršenja ugovora završena. Pronađeno {len(violations)} kršenja.")
+        return violations
+        
+    except Exception as e:
+        logger.error(f"Greška pri proveri kršenja ugovora: {str(e)}")
+        return []
+
+
+def auto_create_penalty(violation_data):
+    """
+    Automatski kreira penal za dato kršenje i šalje email obaveštenje dobavljaču
+    
+    Args:
+        violation_data: Dictionary sa podacima o kršenju (iz check_contract_violations)
+        
+    Returns:
+        tuple: (success: bool, penal: Penal or None, error_message: str or None)
+    """
+    try:
+        ugovor = violation_data['ugovor']
+        dobavljac = ugovor.dobavljac
+        
+        # Kreiraj penal
+        with transaction.atomic():
+            from django.db.models import Max
+            max_penal_id = Penal.objects.aggregate(Max('sifra_p'))['sifra_p__max'] or 0
+            next_penal_id = max_penal_id + 1
+            
+            penal = Penal.objects.create(
+                sifra_p=next_penal_id,
+                razlog_p=violation_data['razlog'],
+                iznos_p=violation_data['iznos_penala'],
+                ugovor=ugovor
+            )
+            
+            # Ako je kršenje 'istek_ugovora', ažuriraj status ugovora
+            if violation_data['tip_krsenja'] == 'istek_ugovora':
+                ugovor.status_u = 'istekao'
+                ugovor.save()
+            
+            logger.info(f"Automatski kreiran penal {penal.sifra_p} za ugovor {ugovor.sifra_u}")
+        
+        # Pošalji email obaveštenje dobavljaču
+        email_sent = send_penalty_notification(
+            dobavljac_email=dobavljac.email,
+            penal=penal,
+            ugovor=ugovor,
+            razlog_detalji=f"\n{violation_data.get('detalji', '')}\n"
+        )
+        
+        if email_sent:
+            logger.info(f"Email obaveštenje uspešno poslato za penal {penal.sifra_p}")
+        else:
+            logger.warning(f"Email obaveštenje nije poslato za penal {penal.sifra_p}")
+        
+        return True, penal, None
+        
+    except Exception as e:
+        error_msg = f"Greška pri automatskom kreiranju penala: {str(e)}"
+        logger.error(error_msg)
+        return False, None, error_msg
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['nabavni_menadzer', 'finansijski_analiticar', 'administrator'])
+def check_and_create_penalties(request):
+    """
+    API endpoint za automatsku proveru kršenja ugovora i kreiranje penala
+    
+    Ova funkcija:
+    1. Proverava sve aktivne ugovore i detektuje kršenja
+    2. Automatski kreira penale za svako kršenje
+    3. Šalje email obaveštenja dobavljačima
+    
+    Može se pozvati ručno ili automatski (npr. putem schedulera)
+    
+    Returns:
+        JSON sa detaljima o kreiranim penalima i greškama
+    """
+    try:
+        # Proveri kršenja ugovora
+        violations = check_contract_violations()
+        
+        if not violations:
+            return Response({
+                'message': 'Nije pronađeno nijedno kršenje ugovora',
+                'violations_found': 0,
+                'penalties_created': 0,
+                'errors': []
+            }, status=status.HTTP_200_OK)
+        
+        # Kreiraj penale za svako kršenje
+        created_penalties = []
+        errors = []
+        
+        for violation in violations:
+            success, penal, error_msg = auto_create_penalty(violation)
+            
+            if success:
+                created_penalties.append({
+                    'penal_id': penal.sifra_p,
+                    'ugovor_id': violation['ugovor'].sifra_u,
+                    'dobavljac': violation['ugovor'].dobavljac.naziv,
+                    'tip_krsenja': violation['tip_krsenja'],
+                    'iznos': float(violation['iznos_penala']),
+                    'razlog': violation['razlog']
+                })
+            else:
+                errors.append({
+                    'ugovor_id': violation['ugovor'].sifra_u,
+                    'dobavljac': violation['ugovor'].dobavljac.naziv,
+                    'error': error_msg
+                })
+        
+        # Pripremi odgovor
+        response_data = {
+            'message': f'Provera završena. Kreirano {len(created_penalties)} penala.',
+            'violations_found': len(violations),
+            'penalties_created': len(created_penalties),
+            'penalties': created_penalties,
+            'errors': errors
+        }
+        
+        # Loguj rezultat
+        logger.info(f"Automatska provera penala: {len(violations)} kršenja, {len(created_penalties)} penala kreirano")
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        logger.error(f"Greška pri automatskoj proveri i kreiranju penala: {str(e)}")
+        return Response({
+            'error': 'Greška pri proveri kršenja ugovora',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['nabavni_menadzer', 'finansijski_analiticar', 'administrator'])
+def preview_contract_violations(request):
+    """
+    API endpoint za pregled kršenja ugovora BEZ kreiranja penala
+    
+    Koristi se za pregled šta bi se desilo kada se pozove check_and_create_penalties
+    
+    Returns:
+        JSON sa listom pronađenih kršenja
+    """
+    try:
+        violations = check_contract_violations()
+        
+        violations_data = []
+        for violation in violations:
+            violations_data.append({
+                'ugovor_id': violation['ugovor'].sifra_u,
+                'dobavljac': violation['ugovor'].dobavljac.naziv,
+                'dobavljac_email': violation['ugovor'].dobavljac.email,
+                'tip_krsenja': violation['tip_krsenja'],
+                'razlog': violation['razlog'],
+                'iznos_penala': float(violation['iznos_penala']),
+                'detalji': violation['detalji'],
+                'datum_potpisa': violation['ugovor'].datum_potpisa_u.strftime('%d.%m.%Y'),
+                'datum_isteka': violation['ugovor'].datum_isteka_u.strftime('%d.%m.%Y'),
+                'status_ugovora': violation['ugovor'].status_u
+            })
+        
+        return Response({
+            'message': f'Pronađeno {len(violations)} kršenja ugovora',
+            'violations_count': len(violations),
+            'violations': violations_data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška pri pregledu kršenja ugovora: {str(e)}")
+        return Response({
+            'error': 'Greška pri pregledu kršenja ugovora',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 def create_transaction(faktura):
