@@ -33,6 +33,32 @@
     margin: 0;
 }
 
+.download-pdf-btn {
+    background-color: #14b8a6; /* Main green */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0 16px;
+    height: 46px;
+    width: 160px;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+    font-weight: 500;
+}
+
+.download-pdf-btn:hover {
+    background-color: #0f766e; /* Darker green on hover */
+}
+
+.pdf-icon {
+    font-size: 16px;
+}
+
 /* Filter Section */
 .reports-filter-section {
     display: flex;
@@ -47,6 +73,17 @@
     display: flex;
     gap: 16px;
     align-items: flex-end;
+}
+
+/* Container for right-aligned actions (PDF button, etc.) */
+.filter-actions {
+    margin-left: auto; /* push to the far right */
+    display: flex;
+    align-items: flex-end;
+}
+
+.filter-actions label {
+    display: none; /* hide the empty label to keep layout consistent */
 }
 
 .filter-dropdown {
@@ -365,11 +402,16 @@
         align-items: stretch;
         width: 100%;
     }
-    .filter-dropdown button {
+    .filter-dropdown button,
+    .filter-dropdown select,
+    .download-pdf-btn {
         width: 100%;
     }
     .generate-report-btn {
         margin-left: 0;
         width: 100%;
+    }
+    .reports-header h1 {
+        font-size: 28px;
     }
 }
