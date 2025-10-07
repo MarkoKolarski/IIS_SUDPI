@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust
+from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj
+
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -377,3 +378,74 @@ class RizicniArtikalSerializer(serializers.ModelSerializer):
         danas = date.today()
         razlika = obj.rok_trajanja_a - danas
         return razlika.days
+
+class TemperaturaSerializer(serializers.ModelSerializer):
+    skladiste_info = serializers.CharField(source='skladiste.mesto_s', read_only=True)
+    
+    class Meta:
+        model = Temperatura
+        fields = '__all__'
+
+class NotifikacijaSerializer(serializers.ModelSerializer):
+    korisnik_info = serializers.CharField(source='korisnik.ime', read_only=True)
+    
+    class Meta:
+        model = Notifikacija
+        fields = '__all__'
+
+class VoziloSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Vozilo
+        fields = '__all__'
+
+class ServisSerializer(serializers.ModelSerializer):
+    vozilo_info = serializers.CharField(source='vozilo.registracija', read_only=True)
+    vrsta_display = serializers.CharField(source='get_vrsta_display', read_only=True)
+    
+    class Meta:
+        model = Servis
+        fields = '__all__'
+
+class RutaSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Ruta
+        fields = '__all__'
+
+class IsporukaSerializer(serializers.ModelSerializer):
+    ruta_info = serializers.CharField(source='ruta.polazna_tacka', read_only=True)
+    vozilo_info = serializers.CharField(source='vozilo.registracija', read_only=True)
+    vozac_info = serializers.CharField(source='vozac.ime', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Isporuka
+        fields = '__all__'
+
+class UpozorenjeSerializer(serializers.ModelSerializer):
+    isporuka_info = serializers.CharField(source='isporuka.sifra_i', read_only=True)
+    tip_display = serializers.CharField(source='get_tip_display', read_only=True)
+    
+    class Meta:
+        model = Upozorenje
+        fields = '__all__'
+
+class VoziloOmogucavaTemperaturaSerializer(serializers.ModelSerializer):
+    temperatura_info = serializers.CharField(source='sifra_temp.vrednost', read_only=True)
+    vozilo_info = serializers.CharField(source='sifra_vozila.registracija', read_only=True)
+    isporuka_info = serializers.CharField(source='isporuka.sifra_i', read_only=True)
+    
+    class Meta:
+        model = voziloOmogucavaTemperatura
+        fields = '__all__'
+
+class IzvestajSerializer(serializers.ModelSerializer):
+    kreirao_info = serializers.CharField(source='kreirao.ime', read_only=True)
+    tip_i_display = serializers.CharField(source='get_tip_i_display', read_only=True)
+    
+    class Meta:
+        model = Izvestaj
+        fields = '__all__'

@@ -12,8 +12,11 @@ from django.db.models import Sum, Q, Count, Avg, Max
 from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .forms import UserProfileUpdateForm
+from .models import Faktura, User, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -2327,4 +2330,38 @@ def artikli_grafikon_po_nedeljama(request):
         return Response(
             {'error': 'Greška pri generisanju grafikona', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        )    
+#@login_required
+# @api_view(['POST'])
+# @permission_classes([AllowAny]) 
+# def user_profile_update(request, user_id=None):
+#     # Ako nije prosleđen user_id, koristi trenutnog korisnika
+#     if user_id:
+#         user = get_object_or_404(User, sifra_k=user_id)
+#         # Provera permisija - samo administrator može da menja druge korisnike
+#         if not request.user.tip_k == 'administrator' and request.user != user:
+#             messages.error(request, "Nemate dozvolu za izmenu ovog profila")
+#             return redirect('dashboard')
+#     else:
+#         user = request.user
+
+#     if request.method == 'POST':
+#         if 'odustani' in request.POST:
+#             return redirect('user_list')  # ili neka druga stranica
+            
+#         form = UserProfileUpdateForm(request.POST, instance=user)
+#         if form.is_valid():
+#             form.save()
+#             messages.success(request, "Profil je uspešno ažuriran")
+#             return redirect('user_list')  # ili 'profile_view'
+#     else:
+#         form = UserProfileUpdateForm(instance=user)
+#         # Ukloni password polje iz forme pri prikazu
+#         form.fields['password'].widget.attrs['placeholder'] = 'Ostavite prazno ako ne želite da promenite lozinku'
+
+#     context = {
+#         'form': form,
+#         'user_to_edit': user,
+#         'is_own_profile': user == request.user,
+#     }
+#     return render(request, 'user_profile_update.html', context)
