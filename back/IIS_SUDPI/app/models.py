@@ -518,3 +518,23 @@ class Servis(models.Model):
     class Meta:
         db_table = 'servis'
 
+class Ruta(models.Model):
+    sifra_r = models.AutoField(primary_key=True)
+    polazna_tacka = models.CharField(max_length=100)
+    odrediste = models.CharField(max_length=100)
+    duzina_km = models.DecimalField(max_digits=10, decimal_places=2)
+    vreme_dolaska = models.DurationField()
+    status_choices = [
+        ('planirana', 'Planirana'),
+        ('zavrsena', 'Zavrsena'),
+        ('u_toku', 'U toku'),
+        ('odstupanje', 'Odstupanje od pocetne rute'),
+    ]
+    status = models.CharField(max_length=20, choices=status_choices)
+
+    
+    def __str__(self):
+        return f"{self.polazna_tacka} -> {self.odrediste}"
+    
+    class Meta:
+        db_table = 'ruta'
