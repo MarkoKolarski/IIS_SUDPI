@@ -185,6 +185,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'onlybuns.isa@gmail.com'
 EMAIL_HOST_PASSWORD = 'uxuwqvwefovkufvq '
+DEFAULT_FROM_EMAIL = 'onlybuns.isa@gmail.com'
 
 #JWT
 SIMPLE_JWT = {

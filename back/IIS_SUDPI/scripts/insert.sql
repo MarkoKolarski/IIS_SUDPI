@@ -524,6 +524,22 @@ VALUES (11, 'VELIKI PENAL: Šećerana Crvenka - ekstremno kašnjenje 14 dana. Iz
 INSERT INTO notifikacija (sifra_n, poruka_n, datum_n, procitana_n, link_n, korisnik_id)
 VALUES (12, 'Novi penal: Voće Srbija - kvalitet II umesto I klase. Iznos: 8,500 RSD', SYSTIMESTAMP - 35, 1, NULL, 3);
 
+INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
+VALUES (6, 'SIMULACIJA Šećerana Crvenka', 'salebecej1@gmail.com', '32165498721', 'Kristal šećer', 95.00, 4, 9.00, TO_DATE('2025-09-18', 'YYYY-MM-DD'), 1);
+
+INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
+VALUES (17, TO_DATE('2025-01-10', 'YYYY-MM-DD'), TO_DATE('2026-01-10', 'YYYY-MM-DD'), 'aktivan', 
+'Isporuka brašna u količini min 1000kg mesečno. Cena fiksna za prvih 6 meseci. Rok plaćanja 30 dana.', 6);
+
+INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
+VALUES (22, 85500.00, TO_DATE('2025-09-01', 'YYYY-MM-DD'), TO_DATE('2025-10-01', 'YYYY-MM-DD'), 'verifikovana', NULL, 17);
+
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (23, 'Pšenično brašno T-500', 1500, 90.50, 'Mesečna isporuka - septembar 2025', 22, 1);
+
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (24, 'Pšenično brašno T-500', 1000, 85.50, 'Mesečna isporuka - oktobar 2025', 22, 1);
+
 -- ============================================
 -- COMMIT
 -- ============================================

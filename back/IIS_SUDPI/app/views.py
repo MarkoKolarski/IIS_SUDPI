@@ -13,7 +13,7 @@ from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
-from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
+from .models import Faktura, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -33,7 +33,10 @@ from .serializers import (
 from rest_framework import generics, filters
 from django.db import transaction
 from .decorators import allowed_users
+from django.core.mail import send_mail
+from django.conf import settings
 import logging
+import uuid
 
 # Postavi logging
 logger = logging.getLogger(__name__)
@@ -928,6 +931,251 @@ def penalties_analysis(request):
     return Response({
         'dobavljaci_analiza': dobavljaci_analiza
     }, status=status.HTTP_200_OK)
+
+
+# ========== SIMULACIJA PLAĆANJA - HELPER FUNKCIJE ==========
+
+def send_payment_notification(dobavljac_email, faktura):
+    """
+    Slanje email notifikacije dobavljaču o pokretanju plaćanja
+    """
+    try:
+        subject = f"Notifikacija: Pokrenuto plaćanje za fakturu {faktura.sifra_f}"
+        message = f"""
+        Poštovani,
+        
+        Obaveštavamo Vas da je pokrenuto plaćanje za sledeću fakturu:
+        
+        Broj fakture: {faktura.sifra_f}
+        Iznos: {faktura.iznos_f} RSD
+        Datum prijema: {faktura.datum_prijema_f}
+        Rok plaćanja: {faktura.rok_placanja_f}
+        
+        Transakcija je u toku. Dobićete potvrdu nakon uspešne isplate.
+        
+        Srdačan pozdrav,
+        Sistem za upravljanje nabavkom
+        """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [dobavljac_email],
+            fail_silently=False,
+        )
+        logger.info(f"Email notifikacija poslata na {dobavljac_email} za fakturu {faktura.sifra_f}")
+        return True
+    except Exception as e:
+        logger.error(f"Greška pri slanju email notifikacije: {str(e)}")
+        return False
+
+
+def send_confirmation_notification(dobavljac_email, transakcija, faktura):
+    """
+    Slanje email potvrde o uspešnoj transakciji
+    """
+    try:
+        subject = f"Potvrda plaćanja: Faktura {faktura.sifra_f}"
+        message = f"""
+        Poštovani,
+        
+        Plaćanje je uspešno izvršeno!
+        
+        Detalji transakcije:
+        - Broj potvrde: {transakcija.potvrda_t}
+        - Faktura: {faktura.sifra_f}
+        - Iznos: {faktura.iznos_f} RSD
+        - Datum transakcije: {transakcija.datum_t.strftime('%d.%m.%Y %H:%M')}
+        - Status: {transakcija.get_status_t_display()}
+        
+        Sredstva su uspešno preneta na Vaš račun.
+        
+        Srdačan pozdrav,
+        Sistem za upravljanje nabavkom
+        """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [dobavljac_email],
+            fail_silently=False,
+        )
+        logger.info(f"Email potvrde poslat na {dobavljac_email} za transakciju {transakcija.potvrda_t}")
+        return True
+    except Exception as e:
+        logger.error(f"Greška pri slanju email potvrde: {str(e)}")
+        return False
+
+
+def create_transaction(faktura):
+    """
+    Kreiranje transakcije za fakturu - automatsko skidanje sredstava
+    Ako transakcija već postoji, ažurira je na 'uspesna' i vraća je
+    Takođe ažurira status fakture i briše razlog čekanja
+    """
+    try:
+        # Prvo proveri da li transakcija već postoji
+        if hasattr(faktura, 'transakcija') and faktura.transakcija:
+            logger.info(f"Transakcija već postoji za fakturu {faktura.sifra_f}, ažuriram status")
+            
+            # ← AŽURIRAJ STATUS postojeće transakcije na 'uspesna'
+            postojeca_transakcija = faktura.transakcija
+            if postojeca_transakcija.status_t != 'uspesna':
+                postojeca_transakcija.status_t = 'uspesna'
+                postojeca_transakcija.datum_t = timezone.now()  # Ažuriraj i datum
+                postojeca_transakcija.save()
+                logger.info(f"Status transakcije {postojeca_transakcija.potvrda_t} promenjen na 'uspesna'")
+            
+            # ← AŽURIRAJ FAKTURU: status i obriši razlog čekanja
+            if faktura.status_f != 'isplacena' or faktura.razlog_cekanja_f is not None:
+                faktura.status_f = 'isplacena'
+                faktura.razlog_cekanja_f = None  # Obriši razlog čekanja
+                faktura.save()
+                logger.info(f"Faktura {faktura.sifra_f}: status = 'isplacena', razlog_cekanja = None")
+            
+            return postojeca_transakcija
+        
+        # Dobavi maksimalnu sifra_t i dodaj 1
+        from django.db.models import Max
+        max_sifra = Transakcija.objects.aggregate(Max('sifra_t'))['sifra_t__max']
+        nova_sifra = (max_sifra or 0) + 1
+        
+        # Generisanje jedinstvenog broja potvrde
+        potvrda_broj = f"TRX-{uuid.uuid4().hex[:12].upper()}"
+        
+        # Proveri da li potvrda_broj već postoji (dupla provera)
+        while Transakcija.objects.filter(potvrda_t=potvrda_broj).exists():
+            potvrda_broj = f"TRX-{uuid.uuid4().hex[:12].upper()}"
+        
+        # Kreiranje nove transakcije sa eksplicitnim ID-om
+        transakcija = Transakcija.objects.create(
+            sifra_t=nova_sifra,
+            faktura=faktura,
+            potvrda_t=potvrda_broj,
+            status_t='uspesna',
+            datum_t=timezone.now()
+        )
+        
+        logger.info(f"Transakcija {potvrda_broj} (ID: {nova_sifra}) kreirana za fakturu {faktura.sifra_f}")
+        return transakcija
+    except Exception as e:
+        logger.error(f"Greška pri kreiranju transakcije: {str(e)}")
+        raise
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
+def simulate_payment(request, invoice_id):
+    """
+    API endpoint za simulaciju plaćanja sa notifikacijama i automatskim skidanjem sredstava
+    
+    Tok simulacije:
+    1. Slanje notifikacije dobavljaču o pokretanju plaćanja
+    2. Automatsko skidanje sredstava (kreiranje transakcije)
+    3. Ažuriranje statusa fakture na 'isplacena'
+    4. Slanje potvrde transakcije dobavljaču
+    """
+    try:
+        # Pronalaženje fakture
+        faktura = get_object_or_404(Faktura, sifra_f=invoice_id)
+        
+        # Provera da li je faktura u odgovarajućem statusu
+        if faktura.status_f == 'isplacena':
+            # Ako je već isplaćena i ima transakciju, vrati podatke postojeće transakcije
+            if hasattr(faktura, 'transakcija') and faktura.transakcija:
+                transakcija = faktura.transakcija
+                return Response({
+                    'success': True,
+                    'message': 'Faktura je već isplaćena',
+                    'transaction': {
+                        'id': transakcija.sifra_t,
+                        'confirmation_number': transakcija.potvrda_t,
+                        'status': transakcija.get_status_t_display(),
+                        'date': transakcija.datum_t.isoformat(),
+                        'amount': float(faktura.iznos_f)
+                    },
+                    'invoice': {
+                        'id': faktura.sifra_f,
+                        'new_status': faktura.get_status_f_display(),
+                        'supplier': faktura.ugovor.dobavljac.naziv
+                    },
+                    'notifications': {
+                        'payment_notification_sent': False,
+                        'confirmation_sent': False,
+                        'recipient': faktura.ugovor.dobavljac.email
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error': 'Faktura je već isplaćena ali nema povezanu transakciju',
+                    'current_status': faktura.status_f
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if faktura.status_f == 'odbijena':
+            return Response({
+                'error': 'Ne možete izvršiti plaćanje odbijene fakture',
+                'current_status': faktura.status_f
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Dobavljač povezan sa fakturom
+        dobavljac = faktura.ugovor.dobavljac
+        dobavljac_email = dobavljac.email if hasattr(dobavljac, 'email') and dobavljac.email else 'noreply@example.com'
+        
+        # Koristi transakciju za atomarnost
+        with transaction.atomic():
+            # KORAK 1: Slanje notifikacije o pokretanju plaćanja
+            notification_sent = send_payment_notification(dobavljac_email, faktura)
+            
+            # KORAK 2: Kreiranje transakcije (automatsko skidanje sredstava)
+            transakcija = create_transaction(faktura)
+            
+            # KORAK 3: Ažuriranje statusa fakture
+            faktura.status_f = 'isplacena'
+            faktura.razlog_cekanja_f = None  # Očisti razlog čekanja ako postoji
+            faktura.save()
+            
+            # KORAK 4: Slanje potvrde transakcije
+            confirmation_sent = send_confirmation_notification(dobavljac_email, transakcija, faktura)
+        
+        # Priprema odgovora
+        response_data = {
+            'success': True,
+            'message': 'Plaćanje uspešno izvršeno',
+            'transaction': {
+                'id': transakcija.sifra_t,
+                'confirmation_number': transakcija.potvrda_t,
+                'status': transakcija.get_status_t_display(),
+                'date': transakcija.datum_t.isoformat(),
+                'amount': float(faktura.iznos_f)
+            },
+            'invoice': {
+                'id': faktura.sifra_f,
+                'new_status': faktura.get_status_f_display(),
+                'supplier': dobavljac.naziv
+            },
+            'notifications': {
+                'payment_notification_sent': notification_sent,
+                'confirmation_sent': confirmation_sent,
+                'recipient': dobavljac_email
+            }
+        }
+        
+        logger.info(f"Simulacija plaćanja uspešna za fakturu {invoice_id}, transakcija {transakcija.potvrda_t}")
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Faktura.DoesNotExist:
+        return Response({
+            'error': 'Faktura nije pronađena'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Greška pri simulaciji plaćanja: {str(e)}")
+        return Response({
+            'error': 'Greška pri izvršavanju plaćanja',
+            'details': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
