@@ -500,3 +500,21 @@ class Vozilo(models.Model):
     class Meta:
         db_table = 'vozilo'
 
+class Servis(models.Model):
+    sifra_s = models.AutoField(primary_key=True)
+    vozilo = models.ForeignKey(Vozilo, on_delete=models.CASCADE)
+    datum_servisa = models.DateField()
+    napomena = models.TextField()
+    vrsta_choices = [
+        ('mali', 'Mali'),
+        ('veliki', 'Veliki'),
+        ('hitan', 'Hitan'),
+    ]
+    vrsta = models.CharField(max_length=20, choices=vrsta_choices)
+    
+    def __str__(self):
+        return f"Servis {self.vozilo.registracija} - {self.datum_servisa}"
+    
+    class Meta:
+        db_table = 'servis'
+
