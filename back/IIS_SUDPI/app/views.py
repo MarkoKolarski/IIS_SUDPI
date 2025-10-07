@@ -15,7 +15,6 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import UserProfileUpdateForm
 from .models import Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
 from .serializers import (
     RegistrationSerializer, 
@@ -32,6 +31,8 @@ from .serializers import (
     DodajSkladisteSerializer,
     DodajArtikalSerializer,
     RizicniArtikalSerializer,
+    UserProfileSerializer, 
+    UserProfileUpdateSerializer
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -1793,37 +1794,99 @@ def artikli_grafikon_po_nedeljama(request):
             {'error': 'Greška pri generisanju grafikona', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )    
-#@login_required
-# @api_view(['POST'])
-# @permission_classes([AllowAny]) 
-# def user_profile_update(request, user_id=None):
-#     # Ako nije prosleđen user_id, koristi trenutnog korisnika
-#     if user_id:
-#         user = get_object_or_404(User, sifra_k=user_id)
-#         # Provera permisija - samo administrator može da menja druge korisnike
-#         if not request.user.tip_k == 'administrator' and request.user != user:
-#             messages.error(request, "Nemate dozvolu za izmenu ovog profila")
-#             return redirect('dashboard')
-#     else:
-#         user = request.user
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def user_profile_update_api(request, user_id=None):
+    """
+    API endpoint za ažuriranje korisničkog profila
+    """
+    # Određivanje korisnika koji se menja
+    if user_id:
+        user = get_object_or_404(User, sifra_k=user_id)
+        # Provera permisija
+        if not request.user.tip_k == 'administrator' and request.user != user:
+            return Response(
+                {"error": "Nemate dozvolu za izmenu ovog profila"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    else:
+        user = request.user
 
-#     if request.method == 'POST':
-#         if 'odustani' in request.POST:
-#             return redirect('user_list')  # ili neka druga stranica
-            
-#         form = UserProfileUpdateForm(request.POST, instance=user)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, "Profil je uspešno ažuriran")
-#             return redirect('user_list')  # ili 'profile_view'
-#     else:
-#         form = UserProfileUpdateForm(instance=user)
-#         # Ukloni password polje iz forme pri prikazu
-#         form.fields['password'].widget.attrs['placeholder'] = 'Ostavite prazno ako ne želite da promenite lozinku'
+    if request.method == 'GET':
+        # Vraćanje trenutnih podataka korisnika
+        serializer = UserProfileUpdateSerializer(user)
+        return Response(serializer.data)
 
-#     context = {
-#         'form': form,
-#         'user_to_edit': user,
-#         'is_own_profile': user == request.user,
-#     }
-#     return render(request, 'user_profile_update.html', context)
+    elif request.method == 'PUT':
+        # Ažuriranje podataka
+        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "Profil je uspešno ažuriran",
+                "user": UserProfileSerializer(user).data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_profile(request):
+    """Dobijanje podataka trenutnog korisnika"""
+    serializer = UserProfileSerializer(request.user)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_profile_by_id(request, user_id):
+    """Dobijanje podataka određenog korisnika (samo za administratore)"""
+    if not request.user.tip_k == 'administrator':
+        return Response(
+            {"error": "Nemate dozvolu za pristup ovim podacima"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    user = get_object_or_404(User, sifra_k=user_id)
+    serializer = UserProfileSerializer(user)
+    return Response(serializer.data)
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def update_user_profile(request, user_id=None):
+    # Određivanje korisnika koji se menja
+    if user_id:
+        user = get_object_or_404(User, sifra_k=user_id)
+        # Provera permisija - samo administrator može da menja druge korisnike
+        if not request.user.tip_k == 'administrator':
+            return Response(
+                {"error": "Nemate dozvolu za izmenu ovog profila"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    else:
+        user = request.user
+
+    serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "message": "Profil je uspešno ažuriran",
+            "user": UserProfileSerializer(user).data
+        }, status=status.HTTP_200_OK)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_users_list(request):
+    """Lista svih korisnika (samo za administratore)"""
+    if not request.user.tip_k == 'administrator':
+        return Response(
+            {"error": "Nemate dozvolu za pristup ovoj listi"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    users = User.objects.all()
+    serializer = UserProfileSerializer(users, many=True)
+    return Response(serializer.data)

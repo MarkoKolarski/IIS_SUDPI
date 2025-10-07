@@ -107,5 +107,10 @@ export const sidebarLinks = {
       href: "/edit/suppliers",
       description: "Izmena podataka dobavljača",
     },
+    {
+      title: "Izmena info. o korisniku",
+      href: "/edit-profile",
+      description: "Ažuriranje poslovnih podataka korisnika.",
+    }
   ],
 };

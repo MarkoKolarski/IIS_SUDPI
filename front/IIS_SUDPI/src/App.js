@@ -32,6 +32,8 @@ import IzmeniArtikal from "./pages/IzmeniArtikal";
 import PregledZaliha from "./pages/PregledZaliha";
 import IzmenaZaliha from "./pages/IzmenaZaliha";
 import DashboardSO from "./pages/DashboardSO";
+import EditProfile from "./pages/EditProfile.js";
+import EditOtherProfile from "./pages/EditOtherProfile.js";
 
 const App = () => {
   return (
@@ -41,7 +43,7 @@ const App = () => {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-
+        <Route path="/profile" element={<EditProfile />} />
         {/* Finansijski analiticar routes */}
         <Route
           path="/dashboard-fa"
@@ -240,6 +242,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["administrator"]}>
               <EditSupplier />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit-profile"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <EditOtherProfile />
             </ProtectedRoute>
           }
         />

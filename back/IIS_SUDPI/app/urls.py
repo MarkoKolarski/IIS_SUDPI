@@ -1,6 +1,7 @@
 from django.urls import path
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
 from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama
+from . import views
 
 urlpatterns = [
     path('', index, name='index'),
@@ -52,4 +53,15 @@ urlpatterns = [
     
     # Grafikon artikala po nedeljama endpoint
     path('artikli/grafikon-po-nedeljama/', artikli_grafikon_po_nedeljama, name='artikli-grafikon-po-nedeljama'),
+
+    # Profil trenutnog korisnika
+    path('api/user/profile/', views.get_user_profile, name='get_user_profile'),
+    path('api/user/profile/update/', views.update_user_profile, name='update_user_profile'),
+    
+    # Profil određenog korisnika (samo admin)
+    path('api/user/profile/<int:user_id>/', views.get_user_profile_by_id, name='get_user_profile_by_id'),
+    path('api/user/profile/update/<int:user_id>/', views.update_user_profile, name='update_user_profile_by_id'),
+    
+    # Lista svih korisnika (samo admin)
+    path('api/users/', views.get_users_list, name='get_users_list'),
 ]

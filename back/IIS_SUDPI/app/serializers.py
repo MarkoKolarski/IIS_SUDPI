@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj
+from .models import Faktura, User, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -449,3 +449,49 @@ class IzvestajSerializer(serializers.ModelSerializer):
     class Meta:
         model = Izvestaj
         fields = '__all__'
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    password_confirm = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
+    class Meta:
+        model = get_user_model()
+        #fields = ['ime_k', 'prz_k', 'mail_k', 'password', 'tip_k']
+        #model = User
+        fields = ['sifra_k', 'ime_k', 'prz_k', 'mail_k', 'tip_k', 'password', 'password_confirm']
+        read_only_fields = ['sifra_k']
+
+    def validate(self, data):
+        if 'mail_k' in data:
+            if User.objects.filter(mail_k=data['mail_k']).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError({"mail_k": "Email adresa se već koristi"})
+        if data.get('password') and data.get('password') != data.get('password_confirm'):
+            raise serializers.ValidationError({"password_confirm": "Lozinke se ne poklapaju"})
+        return data
+
+    def update(self, instance, validated_data):
+        """Ažurira samo polja koja su prosleđena i hešira lozinku ako postoji"""
+        password = validated_data.pop('password', None)
+        validated_data.pop('password_confirm', None)
+
+        # Samo ažuriraj prosleđena polja
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+            
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
+    
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer za prikaz korisničkog profila"""
+    tip_k_display = serializers.CharField(source='get_tip_k_display', read_only=True)
+    #password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    #confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+
+    class Meta:
+        #model = User
+        model = get_user_model()
+        fields = ['sifra_k', 'ime_k', 'prz_k', 'mail_k', 'tip_k', 'tip_k_display']
+        read_only_fields = ['sifra_k']
