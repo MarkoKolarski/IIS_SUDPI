@@ -538,3 +538,64 @@ class Ruta(models.Model):
     
     class Meta:
         db_table = 'ruta'
+
+class Isporuka(models.Model):
+    sifra_i = models.AutoField(primary_key=True)
+    ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE)
+    vozilo = models.ForeignKey(Vozilo, on_delete=models.CASCADE)
+    vozac = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vozac_isporuke')
+    status_choices = [
+        ('aktivna_nova', 'Aktivna - Nova'),
+        ('u_toku', 'U toku'),
+        ('spremna', 'Spremna'),
+        ('zavrsena', 'Završena'),
+    ]
+    status = models.CharField(max_length=20, choices=status_choices, default='aktivna_nova')
+    datum_kreiranja = models.DateTimeField(auto_now_add=True)
+    datum_polaska = models.DateTimeField(null=True, blank=True)
+    rok_is = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Isporuka {self.sifra_i} - {self.ruta}"
+    
+    class Meta:
+        db_table = 'isporuka'
+
+class Upozorenje(models.Model):
+    sifra_u = models.AutoField(primary_key=True)
+    isporuka = models.ForeignKey(Isporuka, on_delete=models.CASCADE)
+    tip_choices = [
+        ('odstupanje', 'odstupanje od rute'),
+        ('temperatura', 'temperatura'),
+        ('kvar', 'kvar vozila'),
+        ('kasnjenje', 'kašnjenje utovara'),
+        ('servis', 'servis vozila'),
+    ]
+    
+    tip = models.CharField(max_length=50, choices= tip_choices)
+    poruka = models.TextField()
+    vreme = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.tip} - {self.isporuka}"
+    
+    class Meta:
+        db_table = 'upozorenje'
+
+class voziloOmogucavaTemperatura(models.Model):
+    sifra_temp = models.ForeignKey(Temperatura, on_delete=models.CASCADE)
+    sifra_vozila = models.ForeignKey(Vozilo, on_delete=models.CASCADE)
+    isporuka = models.ForeignKey(Isporuka, on_delete=models.CASCADE)
+    vreme = models.DateTimeField(auto_now_add=True)
+    vrednost = models.DecimalField(max_digits=5, decimal_places=2)
+    min_granica = models.DecimalField(max_digits=5, decimal_places=2)
+    max_granica = models.DecimalField(max_digits=5, decimal_places=2)
+    
+    def __str__(self):
+        return f"{self.isporuka} - {self.vrednost}°C"
+    def vrednostIzvanGranica(self):
+        if((self.vrednost > self.max_granica) & (self.vrednost < self.min_granica)):
+            return Upozorenje(isporuka = self.isporuka, tip = 'temperatura', poruka = 'Temperatura je izvan opsega.' )
+    class Meta:
+        db_table = 'temperatura'
