@@ -598,4 +598,4 @@ class voziloOmogucavaTemperatura(models.Model):
         if((self.vrednost > self.max_granica) & (self.vrednost < self.min_granica)):
             return Upozorenje(isporuka = self.isporuka, tip = 'temperatura', poruka = 'Temperatura je izvan opsega.' )
     class Meta:
-        db_table = 'temperatura'
+        db_table = 'temperaturaVozilo'
