@@ -31,6 +31,9 @@ VALUES (2, 'Ana', 'Petrović', 'ana.petrovic@firma.rs', 'finansijski_analiticar'
 INSERT INTO korisnik (sifra_k, ime_k, prz_k, mail_k, tip_k, username, password, is_superuser, is_staff, is_active, date_joined, first_name, last_name)
 VALUES (3, 'Jovan', 'Nikolić', 'jovan.nikolic@firma.rs', 'finansijski_analiticar', 'jovan.nikolic@firma.rs', 'pbkdf2_sha256$260000$ghi789', 0, 1, 1, SYSTIMESTAMP, 'Jovan', 'Nikolić');
 
+INSERT INTO korisnik (sifra_k, ime_k, prz_k, mail_k, tip_k, username, password, is_superuser, is_staff, is_active, date_joined, first_name, last_name)
+VALUES (4, 'Marko', 'Marković', '1@gmail.com', 'finansijski_analiticar', '1@gmail.com', 'pbkdf2_sha256$870000$BH9seZyFDVYcXNrepOiBDg$2Jx9Y8SO2ow7ZZLzNfhd5ziUfAsJfELZgIGjDgovChc=', 0, 1, 1, SYSTIMESTAMP, 'Marko', 'Marković');
+
 -- ============================================
 -- 2. FINANSIJSKI ANALITIČAR (specifični zapisi)
 -- ============================================
@@ -44,24 +47,27 @@ VALUES (2, 2);
 INSERT INTO finansijski_analiticar (id, korisnik_id)
 VALUES (3, 3);
 
+INSERT INTO finansijski_analiticar (id, korisnik_id)
+VALUES (4, 4);
+
 -- ============================================
 -- 3. DOBAVLJAČ
 -- ============================================
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (1, 'Agro Invest DOO', 'kontakt@agroinvest.rs', '123456789', 'Pšenično brašno tip 500', 85.50, 5, 7.20, TO_DATE('2025-09-15', 'YYYY-MM-DD'), 1);
+VALUES (1, 'Agro Invest DOO', 'salebecej1@gmail.com', '123456789', 'Pšenično brašno tip 500', 85.50, 5, 7.20, TO_DATE('2025-09-15', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (2, 'Mlekoprodukt AD', 'info@mlekoprodukt.rs', '987654321', 'UHT mleko 3.2%', 125.00, 3, 9.50, TO_DATE('2025-09-20', 'YYYY-MM-DD'), 1);
+VALUES (2, 'Mlekoprodukt AD', 'salebecej1@gmail.com', '987654321', 'UHT mleko 3.2%', 125.00, 3, 9.50, TO_DATE('2025-09-20', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (3, 'Voće Srbija DOO', 'prodaja@vocesrbija.rs', '456789123', 'Jabuke Idared', 65.00, 2, 8.80, TO_DATE('2025-09-10', 'YYYY-MM-DD'), 1);
+VALUES (3, 'Voće Srbija DOO', 'salebecej1@gmail.com', '456789123', 'Jabuke Idared', 65.00, 2, 8.80, TO_DATE('2025-09-10', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (4, 'Hemija Sever DOO', 'office@hemijasever.rs', '789123456', 'Natrijum benzoat', 450.00, 7, 9.10, TO_DATE('2025-08-25', 'YYYY-MM-DD'), 1);
+VALUES (4, 'Hemija Sever DOO', 'salebecej1@gmail.com', '789123456', 'Natrijum benzoat', 450.00, 7, 9.10, TO_DATE('2025-08-25', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (5, 'Šećerana Crvenka', 'info@secerana.rs', '321654987', 'Kristal šećer', 95.00, 4, 9.00, TO_DATE('2025-09-18', 'YYYY-MM-DD'), 1);
+VALUES (5, 'Šećerana Crvenka', 'salebecej1@gmail.com', '321654987', 'Kristal šećer', 95.00, 4, 9.00, TO_DATE('2025-09-18', 'YYYY-MM-DD'), 1);
 
 -- ============================================
 -- 4. UGOVOR
