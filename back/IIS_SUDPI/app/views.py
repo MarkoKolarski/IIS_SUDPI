@@ -16,7 +16,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import UserProfileUpdateForm
-from .models import Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
+from .models import Faktura, User, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -36,7 +36,10 @@ from .serializers import (
 from rest_framework import generics, filters
 from django.db import transaction
 from .decorators import allowed_users
+from django.core.mail import send_mail
+from django.conf import settings
 import logging
+import uuid
 
 # Postavi logging
 logger = logging.getLogger(__name__)
@@ -931,6 +934,541 @@ def penalties_analysis(request):
     return Response({
         'dobavljaci_analiza': dobavljaci_analiza
     }, status=status.HTTP_200_OK)
+
+
+# ========== SIMULACIJA PLAĆANJA - HELPER FUNKCIJE ==========
+
+def send_payment_notification(dobavljac_email, faktura):
+    """
+    Slanje email notifikacije dobavljaču o pokretanju plaćanja
+    """
+    try:
+        subject = f"Notifikacija: Pokrenuto plaćanje za fakturu {faktura.sifra_f}"
+        message = f"""
+        Poštovani,
+        
+        Obaveštavamo Vas da je pokrenuto plaćanje za sledeću fakturu:
+        
+        Broj fakture: {faktura.sifra_f}
+        Iznos: {faktura.iznos_f} RSD
+        Datum prijema: {faktura.datum_prijema_f}
+        Rok plaćanja: {faktura.rok_placanja_f}
+        
+        Transakcija je u toku. Dobićete potvrdu nakon uspešne isplate.
+        
+        Srdačan pozdrav,
+        Sistem za upravljanje nabavkom
+        """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [dobavljac_email],
+            fail_silently=False,
+        )
+        logger.info(f"Email notifikacija poslata na {dobavljac_email} za fakturu {faktura.sifra_f}")
+        return True
+    except Exception as e:
+        logger.error(f"Greška pri slanju email notifikacije: {str(e)}")
+        return False
+
+
+def send_confirmation_notification(dobavljac_email, transakcija, faktura):
+    """
+    Slanje email potvrde o uspešnoj transakciji
+    """
+    try:
+        subject = f"Potvrda plaćanja: Faktura {faktura.sifra_f}"
+        message = f"""
+        Poštovani,
+        
+        Plaćanje je uspešno izvršeno!
+        
+        Detalji transakcije:
+        - Broj potvrde: {transakcija.potvrda_t}
+        - Faktura: {faktura.sifra_f}
+        - Iznos: {faktura.iznos_f} RSD
+        - Datum transakcije: {transakcija.datum_t.strftime('%d.%m.%Y %H:%M')}
+        - Status: {transakcija.get_status_t_display()}
+        
+        Sredstva su uspešno preneta na Vaš račun.
+        
+        Srdačan pozdrav,
+        Sistem za upravljanje nabavkom
+        """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [dobavljac_email],
+            fail_silently=False,
+        )
+        logger.info(f"Email potvrde poslat na {dobavljac_email} za transakciju {transakcija.potvrda_t}")
+        return True
+    except Exception as e:
+        logger.error(f"Greška pri slanju email potvrde: {str(e)}")
+        return False
+
+def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji=""):
+    """
+    Slanje email notifikacije dobavljaču o kršenju ugovora i dodeljenom penalu
+    """
+    try:
+        subject = f"OBAVEŠTENJE: Kršenje ugovora {ugovor.sifra_u} - Dodeljen penal"
+        message = f"""
+        Poštovani,
+        
+        Obaveštavamo Vas da je evidentirano kršenje uslova ugovora, te je na osnovu toga dodeljen penal.
+        
+        ═══════════════════════════════════════════════
+        DETALJI UGOVORA:
+        ═══════════════════════════════════════════════
+        - Broj ugovora: {ugovor.sifra_u}
+        - Datum potpisa: {ugovor.datum_potpisa_u.strftime('%d.%m.%Y')}
+        - Datum isteka: {ugovor.datum_isteka_u.strftime('%d.%m.%Y')}
+        - Status ugovora: {ugovor.get_status_u_display()}
+        
+        ═══════════════════════════════════════════════
+        DETALJI PENALA:
+        ═══════════════════════════════════════════════
+        - Broj penala: {penal.sifra_p}
+        - Razlog: {penal.razlog_p}
+        - Iznos penala: {penal.iznos_p} RSD
+        - Datum evidentiranja: {penal.datum_p.strftime('%d.%m.%Y')}
+        
+        {razlog_detalji}
+        
+        ═══════════════════════════════════════════════
+        SLEDEĆI KORACI:
+        ═══════════════════════════════════════════════
+        1. Iznos penala će biti odbijen od naredne isplate
+        2. Molimo Vas da preduzmete mere kako bi se ovakve situacije izbegavale u budućnosti
+        3. Za dodatna pitanja ili žalbe, kontaktirajte našeg nabavnog menadžera
+        
+        NAPOMENA: Učestala kršenja ugovora mogu dovesti do prekida poslovne saradnje.
+        
+        Srdačan pozdrav,
+        Sistem za upravljanje nabavkom
+        """
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [dobavljac_email],
+            fail_silently=False,
+        )
+        logger.info(f"Email o penalu poslat na {dobavljac_email} za ugovor {ugovor.sifra_u}, penal {penal.sifra_p}")
+        return True
+    except Exception as e:
+        logger.error(f"Greška pri slanju email obaveštenja o penalu: {str(e)}")
+        return False
+
+
+def check_contract_violations():
+    """
+    Proverava sve aktivne ugovore i detektuje kršenja:
+    - Istekli ugovori koji nisu označeni kao istekli
+    - Ugovori koji su prešli rok isporuke (ako postoje fakture koje kasne)
+    
+    Returns:
+        list: Lista dictionary-ja sa detaljima o prekršajima
+    """
+    violations = []
+    danas = date.today()
+    
+    try:
+        # 1. PROVERA: Aktivni ugovori koji su istekli
+        istekli_ugovori = Ugovor.objects.filter(
+            status_u='aktivan',
+            datum_isteka_u__lt=danas
+        ).select_related('dobavljac')
+        
+        for ugovor in istekli_ugovori:
+            violations.append({
+                'ugovor': ugovor,
+                'tip_krsenja': 'istek_ugovora',
+                'razlog': f'Ugovor je istekao {ugovor.datum_isteka_u.strftime("%d.%m.%Y")}, ali nije zatvoren',
+                'iznos_penala': Decimal('5000.00'),  # Fiksni penal za neažurirane ugovore
+                'detalji': f'Ugovor br. {ugovor.sifra_u} je trebao biti zatvoren pre {(danas - ugovor.datum_isteka_u).days} dana.'
+            })
+        
+        # 2. PROVERA: Fakture koje kasne više od 30 dana sa rokom plaćanja
+        pre_30_dana = danas - timedelta(days=30)
+        fakture_koje_kasne = Faktura.objects.filter(
+            status_f__in=['primljena', 'verifikovana'],
+            rok_placanja_f__lt=pre_30_dana
+        ).select_related('ugovor__dobavljac')
+        
+        for faktura in fakture_koje_kasne:
+            # Proveri da li već postoji penal za ovu fakturu
+            vec_penalizovano = Penal.objects.filter(
+                ugovor=faktura.ugovor,
+                razlog_p__icontains=f'Faktura {faktura.sifra_f}'
+            ).exists()
+            
+            if not vec_penalizovano:
+                dana_kasnjenja = (danas - faktura.rok_placanja_f).days
+                iznos_penala = Decimal('1000.00') + (Decimal('100.00') * dana_kasnjenja)  # 1000 + 100 RSD po danu
+                
+                violations.append({
+                    'ugovor': faktura.ugovor,
+                    'tip_krsenja': 'kasnjenje_placanja',
+                    'razlog': f'Faktura {faktura.sifra_f} kasni {dana_kasnjenja} dana sa rokom plaćanja',
+                    'iznos_penala': min(iznos_penala, Decimal('50000.00')),  # Maksimalno 50,000 RSD
+                    'detalji': f'Rok plaćanja je bio {faktura.rok_placanja_f.strftime("%d.%m.%Y")}, a danas je {danas.strftime("%d.%m.%Y")}. Ukupno kašnjenje: {dana_kasnjenja} dana.',
+                    'faktura': faktura
+                })
+        
+        logger.info(f"Provera kršenja ugovora završena. Pronađeno {len(violations)} kršenja.")
+        return violations
+        
+    except Exception as e:
+        logger.error(f"Greška pri proveri kršenja ugovora: {str(e)}")
+        return []
+
+
+def auto_create_penalty(violation_data):
+    """
+    Automatski kreira penal za dato kršenje i šalje email obaveštenje dobavljaču
+    
+    Args:
+        violation_data: Dictionary sa podacima o kršenju (iz check_contract_violations)
+        
+    Returns:
+        tuple: (success: bool, penal: Penal or None, error_message: str or None)
+    """
+    try:
+        ugovor = violation_data['ugovor']
+        dobavljac = ugovor.dobavljac
+        
+        # Kreiraj penal
+        with transaction.atomic():
+            from django.db.models import Max
+            max_penal_id = Penal.objects.aggregate(Max('sifra_p'))['sifra_p__max'] or 0
+            next_penal_id = max_penal_id + 1
+            
+            penal = Penal.objects.create(
+                sifra_p=next_penal_id,
+                razlog_p=violation_data['razlog'],
+                iznos_p=violation_data['iznos_penala'],
+                ugovor=ugovor
+            )
+            
+            # Ako je kršenje 'istek_ugovora', ažuriraj status ugovora
+            if violation_data['tip_krsenja'] == 'istek_ugovora':
+                ugovor.status_u = 'istekao'
+                ugovor.save()
+            
+            logger.info(f"Automatski kreiran penal {penal.sifra_p} za ugovor {ugovor.sifra_u}")
+        
+        # Pošalji email obaveštenje dobavljaču
+        email_sent = send_penalty_notification(
+            dobavljac_email=dobavljac.email,
+            penal=penal,
+            ugovor=ugovor,
+            razlog_detalji=f"\n{violation_data.get('detalji', '')}\n"
+        )
+        
+        if email_sent:
+            logger.info(f"Email obaveštenje uspešno poslato za penal {penal.sifra_p}")
+        else:
+            logger.warning(f"Email obaveštenje nije poslato za penal {penal.sifra_p}")
+        
+        return True, penal, None
+        
+    except Exception as e:
+        error_msg = f"Greška pri automatskom kreiranju penala: {str(e)}"
+        logger.error(error_msg)
+        return False, None, error_msg
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['nabavni_menadzer', 'finansijski_analiticar', 'administrator'])
+def check_and_create_penalties(request):
+    """
+    API endpoint za automatsku proveru kršenja ugovora i kreiranje penala
+    
+    Ova funkcija:
+    1. Proverava sve aktivne ugovore i detektuje kršenja
+    2. Automatski kreira penale za svako kršenje
+    3. Šalje email obaveštenja dobavljačima
+    
+    Može se pozvati ručno ili automatski (npr. putem schedulera)
+    
+    Returns:
+        JSON sa detaljima o kreiranim penalima i greškama
+    """
+    try:
+        # Proveri kršenja ugovora
+        violations = check_contract_violations()
+        
+        if not violations:
+            return Response({
+                'message': 'Nije pronađeno nijedno kršenje ugovora',
+                'violations_found': 0,
+                'penalties_created': 0,
+                'errors': []
+            }, status=status.HTTP_200_OK)
+        
+        # Kreiraj penale za svako kršenje
+        created_penalties = []
+        errors = []
+        
+        for violation in violations:
+            success, penal, error_msg = auto_create_penalty(violation)
+            
+            if success:
+                created_penalties.append({
+                    'penal_id': penal.sifra_p,
+                    'ugovor_id': violation['ugovor'].sifra_u,
+                    'dobavljac': violation['ugovor'].dobavljac.naziv,
+                    'tip_krsenja': violation['tip_krsenja'],
+                    'iznos': float(violation['iznos_penala']),
+                    'razlog': violation['razlog']
+                })
+            else:
+                errors.append({
+                    'ugovor_id': violation['ugovor'].sifra_u,
+                    'dobavljac': violation['ugovor'].dobavljac.naziv,
+                    'error': error_msg
+                })
+        
+        # Pripremi odgovor
+        response_data = {
+            'message': f'Provera završena. Kreirano {len(created_penalties)} penala.',
+            'violations_found': len(violations),
+            'penalties_created': len(created_penalties),
+            'penalties': created_penalties,
+            'errors': errors
+        }
+        
+        # Loguj rezultat
+        logger.info(f"Automatska provera penala: {len(violations)} kršenja, {len(created_penalties)} penala kreirano")
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        logger.error(f"Greška pri automatskoj proveri i kreiranju penala: {str(e)}")
+        return Response({
+            'error': 'Greška pri proveri kršenja ugovora',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['nabavni_menadzer', 'finansijski_analiticar', 'administrator'])
+def preview_contract_violations(request):
+    """
+    API endpoint za pregled kršenja ugovora BEZ kreiranja penala
+    
+    Koristi se za pregled šta bi se desilo kada se pozove check_and_create_penalties
+    
+    Returns:
+        JSON sa listom pronađenih kršenja
+    """
+    try:
+        violations = check_contract_violations()
+        
+        violations_data = []
+        for violation in violations:
+            violations_data.append({
+                'ugovor_id': violation['ugovor'].sifra_u,
+                'dobavljac': violation['ugovor'].dobavljac.naziv,
+                'dobavljac_email': violation['ugovor'].dobavljac.email,
+                'tip_krsenja': violation['tip_krsenja'],
+                'razlog': violation['razlog'],
+                'iznos_penala': float(violation['iznos_penala']),
+                'detalji': violation['detalji'],
+                'datum_potpisa': violation['ugovor'].datum_potpisa_u.strftime('%d.%m.%Y'),
+                'datum_isteka': violation['ugovor'].datum_isteka_u.strftime('%d.%m.%Y'),
+                'status_ugovora': violation['ugovor'].status_u
+            })
+        
+        return Response({
+            'message': f'Pronađeno {len(violations)} kršenja ugovora',
+            'violations_count': len(violations),
+            'violations': violations_data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        logger.error(f"Greška pri pregledu kršenja ugovora: {str(e)}")
+        return Response({
+            'error': 'Greška pri pregledu kršenja ugovora',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def create_transaction(faktura):
+    """
+    Kreiranje transakcije za fakturu - automatsko skidanje sredstava
+    Ako transakcija već postoji, ažurira je na 'uspesna' i vraća je
+    Takođe ažurira status fakture i briše razlog čekanja
+    """
+    try:
+        # Prvo proveri da li transakcija već postoji
+        if hasattr(faktura, 'transakcija') and faktura.transakcija:
+            logger.info(f"Transakcija već postoji za fakturu {faktura.sifra_f}, ažuriram status")
+            
+            # ← AŽURIRAJ STATUS postojeće transakcije na 'uspesna'
+            postojeca_transakcija = faktura.transakcija
+            if postojeca_transakcija.status_t != 'uspesna':
+                postojeca_transakcija.status_t = 'uspesna'
+                postojeca_transakcija.datum_t = timezone.now()  # Ažuriraj i datum
+                postojeca_transakcija.save()
+                logger.info(f"Status transakcije {postojeca_transakcija.potvrda_t} promenjen na 'uspesna'")
+            
+            # ← AŽURIRAJ FAKTURU: status i obriši razlog čekanja
+            if faktura.status_f != 'isplacena' or faktura.razlog_cekanja_f is not None:
+                faktura.status_f = 'isplacena'
+                faktura.razlog_cekanja_f = None  # Obriši razlog čekanja
+                faktura.save()
+                logger.info(f"Faktura {faktura.sifra_f}: status = 'isplacena', razlog_cekanja = None")
+            
+            return postojeca_transakcija
+        
+        # Dobavi maksimalnu sifra_t i dodaj 1
+        from django.db.models import Max
+        max_sifra = Transakcija.objects.aggregate(Max('sifra_t'))['sifra_t__max']
+        nova_sifra = (max_sifra or 0) + 1
+        
+        # Generisanje jedinstvenog broja potvrde
+        potvrda_broj = f"TRX-{uuid.uuid4().hex[:12].upper()}"
+        
+        # Proveri da li potvrda_broj već postoji (dupla provera)
+        while Transakcija.objects.filter(potvrda_t=potvrda_broj).exists():
+            potvrda_broj = f"TRX-{uuid.uuid4().hex[:12].upper()}"
+        
+        # Kreiranje nove transakcije sa eksplicitnim ID-om
+        transakcija = Transakcija.objects.create(
+            sifra_t=nova_sifra,
+            faktura=faktura,
+            potvrda_t=potvrda_broj,
+            status_t='uspesna',
+            datum_t=timezone.now()
+        )
+        
+        logger.info(f"Transakcija {potvrda_broj} (ID: {nova_sifra}) kreirana za fakturu {faktura.sifra_f}")
+        return transakcija
+    except Exception as e:
+        logger.error(f"Greška pri kreiranju transakcije: {str(e)}")
+        raise
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar'])
+def simulate_payment(request, invoice_id):
+    """
+    API endpoint za simulaciju plaćanja sa notifikacijama i automatskim skidanjem sredstava
+    
+    Tok simulacije:
+    1. Slanje notifikacije dobavljaču o pokretanju plaćanja
+    2. Automatsko skidanje sredstava (kreiranje transakcije)
+    3. Ažuriranje statusa fakture na 'isplacena'
+    4. Slanje potvrde transakcije dobavljaču
+    """
+    try:
+        # Pronalaženje fakture
+        faktura = get_object_or_404(Faktura, sifra_f=invoice_id)
+        
+        # Provera da li je faktura u odgovarajućem statusu
+        if faktura.status_f == 'isplacena':
+            # Ako je već isplaćena i ima transakciju, vrati podatke postojeće transakcije
+            if hasattr(faktura, 'transakcija') and faktura.transakcija:
+                transakcija = faktura.transakcija
+                return Response({
+                    'success': True,
+                    'message': 'Faktura je već isplaćena',
+                    'transaction': {
+                        'id': transakcija.sifra_t,
+                        'confirmation_number': transakcija.potvrda_t,
+                        'status': transakcija.get_status_t_display(),
+                        'date': transakcija.datum_t.isoformat(),
+                        'amount': float(faktura.iznos_f)
+                    },
+                    'invoice': {
+                        'id': faktura.sifra_f,
+                        'new_status': faktura.get_status_f_display(),
+                        'supplier': faktura.ugovor.dobavljac.naziv
+                    },
+                    'notifications': {
+                        'payment_notification_sent': False,
+                        'confirmation_sent': False,
+                        'recipient': faktura.ugovor.dobavljac.email
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error': 'Faktura je već isplaćena ali nema povezanu transakciju',
+                    'current_status': faktura.status_f
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if faktura.status_f == 'odbijena':
+            return Response({
+                'error': 'Ne možete izvršiti plaćanje odbijene fakture',
+                'current_status': faktura.status_f
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Dobavljač povezan sa fakturom
+        dobavljac = faktura.ugovor.dobavljac
+        dobavljac_email = dobavljac.email if hasattr(dobavljac, 'email') and dobavljac.email else 'noreply@example.com'
+        
+        # Koristi transakciju za atomarnost
+        with transaction.atomic():
+            # KORAK 1: Slanje notifikacije o pokretanju plaćanja
+            notification_sent = send_payment_notification(dobavljac_email, faktura)
+            
+            # KORAK 2: Kreiranje transakcije (automatsko skidanje sredstava)
+            transakcija = create_transaction(faktura)
+            
+            # KORAK 3: Ažuriranje statusa fakture
+            faktura.status_f = 'isplacena'
+            faktura.razlog_cekanja_f = None  # Očisti razlog čekanja ako postoji
+            faktura.save()
+            
+            # KORAK 4: Slanje potvrde transakcije
+            confirmation_sent = send_confirmation_notification(dobavljac_email, transakcija, faktura)
+        
+        # Priprema odgovora
+        response_data = {
+            'success': True,
+            'message': 'Plaćanje uspešno izvršeno',
+            'transaction': {
+                'id': transakcija.sifra_t,
+                'confirmation_number': transakcija.potvrda_t,
+                'status': transakcija.get_status_t_display(),
+                'date': transakcija.datum_t.isoformat(),
+                'amount': float(faktura.iznos_f)
+            },
+            'invoice': {
+                'id': faktura.sifra_f,
+                'new_status': faktura.get_status_f_display(),
+                'supplier': dobavljac.naziv
+            },
+            'notifications': {
+                'payment_notification_sent': notification_sent,
+                'confirmation_sent': confirmation_sent,
+                'recipient': dobavljac_email
+            }
+        }
+        
+        logger.info(f"Simulacija plaćanja uspešna za fakturu {invoice_id}, transakcija {transakcija.potvrda_t}")
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Faktura.DoesNotExist:
+        return Response({
+            'error': 'Faktura nije pronađena'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Greška pri simulaciji plaćanja: {str(e)}")
+        return Response({
+            'error': 'Greška pri izvršavanju plaćanja',
+            'details': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

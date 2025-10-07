@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from decimal import Decimal
 
 # Model za korisnika - centralni entitet
 class User(AbstractUser):
@@ -157,7 +158,7 @@ class Dobavljac(models.Model):
     ime_sirovine = models.CharField(max_length=200)
     cena = models.DecimalField(max_digits=10, decimal_places=2)
     rok_isporuke = models.IntegerField(help_text="Rok isporuke u danima")
-    ocena = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(0), MaxValueValidator(10)])
+    ocena = models.DecimalField(max_digits=3, decimal_places=2, validators=[MinValueValidator(Decimal('0')), MaxValueValidator(Decimal('10'))])
     datum_ocenjivanja = models.DateField()
     izabran = models.BooleanField(default=False)
     
