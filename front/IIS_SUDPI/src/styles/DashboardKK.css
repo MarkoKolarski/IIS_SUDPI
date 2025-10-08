@@ -566,3 +566,9 @@ form button:hover {
 .dashboard-kk-wrapper.sidebar-collapsed .dashboard-kk-main-content {
   margin-left: 80px;
 }
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr) !important; 
+    gap: 24px;
+}
