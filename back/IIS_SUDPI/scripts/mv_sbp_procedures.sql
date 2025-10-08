@@ -48,8 +48,17 @@ BEGIN
 END;
 /
 
+
+DELETE FROM KONTROLOR_KVALITETA;
+DELETE FROM KORISNIK;
 DELETE FROM REKLAMACIJA;
 DELETE FROM DOBAVLJAC;
+DELETE FROM IZVESTAJ;
+COMMIT;
+
+Insert into KORISNIK (PASSWORD,LAST_LOGIN,IS_SUPERUSER,USERNAME,FIRST_NAME,LAST_NAME,EMAIL,IS_STAFF,IS_ACTIVE,DATE_JOINED,SIFRA_K,IME_K,PRZ_K,MAIL_K,TIP_K)
+values ('pbkdf2_sha256$870000$TBPa0G1YJA8WchwMpSej12$Z41cEGgRWcRHjhZwEKXaVA8a7anJRXettd0mkBCxzWI=',to_timestamp('08-OCT-25 02.25.41.558910000 PM','DD-MON-RR HH.MI.SSXFF AM'),0,'kontrolor@gmail.com',null,null,null,0,1,to_timestamp('08-OCT-25 02.20.39.075427000 PM','DD-MON-RR HH.MI.SSXFF AM'),1,'kontrolor','kontrolor','kontrolor@gmail.com','kontrolor_kvaliteta');
+Insert into KONTROLOR_KVALITETA (ID, KORISNIK_ID) values (1, 1);
 COMMIT;
 
 BEGIN
@@ -82,6 +91,34 @@ BEGIN
 END;
 /
 
+BEGIN
+  FOR i IN 20..3000 LOOP
+    INSERT INTO REKLAMACIJA (
+      dobavljac_id,
+      kontrolor_id,
+      status,
+      opis_problema,
+      vreme_trajanja,
+      jacina_zalbe,
+      datum_prijema
+    ) VALUES (
+      TRUNC(DBMS_RANDOM.VALUE(20, 31)), -- dobavljac_id (assuming IDs 20-30 exist)
+      1, -- kontrolor_id (assuming IDs 1-5 exist)
+      CASE TRUNC(DBMS_RANDOM.VALUE(1, 5))
+        WHEN 1 THEN 'prijem'
+        WHEN 2 THEN 'analiza'
+        WHEN 3 THEN 'odgovor'
+        ELSE 'zatvaranje'
+      END,
+      'Problem ' || i, -- opis_problema
+      TRUNC(DBMS_RANDOM.VALUE(1, 30)), -- vreme_trajanja
+      TRUNC(DBMS_RANDOM.VALUE(1, 11)),  -- jacina_zalbe
+      SYSDATE - TRUNC(DBMS_RANDOM.VALUE(0, 365)) -- datum_prijema
+    );
+  END LOOP;
+  COMMIT;
+END;
+/
 
 
 -- Funkcija 1: Izračunavanje prosečne ocene dobavljača za sirovinu
