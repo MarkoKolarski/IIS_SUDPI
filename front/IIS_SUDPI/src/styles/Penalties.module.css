@@ -1,24 +1,24 @@
 /* General Structure */
-.penalties-wrapper {
+.penaltiesWrapper {
     display: flex;
     background-color: #f0fdfa; /* Very light green from dashboard */
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.penalties-main-content {
+.penaltiesMainContent {
     flex-grow: 1;
     margin-left: 280px;
     transition: margin-left 0.3s ease;
     padding: 0;
 }
 
-.penalties-wrapper.sidebar-collapsed .penalties-main-content {
+.penaltiesWrapper.sidebarCollapsed .penaltiesMainContent {
     margin-left: 80px;
 }
 
 /* Header Section */
-.penalties-header {
+.penaltiesHeader {
     background-color: #14b8a6; /* Main green from dashboard */
     padding: 28px;
     text-align: center;
@@ -26,7 +26,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.penalties-header h1 {
+.penaltiesHeader h1 {
     font-size: 34px;
     font-weight: 700;
     color: #ffffff; /* White text on green background */
@@ -34,7 +34,7 @@
 }
 
 /* Filter Section */
-.penalties-filter-section {
+.penaltiesFilterSection {
     padding: 24px 32px;
     border-bottom: 1px solid #a7f3d0; /* Light green border */
     display: flex;
@@ -44,21 +44,21 @@
     justify-content: flex-start; /* Flex-start za ostale elemente */
 }
 
-.filter-dropdown {
+.filterDropdown {
     display: flex;
     flex-direction: column;
     min-width: 200px;
 }
 
-.filter-dropdown label {
+.filterDropdown label {
     font-size: 15px;
     font-weight: 500;
     color: #134e4a; /* Dark green text */
     margin-bottom: 8px;
 }
 
-.filter-dropdown button,
-.filter-dropdown select {
+.filterDropdown button,
+.filterDropdown select {
     background-color: #14b8a6; /* Main green */
     color: white;
     border: none;
@@ -73,23 +73,23 @@
     transition: background-color 0.2s;
 }
 
-.filter-dropdown button:hover,
-.filter-dropdown select:hover {
+.filterDropdown button:hover,
+.filterDropdown select:hover {
     background-color: #0f766e; /* Darker green on hover */
 }
 
-.filter-dropdown select {
+.filterDropdown select {
     width: 100%;
     appearance: none;
 }
 
-.filter-dropdown select option {
+.filterDropdown select option {
     background-color: white;
     color: #134e4a;
 }
 
 /* Check Violations Button */
-.check-violations-btn {
+.checkViolationsBtn {
     background-color: #14b8a6 !important;
     color: white !important;
     border: none;
@@ -108,18 +108,18 @@
     min-width: 260px;
 }
 
-.check-violations-btn:hover:not(:disabled) {
+.checkViolationsBtn:hover:not(:disabled) {
     background-color: #0f766e !important;
     box-shadow: 0 4px 6px rgba(20, 184, 166, 0.3);
     transform: translateY(-1px);
 }
 
-.check-violations-btn:disabled {
+.checkViolationsBtn:disabled {
     opacity: 0.7;
     cursor: not-allowed;
 }
 
-.check-violations-btn span:first-child {
+.checkViolationsBtn span:first-child {
     font-size: 18px;
 }
 
@@ -140,7 +140,7 @@
 }
 
 /* Violation Message Notification */
-.violation-message {
+.violationMessage {
     margin: 0 32px;
     padding: 16px 24px;
     border-radius: 6px;
@@ -153,25 +153,25 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.violation-message.success {
+.violationMessage.success {
     background-color: #d1fae5;
     color: #065f46;
     border-left: 4px solid #10b981;
 }
 
-.violation-message.success::before {
+.violationMessage.success::before {
     content: "✓";
     font-size: 20px;
     font-weight: bold;
 }
 
-.violation-message.error {
+.violationMessage.error {
     background-color: #fee2e2;
     color: #991b1b;
     border-left: 4px solid #ef4444;
 }
 
-.violation-message.error::before {
+.violationMessage.error::before {
     content: "✕";
     font-size: 20px;
     font-weight: bold;
@@ -189,11 +189,11 @@
 }
 
 /* Table Section */
-.penalties-table-section {
+.penaltiesTableSection {
     padding: 32px;
 }
 
-.table-container {
+.tableContainer {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1); /* Green shadow */
     overflow: hidden;
@@ -203,58 +203,58 @@
     background-color: #ffffff; /* White background */
 }
 
-.table-title-header {
+.tableTitleHeader {
     background-color: #14b8a6; /* Main green */
     padding: 20px 24px;
     text-align: center;
 }
 
-.table-title-header h2 {
+.tableTitleHeader h2 {
     font-size: 23px;
     font-weight: 700;
     color: #ffffff; /* White text */
     margin: 0;
 }
 
-.table-content {
+.tableContent {
     width: 100%;
 }
 
-.penalties-table-header, .table-row {
+.penaltiesTableHeader, .tableRow {
     display: flex;
     width: 100%;
 }
 
-.penalties-table-header {
+.penaltiesTableHeader {
     background-color: #a7f3d0; /* Light green background */
     border-bottom: 1px solid #14b8a6; /* Main green border */
 }
 
-.penalties-table-header .table-col {
+.penaltiesTableHeader .tableCol {
     padding: 14px 20px;
     font-size: 16px;
     font-weight: 500;
     color: #065f46; /* Dark green text */
 }
 
-.penalties-table-body .table-row {
+.penaltiesTableBody .tableRow {
     border-bottom: 1px solid #a7f3d0; /* Light green border */
     transition: background-color 0.2s;
 }
 
-.penalties-table-body .table-row:hover {
+.penaltiesTableBody .tableRow:hover {
     background-color: #d1fae5; /* Light green hover */
 }
 
-.penalties-table-body .row-dark {
+.penaltiesTableBody .rowDark {
     background-color: #ecfdf5; /* Very light green */
 }
 
-.penalties-table-body .row-light {
+.penaltiesTableBody .rowLight {
     background-color: #ffffff; /* White */
 }
 
-.penalties-table-body .table-col {
+.penaltiesTableBody .tableCol {
     padding: 16px 20px;
     font-size: 15px;
     color: #134e4a; /* Dark green text */
@@ -262,15 +262,15 @@
     align-items: center;
 }
 
-.col-id { width: 8%; }
-.col-dobavljac { width: 15%; }
-.col-ugovor { width: 18%; }
-.col-datum { width: 20%; }
-.col-iznos { width: 18%; justify-content: flex-end; }
-.col-status { width: 21%; justify-content: flex-end; }
+.colId { width: 8%; }
+.colDobavljac { width: 15%; }
+.colUgovor { width: 18%; }
+.colDatum { width: 20%; }
+.colIznos { width: 18%; justify-content: flex-end; }
+.colStatus { width: 21%; justify-content: flex-end; }
 
 /* Status Badges */
-.status-badge {
+.statusBadge {
     padding: 4px 12px;
     border-radius: 12px;
     font-size: 14px;
@@ -278,22 +278,22 @@
     text-align: center;
 }
 
-.status-resolved {
+.statusResolved {
     background-color: #d1fae5; /* Light green background */
     color: #065f46; /* Dark green text */
 }
 
-.status-notified {
+.statusNotified {
     background-color: #fef3c7;
     color: #92400e;
 }
 
 /* Analysis Section */
-.analysis-section {
+.analysisSection {
     padding: 0 32px 48px 32px;
 }
 
-.analysis-container {
+.analysisContainer {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(20, 184, 166, 0.1);
     overflow: hidden;
@@ -302,35 +302,35 @@
     border: 1px solid #a7f3d0;
 }
 
-.analysis-title-header {
+.analysisTitleHeader {
     background-color: #14b8a6;
     padding: 20px 24px;
     text-align: center;
 }
 
-.analysis-title-header h2 {
+.analysisTitleHeader h2 {
     font-size: 23px;
     font-weight: 700;
     color: #ffffff;
     margin: 0;
 }
 
-.analysis-cards-wrapper {
+.analysisCardsWrapper {
     display: flex;
     background-color: #a7f3d0;
 }
 
-.analysis-card {
+.analysisCard {
     flex: 1;
     padding: 28px;
     background-color: #ffffff;
 }
 
-.analysis-card:first-child {
+.analysisCard:first-child {
     border-right: 1px solid #a7f3d0;
 }
 
-.analysis-card h3 {
+.analysisCard h3 {
     font-size: 20px;
     font-weight: 700;
     color: #134e4a;
@@ -338,62 +338,62 @@
     margin-bottom: 20px;
 }
 
-.analysis-card p {
+.analysisCard p {
     font-size: 16px;
     color: #134e4a;
     line-height: 1.6;
     margin: 0 0 12px 0;
 }
 
-.analysis-card p strong {
+.analysisCard p strong {
     font-weight: 600;
 }
 
-.critical-metric {
+.criticalMetric {
     color: #ef4444 !important;
     font-weight: 600;
 }
 
-.warning-metric {
+.warningMetric {
     color: #f59e0b !important;
     font-weight: 600;
 }
 
-.positive-metric {
+.positiveMetric {
     color: #16a34a !important;
     font-weight: 600;
 }
 
-.recommendation-negative {
+.recommendationNegative {
     color: #dc2626 !important;
     font-weight: 700;
 }
 
-.recommendation-warning {
+.recommendationWarning {
     color: #f59e0b !important;
     font-weight: 700;
 }
 
-.recommendation-positive {
+.recommendationPositive {
     color: #065f46 !important;
     font-weight: 700;
 }
 
 /* Responsive */
 @media (max-width: 1200px) {
-    .penalties-table-section, .analysis-section {
+    .penaltiesTableSection, .analysisSection {
         overflow-x: auto;
     }
-    .table-container, .analysis-container {
+    .tableContainer, .analysisContainer {
         min-width: 1000px;
     }
 }
 
 @media (max-width: 768px) {
-    .analysis-cards-wrapper {
+    .analysisCardsWrapper {
         flex-direction: column;
     }
-    .analysis-card:first-child {
+    .analysisCard:first-child {
         border-right: none;
         border-bottom: 1px solid #a7f3d0;
     }

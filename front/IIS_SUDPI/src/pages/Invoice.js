@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import MainSideBar from "../components/MainSideBar";
-import "../styles/Invoice.css";
+import styles from "../styles/Invoice.module.css";
 import { FaChevronDown, FaTimes, FaSearch } from "react-icons/fa";
 import axiosInstance from "../axiosInstance";
 import { useNavigate } from "react-router-dom";
@@ -118,13 +118,13 @@ const Invoice = () => {
   const getStatusClassName = (status) => {
     switch (status) {
       case "Čeka verifikaciju":
-        return "status-waiting";
+        return "statusWaiting";
       case "Plaćeno":
-        return "status-paid";
+        return "statusPaid";
       case "Primljeno":
-        return "status-received";
+        return "statusReceived";
       case "Odbačeno":
-        return "status-rejected";
+        return "statusRejected";
       default:
         return "";
     }
@@ -152,33 +152,33 @@ const Invoice = () => {
 
   return (
     <div
-      className={`invoice-wrapper ${
-        isSidebarCollapsed ? "sidebar-collapsed" : ""
+      className={`${styles.invoiceWrapper} ${
+        isSidebarCollapsed ? styles.sidebarCollapsed : ""
       }`}
     >
       <MainSideBar
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />
-      <main className="invoice-main-content">
-        <header className="invoice-header">
+      <main className={styles.invoiceMainContent}>
+        <header className={styles.invoiceHeader}>
           <h1>Fakture</h1>
         </header>
 
-        <section className="filter-section">
-          <div className="filter-controls">
-            <div className="filter-dropdown">
+        <section className={styles.filterSection}>
+          <div className={styles.filterControls}>
+            <div className={styles.filterDropdown}>
               <label>Status</label>
               <button onClick={() => toggleDropdown("status")}>
                 <span>{getSelectedLabel("statusi", filters.status)}</span>
                 <FaChevronDown />
               </button>
               {dropdownOpen.status && (
-                <div className="dropdown-menu">
+                <div className={styles.dropdownMenu}>
                   {filterOptions.statusi.map((option) => (
                     <div
                       key={option.value}
-                      className="dropdown-item"
+                      className={styles.dropdownItem}
                       onClick={() => handleFilterChange("status", option.value)}
                     >
                       {option.label}
@@ -187,18 +187,18 @@ const Invoice = () => {
                 </div>
               )}
             </div>
-            <div className="filter-dropdown">
+            <div className={styles.filterDropdown}>
               <label>Dobavljač</label>
               <button onClick={() => toggleDropdown("dobavljac")}>
                 <span>{getSelectedLabel("dobavljaci", filters.dobavljac)}</span>
                 <FaChevronDown />
               </button>
               {dropdownOpen.dobavljac && (
-                <div className="dropdown-menu">
+                <div className={styles.dropdownMenu}>
                   {filterOptions.dobavljaci.map((option) => (
                     <div
                       key={option.value}
-                      className="dropdown-item"
+                      className={styles.dropdownItem}
                       onClick={() =>
                         handleFilterChange("dobavljac", option.value)
                       }
@@ -209,18 +209,18 @@ const Invoice = () => {
                 </div>
               )}
             </div>
-            <div className="filter-dropdown">
+            <div className={styles.filterDropdown}>
               <label>Datum</label>
               <button onClick={() => toggleDropdown("datum")}>
                 <span>{getSelectedLabel("datumi", filters.datum)}</span>
                 <FaChevronDown />
               </button>
               {dropdownOpen.datum && (
-                <div className="dropdown-menu">
+                <div className={styles.dropdownMenu}>
                   {filterOptions.datumi.map((option) => (
                     <div
                       key={option.value}
-                      className="dropdown-item"
+                      className={styles.dropdownItem}
                       onClick={() => handleFilterChange("datum", option.value)}
                     >
                       {option.label}
@@ -231,8 +231,8 @@ const Invoice = () => {
             </div>
           </div>
 
-          <div className="search-and-filters">
-            <div className="search-box">
+          <div className={styles.searchAndFilters}>
+            <div className={styles.searchBox}>
               <input
                 type="text"
                 placeholder="Pretraži fakture..."
@@ -246,79 +246,79 @@ const Invoice = () => {
             </div>
 
             {activeSearch && (
-              <div className="active-filters">
-                <div className="filter-chip">
+              <div className={styles.activeFilters}>
+                <div className={styles.filterChip}>
                   <span>Pretraga: "{activeSearch}"</span>
-                  <FaTimes className="remove-chip-icon" onClick={clearSearch} />
+                  <FaTimes className={styles.removeChipIcon} onClick={clearSearch} />
                 </div>
               </div>
             )}
           </div>
         </section>
 
-        <section className="table-section">
-          <div className="table-container">
-            <div className="table-title-header">
+        <section className={styles.tableSection}>
+          <div className={styles.tableContainer}>
+            <div className={styles.tableTitleHeader}>
               <h2>Lista faktura ({pagination.count} ukupno)</h2>
             </div>
-            <div className="table-content">
-              <div className="table-header">
-                <div className="table-col" style={{ width: "12%" }}>
+            <div className={styles.tableContent}>
+              <div className={styles.tableHeader}>
+                <div className={styles.tableCol} style={{ width: "12%" }}>
                   ID
                 </div>
-                <div className="table-col" style={{ width: "12%" }}>
+                <div className={styles.tableCol} style={{ width: "12%" }}>
                   Dobavljač
                 </div>
-                <div className="table-col" style={{ width: "14%" }}>
+                <div className={styles.tableCol} style={{ width: "14%" }}>
                   Iznos
                 </div>
-                <div className="table-col" style={{ width: "20%" }}>
+                <div className={styles.tableCol} style={{ width: "20%" }}>
                   Datum prijema
                 </div>
-                <div className="table-col" style={{ width: "20%" }}>
+                <div className={styles.tableCol} style={{ width: "20%" }}>
                   Rok plaćanja
                 </div>
-                <div className="table-col status-col" style={{ width: "22%" }}>
+                <div className={`${styles.tableCol} ${styles.statusCol}`} style={{ width: "22%" }}>
                   Status
                 </div>
               </div>
-              <div className="table-body">
+              <div className={styles.tableBody}>
                 {loading ? (
-                  <div className="loading-message">Učitavanje faktura...</div>
+                  <div className={styles.loadingMessage}>Učitavanje faktura...</div>
                 ) : invoices.length === 0 ? (
-                  <div className="no-data-message">Nema faktura za prikaz</div>
+                  <div className={styles.noDataMessage}>Nema faktura za prikaz</div>
                 ) : (
                   invoices.map((invoice, index) => (
                     <div
                       key={invoice.sifra_f}
-                      className={`table-row ${
-                        index % 2 === 0 ? "row-even" : "row-odd"
-                      } clickable-row`}
+                      className={`${styles.tableRow} ${
+                        index % 2 === 0 ? styles.rowEven : styles.rowOdd
+                      } ${styles.clickableRow}`}
                       onClick={() => handleInvoiceClick(invoice.sifra_f)}
                     >
-                      <div className="table-col" style={{ width: "12%" }}>
+                      <div className={styles.tableCol} style={{ width: "12%" }}>
                         {invoice.sifra_f}
                       </div>
-                      <div className="table-col" style={{ width: "12%" }}>
+                      <div className={styles.tableCol} style={{ width: "12%" }}>
                         {invoice.dobavljac_naziv}
                       </div>
-                      <div className="table-col" style={{ width: "14%" }}>
+                      <div className={styles.tableCol} style={{ width: "14%" }}>
                         {formatAmount(invoice.iznos_f)}
                       </div>
-                      <div className="table-col" style={{ width: "20%" }}>
+                      <div className={styles.tableCol} style={{ width: "20%" }}>
                         {formatDate(invoice.datum_prijema_f)}
                       </div>
-                      <div className="table-col" style={{ width: "20%" }}>
+                      <div className={styles.tableCol} style={{ width: "20%" }}>
                         {formatDate(invoice.rok_placanja_f)}
                       </div>
                       <div
-                        className="table-col status-col"
+                        className={`${styles.tableCol} ${styles.statusCol}`}
                         style={{ width: "22%" }}
                       >
                         <span
-                          className={`status-badge ${getStatusClassName(
+                          className={`${styles.statusBadge} ${styles[getStatusClassName(
                             invoice.status_display
-                          )}`}
+                          )]}`}
                         >
                           {invoice.status_display}
                         </span>
@@ -331,7 +331,7 @@ const Invoice = () => {
 
             {/* Paginacija */}
             {!loading && invoices.length > 0 && pagination.num_pages > 1 && (
-              <div className="pagination">
+              <div className={styles.pagination}>
                 <button
                   onClick={() =>
                     setPagination((prev) => ({
@@ -340,11 +340,11 @@ const Invoice = () => {
                     }))
                   }
                   disabled={!pagination.has_previous}
-                  className="pagination-btn"
+                  className={styles.paginationBtn}
                 >
                   Prethodna
                 </button>
-                <span className="pagination-info">
+                <span className={styles.paginationInfo}>
                   Stranica {pagination.current_page} od {pagination.num_pages}
                 </span>
                 <button
@@ -355,7 +355,7 @@ const Invoice = () => {
                     }))
                   }
                   disabled={!pagination.has_next}
-                  className="pagination-btn"
+                  className={styles.paginationBtn}
                 >
                   Sledeća
                 </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import MainSideBar from "../components/MainSideBar";
 import PaymentSimulationModal from "../components/PaymentSimulationModal";
-import "../styles/InvoiceDetails.css";
+import styles from "../styles/InvoiceDetails.module.css";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
 
@@ -81,16 +81,16 @@ const InvoiceDetails = () => {
   if (loading) {
     return (
       <div
-        className={`invoice-details-wrapper ${
-          isSidebarCollapsed ? "sidebar-collapsed" : ""
+        className={`${styles.invoiceDetailsWrapper} ${
+          isSidebarCollapsed ? styles.sidebarCollapsed : ""
         }`}
       >
         <MainSideBar
           isCollapsed={isSidebarCollapsed}
           toggleSidebar={toggleSidebar}
         />
-        <main className="invoice-details-main">
-          <div className="loading-message">Učitavanje detalja fakture...</div>
+        <main className={styles.invoiceDetailsMain}>
+          <div className={styles.loadingMessage}>Učitavanje detalja fakture...</div>
         </main>
       </div>
     );
@@ -99,16 +99,16 @@ const InvoiceDetails = () => {
   if (!invoice) {
     return (
       <div
-        className={`invoice-details-wrapper ${
-          isSidebarCollapsed ? "sidebar-collapsed" : ""
+        className={`${styles.invoiceDetailsWrapper} ${
+          isSidebarCollapsed ? styles.sidebarCollapsed : ""
         }`}
       >
         <MainSideBar
           isCollapsed={isSidebarCollapsed}
           toggleSidebar={toggleSidebar}
         />
-        <main className="invoice-details-main">
-          <div className="error-message">Faktura nije pronađena.</div>
+        <main className={styles.invoiceDetailsMain}>
+          <div className={styles.errorMessage}>Faktura nije pronađena.</div>
         </main>
       </div>
     );
@@ -116,59 +116,59 @@ const InvoiceDetails = () => {
 
   return (
     <div
-      className={`invoice-details-wrapper ${
-        isSidebarCollapsed ? "sidebar-collapsed" : ""
+      className={`${styles.invoiceDetailsWrapper} ${
+        isSidebarCollapsed ? styles.sidebarCollapsed : ""
       }`}
     >
       <MainSideBar
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />
-      <main className="invoice-details-main">
-        <header className="invoice-details-header">
+      <main className={styles.invoiceDetailsMain}>
+        <header className={styles.invoiceDetailsHeader}>
           <h1>Detalji fakture</h1>
         </header>
 
-        <div className="invoice-details-content">
-          <section className="invoice-summary-card">
-            <div className="invoice-summary-header">
+        <div className={styles.invoiceDetailsContent}>
+          <section className={styles.invoiceSummaryCard}>
+            <div className={styles.invoiceSummaryHeader}>
               <h2>Faktura ID: {invoice.sifra_f}</h2>
             </div>
-            <div className="invoice-summary-row row-light">
-              <div className="summary-col">
-                <span className="summary-label">Dobavljač:</span>
-                <span className="summary-value">{invoice.dobavljac_naziv}</span>
+            <div className={`${styles.invoiceSummaryRow} ${styles.rowLight}`}>
+              <div className={styles.summaryCol}>
+                <span className={styles.summaryLabel}>Dobavljač:</span>
+                <span className={styles.summaryValue}>{invoice.dobavljac_naziv}</span>
               </div>
-              <div className="summary-col">
-                <span className="summary-label">Iznos:</span>
-                <span className="summary-value">
+              <div className={styles.summaryCol}>
+                <span className={styles.summaryLabel}>Iznos:</span>
+                <span className={styles.summaryValue}>
                   {formatAmount(invoice.iznos_f)}
                 </span>
               </div>
             </div>
-            <div className="invoice-summary-row row-medium">
-              <div className="summary-col">
-                <span className="summary-label">Datum prijema:</span>
-                <span className="summary-value">
+            <div className={`${styles.invoiceSummaryRow} ${styles.rowMedium}`}>
+              <div className={styles.summaryCol}>
+                <span className={styles.summaryLabel}>Datum prijema:</span>
+                <span className={styles.summaryValue}>
                   {formatDate(invoice.datum_prijema_f)}
                 </span>
               </div>
-              <div className="summary-col">
-                <span className="summary-label">Rok plaćanja:</span>
-                <span className="summary-value">
+              <div className={styles.summaryCol}>
+                <span className={styles.summaryLabel}>Rok plaćanja:</span>
+                <span className={styles.summaryValue}>
                   {formatDate(invoice.rok_placanja_f)}
                 </span>
               </div>
             </div>
-            <div className="invoice-summary-row row-light">
-              <div className="summary-col">
-                <span className="summary-label">Status:</span>
-                <span className="summary-value">{invoice.status_display}</span>
+            <div className={`${styles.invoiceSummaryRow} ${styles.rowLight}`}>
+              <div className={styles.summaryCol}>
+                <span className={styles.summaryLabel}>Status:</span>
+                <span className={styles.summaryValue}>{invoice.status_display}</span>
               </div>
               {invoice.ugovor && (
-                <div className="summary-col">
-                  <span className="summary-label">Ugovor ID:</span>
-                  <span className="summary-value">
+                <div className={styles.summaryCol}>
+                  <span className={styles.summaryLabel}>Ugovor ID:</span>
+                  <span className={styles.summaryValue}>
                     {invoice.ugovor.sifra_u}
                   </span>
                 </div>
@@ -176,33 +176,33 @@ const InvoiceDetails = () => {
             </div>
           </section>
 
-          <section className="process-flow">
-            <div className="process-flow-header">
+          <section className={styles.processFlow}>
+            <div className={styles.processFlowHeader}>
               <h3>Vizuelni tok procesa</h3>
             </div>
-            <div className="process-flow-body">
+            <div className={styles.processFlowBody}>
               {invoice.process_steps &&
                 invoice.process_steps.map((step, index) => (
                   <React.Fragment key={step.number}>
-                    <div className={`process-step ${step.status}`}>
-                      <div className="step-circle">{step.number}</div>
-                      <span className="step-label">{step.label}</span>
+                    <div className={`${styles.processStep} ${styles[step.status]}`}>
+                      <div className={styles.stepCircle}>{step.number}</div>
+                      <span className={styles.stepLabel}>{step.label}</span>
                     </div>
                     {index < invoice.process_steps.length - 1 && (
-                      <div className="step-connector" aria-hidden="true" />
+                      <div className={styles.stepConnector} aria-hidden="true" />
                     )}
                   </React.Fragment>
                 ))}
             </div>
           </section>
 
-          <section className="bottom-cards">
+          <section className={styles.bottomCards}>
             {invoice.razlog_cekanja_f && (
-              <div className="discrepancy-card">
-                <div className="card-header">
+              <div className={styles.discrepancyCard}>
+                <div className={styles.cardHeader}>
                   <h3>Razlog čekanja</h3>
                 </div>
-                <div className="card-body">
+                <div className={styles.cardBody}>
                   <p>
                     <strong>Razlog:</strong> {invoice.razlog_cekanja_f}
                   </p>
@@ -211,13 +211,13 @@ const InvoiceDetails = () => {
             )}
 
             {invoice.stavke && invoice.stavke.length > 0 && (
-              <div className="items-card">
-                <div className="card-header">
+              <div className={styles.itemsCard}>
+                <div className={styles.cardHeader}>
                   <h3>Stavke fakture</h3>
                 </div>
-                <div className="card-body">
+                <div className={styles.cardBody}>
                   {invoice.stavke.map((stavka) => (
-                    <div key={stavka.sifra_sf} className="invoice-item">
+                    <div key={stavka.sifra_sf} className={styles.invoiceItem}>
                       <p>
                         <strong>{stavka.naziv_sf}</strong>
                       </p>
@@ -234,26 +234,26 @@ const InvoiceDetails = () => {
 
             {(invoice.status_f === "primljena" ||
               invoice.status_f === "verifikovana") && (
-              <div className="notification-card">
-                <div className="card-header">
+              <div className={styles.notificationCard}>
+                <div className={styles.cardHeader}>
                   <h3>Akcije</h3>
                 </div>
-                <div className="card-body">
-                  <p className="notification-question">
+                <div className={styles.cardBody}>
+                  <p className={styles.notificationQuestion}>
                     {invoice.status_f === "primljena"
                       ? "Da li želite da verifikujete fakturu?"
                       : "Da li želite da odobrite isplatu?"}
                   </p>
-                  <div className="notification-actions">
+                  <div className={styles.notificationActions}>
                     <button
-                      className="notification-btn confirm"
+                      className={`${styles.notificationBtn} ${styles.confirm}`}
                       onClick={() => handleInvoiceAction("approve")}
                       disabled={actionLoading}
                     >
                       {actionLoading ? "Procesiranje..." : "Odobri"}
                     </button>
                     <button
-                      className="notification-btn decline"
+                      className={`${styles.notificationBtn} ${styles.decline}`}
                       onClick={() => {
                         const reason = prompt("Unesite razlog odbacivanja:");
                         if (reason) handleInvoiceAction("reject", reason);
@@ -268,11 +268,11 @@ const InvoiceDetails = () => {
             )}
 
             {invoice.transakcija && (
-              <div className="transaction-card">
-                <div className="card-header">
+              <div className={styles.transactionCard}>
+                <div className={styles.cardHeader}>
                   <h3>Transakcija</h3>
                 </div>
-                <div className="card-body">
+                <div className={styles.cardBody}>
                   <p>
                     <strong>ID transakcije:</strong>{" "}
                     {invoice.transakcija.sifra_t}
@@ -293,13 +293,13 @@ const InvoiceDetails = () => {
           </section>
         </div>
 
-        <div className="action-buttons">
-          <button className="back-btn" onClick={() => navigate("/invoice")}>
+        <div className={styles.actionButtons}>
+          <button className={styles.backBtn} onClick={() => navigate("/invoice")}>
             ← Nazad na listu faktura
           </button>
           {invoice.status_f === "verifikovana" && (
             <button
-              className="simulate-payment-btn"
+              className={styles.simulatePaymentBtn}
               onClick={openPaymentSimulation}
             >
               Simulacija plaćanja

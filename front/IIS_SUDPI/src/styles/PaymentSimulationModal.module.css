@@ -1,5 +1,5 @@
 /* Modal Overlay */
-.payment-modal-overlay {
+.paymentModalOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -24,7 +24,7 @@
 }
 
 /* Modal Container */
-.payment-modal-container {
+.paymentModalContainer {
     width: 400px;
     max-width: 90vw;
     background: #d1fae5; /* Light green background matching theme */
@@ -49,7 +49,7 @@
 }
 
 /* Modal Title */
-.payment-modal-title {
+.paymentModalTitle {
     font-size: 28px;
     font-weight: 700;
     color: #065f46; /* Dark green for title */
@@ -60,7 +60,7 @@
 }
 
 /* Progress Bar */
-.payment-progress-bar {
+.paymentProgressBar {
     width: 100%;
     height: 7px;
     background: rgba(6, 95, 70, 0.15); /* Semi-transparent dark green */
@@ -69,7 +69,7 @@
     overflow: hidden;
 }
 
-.payment-progress-fill {
+.paymentProgressFill {
     height: 100%;
     background: linear-gradient(90deg, #14b8a6, #0f766e); /* Teal gradient */
     border-radius: 4px;
@@ -78,7 +78,7 @@
 }
 
 /* Steps List */
-.payment-steps-list {
+.paymentStepsList {
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -88,18 +88,18 @@
 }
 
 /* Individual Step Item */
-.payment-step-item {
+.paymentStepItem {
     position: relative;
 }
 
-.payment-step-content {
+.paymentStepContent {
     display: flex;
     align-items: center;
     gap: 18px;
 }
 
 /* Step Circle */
-.payment-step-circle {
+.paymentStepCircle {
     width: 46px;
     height: 46px;
     border: 3px solid #065f46; /* Dark green border */
@@ -113,18 +113,18 @@
     position: relative;
 }
 
-.payment-step-circle.pending {
+.paymentStepCircle.pending {
     opacity: 0.6;
     border-color: #6b7280;
 }
 
-.payment-step-circle.active {
+.paymentStepCircle.active {
     background: #14b8a6; /* Main teal color */
     border-color: #0f766e;
     animation: circlePulse 1.5s infinite;
 }
 
-.payment-step-circle.completed {
+.paymentStepCircle.completed {
     background: #22c55e; /* Success green */
     border-color: #16a34a;
     animation: completedBounce 400ms ease-out;
@@ -152,19 +152,19 @@
 }
 
 /* Step Number */
-.payment-step-number {
+.paymentStepNumber {
     font-size: 21px;
     font-weight: 700;
     color: #065f46; /* Dark green */
     line-height: 1;
 }
 
-.payment-step-circle.active .payment-step-number {
+.paymentStepCircle.active .paymentStepNumber {
     color: #ffffff;
 }
 
 /* Checkmark */
-.payment-checkmark {
+.paymentCheckmark {
     font-size: 24px;
     color: #ffffff;
     font-weight: 700;
@@ -186,7 +186,7 @@
 }
 
 /* Loading Spinner */
-.payment-spinner {
+.paymentSpinner {
     width: 26px;
     height: 26px;
     border: 3px solid rgba(255, 255, 255, 0.3);
@@ -202,7 +202,7 @@
 }
 
 /* Step Text */
-.payment-step-text {
+.paymentStepText {
     font-size: 16px;
     font-weight: 400;
     color: #134e4a; /* Dark green text */
@@ -210,27 +210,27 @@
     transition: all 0.3s ease;
 }
 
-.payment-step-text.pending {
+.paymentStepText.pending {
     opacity: 0.6;
     color: #6b7280;
 }
 
-.payment-step-text.active {
+.paymentStepText.active {
     font-weight: 600;
     color: #065f46;
 }
 
-.payment-step-text.completed {
+.paymentStepText.completed {
     color: #6b7280;
 }
 
-.payment-step-text.final {
+.paymentStepText.final {
     font-weight: 700;
     color: #16a34a; /* Success green */
 }
 
 /* Step Connector Lines */
-.payment-step-connector {
+.paymentStepConnector {
     position: absolute;
     width: 3px;
     height: 24px;
@@ -240,12 +240,12 @@
     transition: background-color 0.3s ease;
 }
 
-.payment-step-connector.completed {
+.paymentStepConnector.completed {
     background: #22c55e;
 }
 
 /* Close Button */
-.payment-modal-close-btn {
+.paymentModalCloseBtn {
     width: 160px;
     background: #14b8a6; /* Teal instead of gray to match theme */
     color: #ffffff;
@@ -263,28 +263,28 @@
     transition: all 0.2s ease;
 }
 
-.payment-modal-close-btn:hover {
+.paymentModalCloseBtn:hover {
     background: #0f766e;
     box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
     transform: translateY(-2px);
 }
 
-.payment-modal-close-btn:active {
+.paymentModalCloseBtn:active {
     transform: translateY(0) scale(0.98);
     box-shadow: 0 1px 4px rgba(15, 118, 110, 0.2);
 }
 
-.payment-modal-close-btn:focus {
+.paymentModalCloseBtn:focus {
     outline: 2px solid #14b8a6;
     outline-offset: 2px;
 }
 
 /* Modal Exit Animation */
-.payment-modal-overlay.closing {
+.paymentModalOverlay.closing {
     animation: overlayFadeOut 200ms ease-in;
 }
 
-.payment-modal-overlay.closing .payment-modal-container {
+.paymentModalOverlay.closing .paymentModalContainer {
     animation: modalScaleOut 200ms ease-in;
 }
 
@@ -309,7 +309,7 @@
 }
 
 /* Step Transitions */
-.payment-step-item {
+.paymentStepItem {
     animation: stepFadeIn 300ms ease-out;
 }
 
@@ -325,7 +325,7 @@
 }
 
 /* Error Message Styling */
-.payment-error-message {
+.paymentErrorMessage {
     background: #fee2e2;
     border: 2px solid #dc2626;
     border-radius: 12px;
@@ -337,12 +337,12 @@
     animation: errorShake 400ms ease-out;
 }
 
-.payment-error-message .error-icon {
+.paymentErrorMessage .errorIcon {
     font-size: 28px;
     flex-shrink: 0;
 }
 
-.payment-error-message p {
+.paymentErrorMessage p {
     margin: 0;
     color: #991b1b;
     font-size: 15px;
@@ -363,7 +363,7 @@
 }
 
 /* Success Info Styling */
-.payment-success-info {
+.paymentSuccessInfo {
     background: #ecfdf5;
     border: 2px solid #10b981;
     border-radius: 12px;
@@ -372,32 +372,32 @@
     animation: successSlideIn 400ms ease-out;
 }
 
-.payment-success-info h3 {
+.paymentSuccessInfo h3 {
     margin: 0 0 16px 0;
     color: #065f46;
     font-size: 18px;
     font-weight: 700;
 }
 
-.transaction-details {
+.transactionDetails {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.transaction-details p {
+.transactionDetails p {
     margin: 0;
     color: #047857;
     font-size: 14px;
     line-height: 1.5;
 }
 
-.transaction-details strong {
+.transactionDetails strong {
     color: #065f46;
     font-weight: 600;
 }
 
-.notification-status {
+.notificationStatus {
     color: #059669 !important;
     font-weight: 500 !important;
     display: flex;
@@ -418,57 +418,57 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .payment-modal-container {
+    .paymentModalContainer {
         width: 92%;
         padding: 32px;
     }
     
-    .payment-modal-title {
+    .paymentModalTitle {
         font-size: 24px;
         margin-bottom: 32px;
     }
     
-    .payment-step-circle {
+    .paymentStepCircle {
         width: 42px;
         height: 42px;
     }
     
-    .payment-step-number {
+    .paymentStepNumber {
         font-size: 19px;
     }
     
-    .payment-checkmark {
+    .paymentCheckmark {
         font-size: 22px;
     }
     
-    .payment-spinner {
+    .paymentSpinner {
         width: 24px;
         height: 24px;
     }
     
-    .payment-step-text {
+    .paymentStepText {
         font-size: 15px;
     }
     
-    .payment-step-connector {
+    .paymentStepConnector {
         left: 20px;
     }
 }
 
 @media (max-width: 480px) {
-    .payment-modal-container {
+    .paymentModalContainer {
         padding: 28px;
     }
     
-    .payment-modal-title {
+    .paymentModalTitle {
         font-size: 22px;
     }
     
-    .payment-modal-close-btn {
+    .paymentModalCloseBtn {
         width: 100%;
     }
     
-    .payment-steps-list {
+    .paymentStepsList {
         gap: 20px;
     }
 }
