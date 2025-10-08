@@ -3,11 +3,7 @@ import "../styles/DashboardKK.css";
 import MainSideBar from "../components/MainSideBar";
 import axiosInstance from "../axiosInstance";
 import VisitSupplierTable from "../components/VisitSupplierTable";
-import {
-  convertToBelgradeTime,
-  formatFullDateTimeSR,
-  compareDates,
-} from "../utils/dateUtils";
+import { formatFullDateTimeSR, compareDates } from "../utils/dateUtils";
 
 const Visits = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);

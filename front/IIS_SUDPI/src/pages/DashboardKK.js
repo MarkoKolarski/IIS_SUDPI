@@ -4,12 +4,7 @@ import MainSideBar from "../components/MainSideBar";
 import "react-calendar/dist/Calendar.css";
 import "../styles/DashboardKK.css";
 import axiosInstance from "../axiosInstance";
-import {
-  formatDateTimeSR,
-  formatFullDateTimeSR,
-  compareDates,
-  isSameDay,
-} from "../utils/dateUtils";
+import { formatDateTimeSR, compareDates, isSameDay } from "../utils/dateUtils";
 
 const DashboardKK = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -134,32 +129,6 @@ const DashboardKK = () => {
 
         {!loading && !error && (
           <div className="dashboard-grid">
-            {/* Status Cards Column */}
-            <div className="status-cards">
-              <div className="status-card today">
-                <h3>Današnje posete</h3>
-                <div className="card-number">{getTodayVisits().length}</div>
-              </div>
-              <div className="status-card scheduled">
-                <h3>Zakazane</h3>
-                <div className="card-number">
-                  {getVisitsByStatus("zakazana").length}
-                </div>
-              </div>
-              <div className="status-card in-progress">
-                <h3>U toku</h3>
-                <div className="card-number">
-                  {getVisitsByStatus("u_toku").length}
-                </div>
-              </div>
-              <div className="status-card completed">
-                <h3>Završene</h3>
-                <div className="card-number">
-                  {getVisitsByStatus("zavrsena").length}
-                </div>
-              </div>
-            </div>
-
             <div className="vists-container">
               {/* Calendar Column */}
               <div className="calendar-container">
@@ -172,6 +141,32 @@ const DashboardKK = () => {
               </div>
               {/* Upcoming Visits Column */}
               <div className="upcoming-visits-container">
+                {/* Status Cards Column */}
+                <div className="status-cards">
+                  <div className="status-card today">
+                    <h3>Današnje posete</h3>
+                    <div className="card-number">{getTodayVisits().length}</div>
+                  </div>
+                  <div className="status-card scheduled">
+                    <h3>Zakazane</h3>
+                    <div className="card-number">
+                      {getVisitsByStatus("zakazana").length}
+                    </div>
+                  </div>
+                  <div className="status-card in-progress">
+                    <h3>U toku</h3>
+                    <div className="card-number">
+                      {getVisitsByStatus("u_toku").length}
+                    </div>
+                  </div>
+                  <div className="status-card completed">
+                    <h3>Završene</h3>
+                    <div className="card-number">
+                      {getVisitsByStatus("zavrsena").length}
+                    </div>
+                  </div>
+                </div>
+
                 <h2>Predstojeće posete</h2>
                 <div className="visits-timeline">
                   {visits
@@ -193,12 +188,22 @@ const DashboardKK = () => {
                         </div>
                         <div className="timeline-content">
                           <h4>{visit.dobavljac}</h4>
-                          <div className="timeline-time">
-                            {new Intl.DateTimeFormat("sr-RS", {
-                              timeZone: "Europe/Belgrade",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }).format(new Date(visit.datum_od))}
+                          <div>
+                            <span className="timeline-time">
+                              {new Intl.DateTimeFormat("sr-RS", {
+                                timeZone: "Europe/Belgrade",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }).format(new Date(visit.datum_od))}
+                            </span>
+                            <span> - </span>
+                            <span className="timeline-time">
+                              {new Intl.DateTimeFormat("sr-RS", {
+                                timeZone: "Europe/Belgrade",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }).format(new Date(visit.datum_do))}
+                            </span>
                           </div>
                           <div className="visit-duration">
                             Trajanje:{" "}

@@ -5,11 +5,7 @@ import "react-calendar/dist/Calendar.css";
 import MainSideBar from "../components/MainSideBar";
 import axiosInstance from "../axiosInstance";
 import "../styles/ScheduleVisit.css";
-import {
-  convertISOToLocalTime,
-  convertToBelgradeTime,
-  convertToISOString,
-} from "../utils/dateUtils";
+import { convertISOToLocalTime, convertToISOString } from "../utils/dateUtils";
 
 const ScheduleVisit = () => {
   const { supplierId } = useParams();

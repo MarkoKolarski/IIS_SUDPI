@@ -8,8 +8,16 @@
 .dashboard-kk-main-content {
     flex-grow: 1;
     margin-left: 280px;
+    padding: 20px;
     transition: margin-left 0.3s ease;
-    padding: 0;
+}
+
+.sidebar-collapsed .dashboard-kk-main-content {
+    margin-left: 60px;
+}
+
+.dashboard-header {
+    margin-bottom: 30px;
 }
 
 .calendar-section {
@@ -244,40 +252,33 @@ form button:hover {
 /* Dashboard Grid Layout */
 .dashboard-grid {
   display: flex;
+  gap: 20px;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  height: calc(100vh - 80px);
-  grid-template-columns: repeat(1, 1fr);
 }
 
 .vists-container {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 /* Status Cards */
 .status-cards {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  width: 100%;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
 .status-card {
   background: white;
-  padding: 12px;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  text-align: center;
-  height: 70px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .status-card h3 {
-  font-size: 12px;
+  font-size: 11px;
   margin: 0 0 4px 0;
   color: #6b7280;
 }
@@ -322,7 +323,6 @@ form button:hover {
 /* Main Grid */
 .main-grid {
   display: grid;
-  grid-template-columns: 1fr;
   gap: 20px;
   flex: 1;
   min-height: 0;
@@ -331,18 +331,17 @@ form button:hover {
 /* Calendar Container */
 .calendar-container {
   background: white;
-  padding: 16px;
+  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  overflow-y: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Upcoming Visits Container */
 .upcoming-visits-container {
   background: white;
-  padding: 16px;
+  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
 }
 
@@ -363,18 +362,16 @@ form button:hover {
 
 .timeline-item {
   display: flex;
-  gap: 12px;
-  padding: 16px;
+  margin-bottom: 15px;
+  padding: 10px;
   background: white;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .timeline-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .timeline-item.zakazana {
@@ -412,6 +409,9 @@ form button:hover {
 }
 
 .visit-status-select {
+  margin-top: 10px;
+  padding: 5px;
+  border-radius: 4px;
   padding: 8px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -421,7 +421,6 @@ form button:hover {
   cursor: pointer;
   transition: all 0.2s;
   width: max-content;
-  margin-top: 8px;
 }
 
 .visit-status-select:hover {
@@ -447,7 +446,6 @@ form button:hover {
 .timeline-time {
   color: #6b7280;
   font-size: 14px;
-  display: flex;
   align-items: center;
   gap: 4px;
 }
@@ -557,20 +555,14 @@ form button:hover {
   color: #b91c1c;
 }
 
-  .status-cards {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  
-  .dashboard-kk-main-content {
-    margin-left: 280px;
-  }
-  
-  .dashboard-kk-wrapper.sidebar-collapsed .dashboard-kk-main-content {
-    margin-left: 80px;
-  }
+.status-cards {
+  grid-template-columns: repeat(4, 1fr);
+}
 
+.dashboard-kk-main-content {
+  margin-left: 280px;
+}
 
-
-  .main-grid {
-    grid-template-columns: 1.5fr 1fr;
-  }
+.dashboard-kk-wrapper.sidebar-collapsed .dashboard-kk-main-content {
+  margin-left: 80px;
+}
