@@ -117,6 +117,13 @@ const SuppliersTable = () => {
     }
   };
 
+  // Helper function to format date as DD.MM.YYYY
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("sr-RS"); // Serbian locale for DD.MM.YYYY format
+  };
+
   return (
     <div className="suppliers-container">
       <h1 className="suppliers-title">Dobavljaci</h1>
@@ -135,6 +142,8 @@ const SuppliersTable = () => {
             <th>Sirovina</th>
             <th>Email</th>
             <th>Ocena</th>
+            <th>Datum ocenjivanja</th>
+            <th>Rok isporuke</th>
             <th>Sertifikati</th>
             {userType === "nabavni_menadzer" && <th>Akcije</th>}
           </tr>
@@ -150,6 +159,8 @@ const SuppliersTable = () => {
                 <td>{supplier.ime_sirovine}</td>
                 <td>{supplier.email}</td>
                 <td>{supplier.ocena}/10</td>
+                <td>{formatDate(supplier.datum_ocenjivanja)}</td>
+                <td>{supplier.rok_isporuke} dana</td>
                 <td>
                   <div className={`certificate-status ${certStatus.status}`}>
                     {certStatus.status === "critical" && (
