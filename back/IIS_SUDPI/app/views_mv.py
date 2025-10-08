@@ -310,6 +310,8 @@ def create_complaint(request):
         try:
             dobavljac = Dobavljac.objects.get(sifra_d=dobavljac_id)
             
+            new_rating = dobavljac.ocena
+            
             # Ako je konfiguracija postavljena da se koristi Django logika
             if settings.BUSINESS_LOGIC_IN_DJANGO.get('supplier_rating', True):
                 # Calculate rating penalty based on complaint strength
