@@ -48,6 +48,39 @@ BEGIN
 END;
 /
 
+DELETE FROM DOBAVLJAC;
+COMMIT;
+
+BEGIN
+  FOR i IN 20..30 LOOP
+    INSERT INTO DOBAVLJAC (
+      SIFRA_D,
+      NAZIV,
+      EMAIL,
+      PIB_D,
+      IME_SIROVINE,
+      CENA,
+      ROK_ISPORUKE,
+      OCENA,
+      DATUM_OCENJIVANJA,
+      IZABRAN
+    ) VALUES (
+      i,
+      'Dobavljac_' || i,
+      'email' || i || '@example.com',
+      'PIB' || LPAD(i, 2, '0'),
+      'Čelik X1',
+      ROUND(DBMS_RANDOM.VALUE(50, 500), 2),
+      TRUNC(DBMS_RANDOM.VALUE(1, 30)),
+      ROUND(DBMS_RANDOM.VALUE(1, 5), 1),
+      TRUNC(SYSDATE - DBMS_RANDOM.VALUE(1, 365)),
+      CASE WHEN DBMS_RANDOM.VALUE < 0.5 THEN 0 ELSE 1 END
+    );
+  END LOOP;
+  COMMIT;
+END;
+/
+
 -- Funkcija 1: Izračunavanje prosečne ocene dobavljača za sirovinu
 CREATE OR REPLACE FUNCTION IZRACUNAJ_PROSECNU_OCENU_SIROVINE(
     p_ime_sirovine VARCHAR2
@@ -101,7 +134,7 @@ DECLARE
     v_ocena NUMBER;
     v_rok_isporuke NUMBER;
 BEGIN
-    v_result_cursor := NADJI_ALTERNATIVE_DOBAVLJACE(103);
+    v_result_cursor := NADJI_ALTERNATIVE_DOBAVLJACE(20);
     
     LOOP
         FETCH v_result_cursor INTO v_sifra_d, v_naziv, v_ocena, v_rok_isporuke;
