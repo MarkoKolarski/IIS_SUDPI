@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import MainSideBar from "../components/MainSideBar";
-import "../styles/Reports.css";
+import styles from "../styles/Reports.module.css";
 import axiosInstance from "../axiosInstance";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -189,7 +189,7 @@ const Reports = () => {
       yPosition += 28;
 
       // GRAFIČKI PRIKAZI
-      const chartSection = document.querySelector('.chart-section');
+      const chartSection = document.querySelector(`.${styles.chartSection}`);
       if (chartSection) {
         pdf.setFontSize(14);
         pdf.setFont('helvetica', 'bold');
@@ -432,22 +432,22 @@ const Reports = () => {
 
   return (
     <div
-      className={`reports-wrapper ${
-        isSidebarCollapsed ? "sidebar-collapsed" : ""
+      className={`${styles.reportsWrapper} ${
+        isSidebarCollapsed ? styles.sidebarCollapsed : ""
       }`}
     >
       <MainSideBar
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />
-      <div className="reports-main-content">
-        <header className="reports-header">
+      <div className={styles.reportsMainContent}>
+        <header className={styles.reportsHeader}>
           <h1>Izveštaji</h1>
         </header>
 
-        <section className="reports-filter-section">
-          <div className="filter-controls">
-            <div className="filter-dropdown">
+        <section className={styles.reportsFilterSection}>
+          <div className={styles.filterControls}>
+            <div className={styles.filterDropdown}>
               <label htmlFor="status-filter">Status</label>
               <select
                 id="status-filter"
@@ -461,7 +461,7 @@ const Reports = () => {
                 ))}
               </select>
             </div>
-            <div className="filter-dropdown">
+            <div className={styles.filterDropdown}>
               <label htmlFor="period-filter">Period</label>
               <select
                 id="period-filter"
@@ -475,7 +475,7 @@ const Reports = () => {
                 ))}
               </select>
             </div>
-            <div className="filter-dropdown">
+            <div className={styles.filterDropdown}>
               <label htmlFor="group-by-filter">Grupiši po</label>
               <select
                 id="group-by-filter"
@@ -492,18 +492,18 @@ const Reports = () => {
           </div>
 
           {/* Right aligned actions (PDF download, etc.) */}
-          <div className="filter-actions">
+          <div className={styles.filterActions}>
             <label htmlFor="pdf-download">&nbsp;</label>
-            <button className="download-pdf-btn" onClick={downloadPDF}>
-              <span className="pdf-icon">📄</span>
+            <button className={styles.downloadPdfBtn} onClick={downloadPDF}>
+              <span className={styles.pdfIcon}>📄</span>
               Preuzmi PDF
             </button>
           </div>
         </section>
 
-        <section className="chart-section">
-          <div className="chart-card">
-            <div className="chart-card-header">
+        <section className={styles.chartSection}>
+          <div className={styles.chartCard}>
+            <div className={styles.chartCardHeader}>
               <h2>
                 Profitabilnost po{" "}
                 {filters.group_by === "proizvodu"
@@ -513,12 +513,12 @@ const Reports = () => {
                   : "kategoriji"}
               </h2>
             </div>
-            <div className="chart-card-body">
+            <div className={styles.chartCardBody}>
               {loading ? (
-                <div className="loading">Učitava...</div>
+                <div className={styles.loading}>Učitava...</div>
               ) : (
-                <div className="chart-placeholder">
-                  <div className="chart-summary">
+                <div className={styles.chartPlaceholder}>
+                  <div className={styles.chartSummary}>
                     <h3>
                       Ukupna profitabilnost:{" "}
                       {formatProfitability(reportsData.total_profitability)}
@@ -526,12 +526,12 @@ const Reports = () => {
                     {(reportsData.chart_data?.profitability || [])
                       .slice(0, 5)
                       .map((item, index) => (
-                        <div key={index} className="chart-item">
+                        <div key={index} className={styles.chartItem}>
                           <span>
                             {item.name}: {formatProfitability(item.value)}
                           </span>
                           <div
-                            className="chart-bar"
+                            className={styles.chartBar}
                             style={{ width: `${Math.abs(item.value)}%` }}
                           ></div>
                         </div>
@@ -541,8 +541,8 @@ const Reports = () => {
               )}
             </div>
           </div>
-          <div className="chart-card">
-            <div className="chart-card-header">
+          <div className={styles.chartCard}>
+            <div className={styles.chartCardHeader}>
               <h2>
                 Troškovi po{" "}
                 {filters.group_by === "proizvodu"
@@ -552,24 +552,24 @@ const Reports = () => {
                   : "kategoriji"}
               </h2>
             </div>
-            <div className="chart-card-body">
+            <div className={styles.chartCardBody}>
               {loading ? (
-                <div className="loading">Učitava...</div>
+                <div className={styles.loading}>Učitava...</div>
               ) : (
-                <div className="chart-placeholder">
-                  <div className="chart-summary">
+                <div className={styles.chartPlaceholder}>
+                  <div className={styles.chartSummary}>
                     <h3>
                       Ukupni troškovi: {formatCurrency(reportsData.total_cost)}
                     </h3>
                     {(reportsData.chart_data?.costs || [])
                       .slice(0, 5)
                       .map((item, index) => (
-                        <div key={index} className="chart-item">
+                        <div key={index} className={styles.chartItem}>
                           <span>
                             {item.name}: {formatCurrency(item.value)}
                           </span>
                           <div
-                            className="chart-bar"
+                            className={styles.chartBar}
                             style={{
                               width: `${
                                 (item.value / reportsData.total_cost) * 100
@@ -585,51 +585,51 @@ const Reports = () => {
           </div>
         </section>
 
-        <section className="reports-table-section">
-          <div className="table-container">
-            <div className="table-title-header">
+        <section className={styles.reportsTableSection}>
+          <div className={styles.tableContainer}>
+            <div className={styles.tableTitleHeader}>
               <h2>Detaljan prikaz podataka</h2>
             </div>
-            {error && <div className="error-message">{error}</div>}
+            {error && <div className={styles.errorMessage}>{error}</div>}
             {loading ? (
-              <div className="loading">Učitava podatke...</div>
+              <div className={styles.loading}>Učitava podatke...</div>
             ) : (
-              <div className="table-content">
-                <div className="reports-table-header">
-                  <div className="table-col col-proizvod">
+              <div className={styles.tableContent}>
+                <div className={styles.reportsTableHeader}>
+                  <div className={`${styles.tableCol} ${styles.colProizvod}`}>
                     {filters.group_by === "proizvodu"
                       ? "Proizvod"
                       : filters.group_by === "dobavljacu"
                       ? "Dobavljač"
                       : "Kategorija"}
                   </div>
-                  <div className="table-col col-kolicina">Količina</div>
-                  <div className="table-col col-trosak">Ukupan trošak</div>
-                  <div className="table-col col-profit">Profitabilnost</div>
+                  <div className={`${styles.tableCol} ${styles.colKolicina}`}>Količina</div>
+                  <div className={`${styles.tableCol} ${styles.colTrosak}`}>Ukupan trošak</div>
+                  <div className={`${styles.tableCol} ${styles.colProfit}`}>Profitabilnost</div>
                 </div>
-                <div className="reports-table-body">
+                <div className={styles.reportsTableBody}>
                   {(reportsData.data || []).map((row, index) => (
                     <div
                       key={row.id || index}
                       className={`table-row ${
-                        index % 2 === 0 ? "row-dark" : "row-light"
+                        index % 2 === 0 ? styles.rowDark : styles.rowLight
                       }`}
                     >
-                      <div className="table-col col-proizvod">{row.name}</div>
-                      <div className="table-col col-kolicina">
+                      <div className={`${styles.tableCol} ${styles.colProizvod}`}>{row.name}</div>
+                      <div className={`${styles.tableCol} ${styles.colKolicina}`}>
                         {formatNumber(row.quantity)}
                       </div>
-                      <div className="table-col col-trosak">
+                      <div className={`${styles.tableCol} ${styles.colTrosak}`}>
                         {formatCurrency(row.total_cost)}
                       </div>
                       <div
-                        className={`table-col col-profit ${
+                        className={`${styles.tableCol} ${styles.colProfit} ${
                           row.profitability >= 0
-                            ? "profit-positive"
-                            : "profit-negative"
+                            ? styles.profitPositive
+                            : styles.profitNegative
                         }`}
                       >
-                        <span className="arrow">
+                        <span className={styles.arrow}>
                           {row.profitability >= 0 ? "▲" : "▼"}
                         </span>
                         {formatProfitability(row.profitability)}
@@ -637,22 +637,22 @@ const Reports = () => {
                     </div>
                   ))}
                   {(reportsData.data || []).length > 0 && (
-                    <div className="table-row summary-row">
-                      <div className="table-col col-proizvod">UKUPNO:</div>
-                      <div className="table-col col-kolicina">
+                    <div className={`${styles.tableRow} ${styles.summaryRow}`}>
+                      <div className={`${styles.tableCol} ${styles.colProizvod}`}>UKUPNO:</div>
+                      <div className={`${styles.tableCol} ${styles.colKolicina}`}>
                         {formatNumber(reportsData.total_quantity)} kom
                       </div>
-                      <div className="table-col col-trosak">
+                      <div className={`${styles.tableCol} ${styles.colTrosak}`}>
                         {formatCurrency(reportsData.total_cost)}
                       </div>
                       <div
-                        className={`table-col col-profit ${
+                        className={`${styles.tableCol} ${styles.colProfit} ${
                           reportsData.total_profitability >= 0
-                            ? "profit-positive"
-                            : "profit-negative"
+                            ? styles.profitPositive
+                            : styles.profitNegative
                         }`}
                       >
-                        <span className="arrow">
+                        <span className={styles.arrow}>
                           {reportsData.total_profitability >= 0 ? "▲" : "▼"}
                         </span>
                         {formatProfitability(reportsData.total_profitability)}

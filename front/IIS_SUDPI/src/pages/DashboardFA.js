@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "../styles/DashboardFA.css";
+import styles from "../styles/DashboardFA.module.css";
 import MainSideBar from "../components/MainSideBar";
 import { dashboardAPI } from "../api";
 
@@ -42,35 +42,35 @@ const DashboardFA = () => {
 
   return (
     <div
-      className={`dashboard-fa-wrapper ${
-        isSidebarCollapsed ? "sidebar-collapsed" : ""
+      className={`${styles.dashboardFaWrapper} ${
+        isSidebarCollapsed ? styles.sidebarCollapsed : ""
       }`}
     >
       <MainSideBar
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />
-      <main className="dashboard-fa-main-content">
-        <header className="dashboard-header">
+      <main className={styles.dashboardFaMainContent}>
+        <header className={styles.dashboardHeader}>
           <h1>Kontrolna tabla - Finansijski analitičar</h1>
         </header>
 
         {loading && (
-          <div className="loading-message">Učitavanje podataka...</div>
+          <div className={styles.loadingMessage}>Učitavanje podataka...</div>
         )}
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className={styles.errorMessage}>{error}</div>}
 
         {!loading && !error && (
-          <div className="dashboard-content">
-            <div className="dashboard-grid">
+          <div className={styles.dashboardContent}>
+            <div className={styles.dashboardGrid}>
               {/* Card 1: Pregled finansija */}
-              <div className="dashboard-card">
-                <div className="card-header">
+              <div className={styles.dashboardCard}>
+                <div className={styles.cardHeader}>
                   <h3>Pregled finansija</h3>
                 </div>
-                <div className="card-content">
-                  <div className="finance-overview-item">
+                <div className={styles.cardContent}>
+                  <div className={styles.financeOverviewItem}>
                     <span>Ukupno plaćeno:</span>
                     <strong>
                       {dashboardData.pregled_finansija.ukupno_placeno?.toLocaleString(
@@ -79,7 +79,7 @@ const DashboardFA = () => {
                       RSD
                     </strong>
                   </div>
-                  <div className="finance-overview-item">
+                  <div className={styles.financeOverviewItem}>
                     <span>Na čekanju:</span>
                     <strong>
                       {dashboardData.pregled_finansija.na_cekanju?.toLocaleString(
@@ -88,7 +88,7 @@ const DashboardFA = () => {
                       RSD
                     </strong>
                   </div>
-                  <div className="finance-overview-item">
+                  <div className={styles.financeOverviewItem}>
                     <span>Prosečno vreme plaćanja:</span>
                     <strong>
                       {dashboardData.pregled_finansija.prosecno_vreme_placanja}d
@@ -98,46 +98,46 @@ const DashboardFA = () => {
               </div>
 
               {/* Card 2: Profitabilnost dobavljača */}
-              <div className="dashboard-card">
-                <div className="card-header">
+              <div className={styles.dashboardCard}>
+                <div className={styles.cardHeader}>
                   <h3>Profitabilnost dobavljača</h3>
                 </div>
-                <div className="card-content">
+                <div className={styles.cardContent}>
                   {dashboardData.profitabilnost_dobavljaca.length > 0 ? (
                     dashboardData.profitabilnost_dobavljaca.map(
                       (supplier, index) => (
-                        <div key={index} className="supplier-item">
+                        <div key={index} className={styles.supplierItem}>
                           <span>{supplier.name}</span>
                           <span>{supplier.profitability}</span>
                         </div>
                       )
                     )
                   ) : (
-                    <div className="no-data">Nema podataka o dobavljačima</div>
+                    <div className={styles.noData}>Nema podataka o dobavljačima</div>
                   )}
                 </div>
               </div>
 
               {/* Card 3: Nadolazeće isplate */}
-              <div className="dashboard-card">
-                <div className="card-header">
+              <div className={styles.dashboardCard}>
+                <div className={styles.cardHeader}>
                   <h3>Nadolazeće isplate</h3>
                 </div>
-                <div className="card-content">
-                  <div className="upcoming-payments-table">
-                    <div className="table-header-row">
-                      <div className="table-col id-col">ID</div>
-                      <div className="table-col supplier-col">Dobavljač</div>
-                      <div className="table-col amount-col">Iznos</div>
+                <div className={styles.cardContent}>
+                  <div className={styles.upcomingPaymentsTable}>
+                    <div className={styles.tableHeaderRow}>
+                      <div className={`${styles.tableCol} ${styles.idCol}`}>ID</div>
+                      <div className={`${styles.tableCol} ${styles.supplierCol}`}>Dobavljač</div>
+                      <div className={`${styles.tableCol} ${styles.amountCol}`}>Iznos</div>
                     </div>
                     {dashboardData.nadolazece_isplate.length > 0 ? (
                       dashboardData.nadolazece_isplate.map((payment) => (
-                        <div key={payment.id} className="table-row">
-                          <div className="table-col id-col">{payment.id}</div>
-                          <div className="table-col supplier-col">
+                        <div key={payment.id} className={styles.tableRow}>
+                          <div className={`${styles.tableCol} ${styles.idCol}`}>{payment.id}</div>
+                          <div className={`${styles.tableCol} ${styles.supplierCol}`}>
                             {payment.supplier}
                           </div>
-                          <div className="table-col amount-col">
+                          <div className={`${styles.tableCol} ${styles.amountCol}`}>
                             {parseFloat(payment.amount).toLocaleString(
                               "sr-Latn-RS"
                             )}{" "}
@@ -146,27 +146,27 @@ const DashboardFA = () => {
                         </div>
                       ))
                     ) : (
-                      <div className="no-data">Nema nadolazećih isplata</div>
+                      <div className={styles.noData}>Nema nadolazećih isplata</div>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Card 4: Vizualizacija troškova */}
-              <div className="dashboard-card">
-                <div className="card-header">
+              <div className={styles.dashboardCard}>
+                <div className={styles.cardHeader}>
                   <h3>Vizualizacija troškova (poslednih 6 meseci)</h3>
                 </div>
-                <div className="card-content">
-                  <div className="chart-placeholder">
+                <div className={styles.cardContent}>
+                  <div className={styles.chartPlaceholder}>
                     {dashboardData.vizualizacija_troskova.length > 0 ? (
-                      <div className="chart-data">
+                      <div className={styles.chartData}>
                         {dashboardData.vizualizacija_troskova.map(
                           (item, index) => (
-                            <div key={index} className="chart-item">
-                              <div className="chart-month">{item.mesec}</div>
+                            <div key={index} className={styles.chartItem}>
+                              <div className={styles.chartMonth}>{item.mesec}</div>
                               <div
-                                className="chart-bar"
+                                className={styles.chartBar}
                                 style={{
                                   height: `${Math.max(
                                     10,
@@ -181,7 +181,7 @@ const DashboardFA = () => {
                                   backgroundColor: "#3b82f6",
                                 }}
                               ></div>
-                              <div className="chart-amount">
+                              <div className={styles.chartAmount}>
                                 {item.iznos.toLocaleString("sr-Latn-RS")} RSD
                               </div>
                             </div>
@@ -189,7 +189,7 @@ const DashboardFA = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="no-data">Nema podataka o troškovima</div>
+                      <div className={styles.noData}>Nema podataka o troškovima</div>
                     )}
                   </div>
                 </div>

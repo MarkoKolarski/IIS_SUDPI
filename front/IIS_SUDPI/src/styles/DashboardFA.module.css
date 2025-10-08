@@ -1,24 +1,24 @@
 /* General Wrapper and Main Content */
-.dashboard-fa-wrapper {
+.dashboardFaWrapper {
     display: flex;
     background-color: #f0fdfa; /* Very light green from login page */
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.dashboard-fa-main-content {
+.dashboardFaMainContent {
     flex-grow: 1;
     margin-left: 280px; /* Default sidebar width */
     transition: margin-left 0.3s ease;
     padding: 0;
 }
 
-.dashboard-fa-wrapper.sidebar-collapsed .dashboard-fa-main-content {
+.sidebarCollapsed .dashboardFaMainContent {
     margin-left: 80px; /* Collapsed sidebar width */
 }
 
 /* Header Section */
-.dashboard-header {
+.dashboardHeader {
     background-color: #14b8a6; /* Main green from login page */
     padding: 24px;
     text-align: center;
@@ -26,7 +26,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.dashboard-header h1 {
+.dashboardHeader h1 {
     font-size: 30px;
     font-weight: 700;
     color: #ffffff; /* White text on green background */
@@ -34,21 +34,21 @@
 }
 
 /* Content Area */
-.dashboard-content {
+.dashboardContent {
     padding: 32px;
     max-width: 1600px;
     margin: 0 auto;
 }
 
 /* Grid Layout */
-.dashboard-grid {
+.dashboardGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
 }
 
 /* Card Styling */
-.dashboard-card {
+.dashboardCard {
     background-color: #ffffff; /* White background for cards */
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1);
@@ -58,46 +58,46 @@
     border: 1px solid #a7f3d0; /* Light green border */
 }
 
-.card-header {
+.cardHeader {
     background-color: #14b8a6; /* Main green */
     padding: 16px 20px;
 }
 
-.card-header h3 {
+.cardHeader h3 {
     color: #ffffff; /* White text */
     font-size: 19px;
     font-weight: 700;
     margin: 0;
 }
 
-.card-content {
+.cardContent {
     padding: 20px;
     flex-grow: 1;
 }
 
 /* Card 1: Finance Overview */
-.finance-overview-item {
+.financeOverviewItem {
     display: flex;
     justify-content: space-between;
     font-size: 16px;
     padding: 16px 0;
 }
 
-.finance-overview-item:not(:last-child) {
+.financeOverviewItem:not(:last-child) {
     border-bottom: 1px solid #a7f3d0; /* Light green separator */
 }
 
-.finance-overview-item span {
+.financeOverviewItem span {
     color: #134e4a; /* Dark green text */
 }
 
-.finance-overview-item strong {
+.financeOverviewItem strong {
     color: #065f46; /* Darker green for emphasis */
     font-weight: 600;
 }
 
 /* Card 2: Supplier Profitability */
-.supplier-item {
+.supplierItem {
     display: flex;
     justify-content: space-between;
     font-size: 16px;
@@ -105,45 +105,45 @@
     color: #134e4a;
 }
 
-.supplier-item:not(:last-child) {
+.supplierItem:not(:last-child) {
     border-bottom: 1px solid #a7f3d0; /* Light green separator */
 }
 
 /* Card 3: Upcoming Payments */
-.upcoming-payments-table {
+.upcomingPaymentsTable {
     display: flex;
     flex-direction: column;
     width: 100%;
     color: #134e4a;
 }
 
-.table-header-row, .table-row {
+.tableHeaderRow, .tableRow {
     display: flex;
     padding: 15px 0;
     font-size: 16px;
 }
 
-.table-header-row {
+.tableHeaderRow {
     font-weight: 700;
     color: #065f46; /* Darker green for header */
     border-bottom: 2px solid #14b8a6; /* Main green border */
 }
 
-.table-row:not(:last-child) {
+.tableRow:not(:last-child) {
     border-bottom: 1px solid #a7f3d0; /* Light green separator */
 }
 
-.table-col {
+.tableCol {
     text-align: left;
 }
 
-.id-col { width: 25%; }
-.supplier-col { width: 45%; }
-.amount-col { width: 30%; text-align: right; }
+.idCol { width: 25%; }
+.supplierCol { width: 45%; }
+.amountCol { width: 30%; text-align: right; }
 
 
 /* Card 4: Chart Placeholder */
-.chart-placeholder {
+.chartPlaceholder {
     background-color: #d1fae5; /* Light green background for chart area */
     border-radius: 4px;
     min-height: 280px;
@@ -155,7 +155,7 @@
 }
 
 /* Chart Data Display */
-.chart-data {
+.chartData {
     display: flex;
     justify-content: space-around;
     align-items: flex-end;
@@ -164,7 +164,7 @@
     padding: 20px;
 }
 
-.chart-item {
+.chartItem {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -172,31 +172,31 @@
     flex: 1;
 }
 
-.chart-month {
+.chartMonth {
     font-size: 12px;
     color: #065f46;
     font-weight: 600;
 }
 
-.chart-bar {
+.chartBar {
     width: 30px;
     background-color: #14b8a6;
     border-radius: 2px;
     transition: all 0.3s ease;
 }
 
-.chart-bar:hover {
+.chartBar:hover {
     background-color: #0f766e;
 }
 
-.chart-amount {
+.chartAmount {
     font-size: 10px;
     color: #134e4a;
     text-align: center;
 }
 
 /* Loading and Error States */
-.loading-message, .error-message {
+.loadingMessage, .errorMessage {
     text-align: center;
     padding: 40px;
     font-size: 18px;
@@ -204,18 +204,18 @@
     border-radius: 8px;
 }
 
-.loading-message {
+.loadingMessage {
     background-color: #d1fae5;
     color: #065f46;
 }
 
-.error-message {
+.errorMessage {
     background-color: #fee2e2;
     color: #dc2626;
     border: 1px solid #fecaca;
 }
 
-.no-data {
+.noData {
     text-align: center;
     color: #6b7280;
     font-style: italic;
@@ -224,25 +224,25 @@
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .dashboard-grid {
+    .dashboardGrid {
         grid-template-columns: 1fr;
     }
-    .dashboard-content {
+    .dashboardContent {
         padding: 24px;
     }
 }
 
 @media (max-width: 768px) {
-    .dashboard-fa-main-content {
+    .dashboardFaMainContent {
         margin-left: 80px; /* Collapsed sidebar width */
     }
-    .dashboard-fa-wrapper.sidebar-collapsed .dashboard-fa-main-content {
+    .sidebarCollapsed .dashboardFaMainContent {
         margin-left: 0;
     }
-    .dashboard-content {
+    .dashboardContent {
         padding: 16px;
     }
-    .dashboard-header h1 {
+    .dashboardHeader h1 {
         font-size: 24px;
     }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import MainSideBar from "../components/MainSideBar";
-import "../styles/Penalties.css";
+import styles from "../styles/Penalties.module.css";
 import axiosInstance from "../axiosInstance";
 
 const Penalties = () => {
@@ -139,31 +139,31 @@ const Penalties = () => {
   const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case "rešen":
-        return <span className="status-badge status-resolved">{status}</span>;
+        return <span className={`${styles.statusBadge} ${styles.statusResolved}`}>{status}</span>;
       case "obavešten":
-        return <span className="status-badge status-notified">{status}</span>;
+        return <span className={`${styles.statusBadge} ${styles.statusNotified}`}>{status}</span>;
       default:
-        return <span className="status-badge">{status}</span>;
+        return <span className={styles.statusBadge}>{status}</span>;
     }
   };
 
   return (
     <div
-      className={`penalties-wrapper ${
-        isSidebarCollapsed ? "sidebar-collapsed" : ""
+      className={`${styles.penaltiesWrapper} ${
+        isSidebarCollapsed ? styles.sidebarCollapsed : ""
       }`}
     >
       <MainSideBar
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
       />
-      <div className="penalties-main-content">
-        <header className="penalties-header">
+      <div className={styles.penaltiesMainContent}>
+        <header className={styles.penaltiesHeader}>
           <h1>Penali</h1>
         </header>
 
-        <section className="penalties-filter-section">
-          <div className="filter-dropdown">
+        <section className={styles.penaltiesFilterSection}>
+          <div className={styles.filterDropdown}>
             <label htmlFor="dobavljac-filter">Dobavljač</label>
             <select
               id="dobavljac-filter"
@@ -177,7 +177,7 @@ const Penalties = () => {
               ))}
             </select>
           </div>
-          <div className="filter-dropdown">
+          <div className={styles.filterDropdown}>
             <label htmlFor="status-filter">Status</label>
             <select
               id="status-filter"
@@ -191,16 +191,16 @@ const Penalties = () => {
               ))}
             </select>
           </div>
-          <div className="filter-dropdown" style={{ marginLeft: 'auto' }}>
+          <div className={styles.filterDropdown} style={{ marginLeft: 'auto' }}>
             <label>&nbsp;</label>
             <button
-              className="check-violations-btn"
+              className={styles.checkViolationsBtn}
               onClick={handleCheckViolations}
               disabled={checkingViolations}
             >
               {checkingViolations ? (
                 <>
-                  <span className="spinner"></span>
+                  <span className={styles.spinner}></span>
                   Proveravam...
                 </>
               ) : (
@@ -214,30 +214,30 @@ const Penalties = () => {
         </section>
 
         {violationMessage && (
-          <div className={`violation-message ${violationMessage.type}`}>
+          <div className={`${styles.violationMessage} ${styles[violationMessage.type]}`}>
             {violationMessage.text}
           </div>
         )}
 
-        <section className="penalties-table-section">
-          <div className="table-container">
-            <div className="table-title-header">
+        <section className={styles.penaltiesTableSection}>
+          <div className={styles.tableContainer}>
+            <div className={styles.tableTitleHeader}>
               <h2>Pregled penala</h2>
             </div>
-            <div className="table-content">
-              <div className="penalties-table-header">
-                <div className="table-col col-id">ID</div>
-                <div className="table-col col-dobavljac">Dobavljač</div>
-                <div className="table-col col-ugovor">Ugovor</div>
-                <div className="table-col col-datum">Datum kršenja</div>
-                <div className="table-col col-iznos">Iznos</div>
-                <div className="table-col col-status">Status</div>
+            <div className={styles.tableContent}>
+              <div className={styles.penaltiesTableHeader}>
+                <div className={`${styles.tableCol} ${styles.colId}`}>ID</div>
+                <div className={`${styles.tableCol} ${styles.colDobavljac}`}>Dobavljač</div>
+                <div className={`${styles.tableCol} ${styles.colUgovor}`}>Ugovor</div>
+                <div className={`${styles.tableCol} ${styles.colDatum}`}>Datum kršenja</div>
+                <div className={`${styles.tableCol} ${styles.colIznos}`}>Iznos</div>
+                <div className={`${styles.tableCol} ${styles.colStatus}`}>Status</div>
               </div>
-              <div className="penalties-table-body">
+              <div className={styles.penaltiesTableBody}>
                 {loading ? (
-                  <div className="table-row">
+                  <div className={styles.tableRow}>
                     <div
-                      className="table-col"
+                      className={styles.tableCol}
                       style={{
                         textAlign: "center",
                         padding: "20px",
@@ -248,9 +248,9 @@ const Penalties = () => {
                     </div>
                   </div>
                 ) : error ? (
-                  <div className="table-row">
+                  <div className={styles.tableRow}>
                     <div
-                      className="table-col"
+                      className={styles.tableCol}
                       style={{
                         textAlign: "center",
                         padding: "20px",
@@ -262,9 +262,9 @@ const Penalties = () => {
                     </div>
                   </div>
                 ) : penaltiesData.length === 0 ? (
-                  <div className="table-row">
+                  <div className={styles.tableRow}>
                     <div
-                      className="table-col"
+                      className={styles.tableCol}
                       style={{
                         textAlign: "center",
                         padding: "20px",
@@ -279,23 +279,23 @@ const Penalties = () => {
                     <div
                       key={row.sifra_p}
                       className={`table-row ${
-                        index % 2 === 0 ? "row-dark" : "row-light"
+                        index % 2 === 0 ? styles.rowDark : styles.rowLight
                       }`}
                     >
-                      <div className="table-col col-id">{row.sifra_p}</div>
-                      <div className="table-col col-dobavljac">
+                      <div className={`${styles.tableCol} ${styles.colId}`}>{row.sifra_p}</div>
+                      <div className={`${styles.tableCol} ${styles.colDobavljac}`}>
                         {row.dobavljac_naziv}
                       </div>
-                      <div className="table-col col-ugovor">
+                      <div className={`${styles.tableCol} ${styles.colUgovor}`}>
                         {row.ugovor_sifra}
                       </div>
-                      <div className="table-col col-datum">
+                      <div className={`${styles.tableCol} ${styles.colDatum}`}>
                         {formatDate(row.datum_p)}
                       </div>
-                      <div className="table-col col-iznos">
+                      <div className={`${styles.tableCol} ${styles.colIznos}`}>
                         {formatAmount(row.iznos_p)}
                       </div>
-                      <div className="table-col col-status">
+                      <div className={`${styles.tableCol} ${styles.colStatus}`}>
                         {getStatusBadge(row.status_display)}
                       </div>
                     </div>
@@ -306,21 +306,21 @@ const Penalties = () => {
           </div>
         </section>
 
-        <section className="analysis-section">
-          <div className="analysis-container">
-            <div className="analysis-title-header">
+        <section className={styles.analysisSection}>
+          <div className={styles.analysisContainer}>
+            <div className={styles.analysisTitleHeader}>
               <h2>Automatska analiza saradnje</h2>
             </div>
-            <div className="analysis-cards-wrapper">
+            <div className={styles.analysisCardsWrapper}>
               {analysisData.length === 0 ? (
-                <div className="analysis-card">
+                <div className={styles.analysisCard}>
                   <p style={{ textAlign: "center", padding: "20px" }}>
                     Nema dovoljno podataka za analizu
                   </p>
                 </div>
               ) : (
                 analysisData.map((analiza, index) => (
-                  <div key={index} className="analysis-card">
+                  <div key={index} className={styles.analysisCard}>
                     <h3>{analiza.naziv}</h3>
                     <p>
                       <strong>Broj penala:</strong> {analiza.broj_penala}

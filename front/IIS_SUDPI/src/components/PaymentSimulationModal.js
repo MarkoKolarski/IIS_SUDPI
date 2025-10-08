@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axiosInstance from '../axiosInstance';
-import '../styles/PaymentSimulationModal.css';
+import styles from '../styles/PaymentSimulationModal.module.css';
 
 const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
     const [currentStep, setCurrentStep] = useState(0);
@@ -107,35 +107,35 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
 
     return (
         <div 
-            className="payment-modal-overlay" 
+            className={styles.paymentModalOverlay} 
             onClick={handleOverlayClick}
             role="dialog" 
             aria-modal="true"
             aria-labelledby="simulation-modal-title"
             aria-describedby="simulation-progress-list"
         >
-            <div className="payment-modal-container">
-                <h2 id="simulation-modal-title" className="payment-modal-title">
+            <div className={styles.paymentModalContainer}>
+                <h2 id="simulation-modal-title" className={styles.paymentModalTitle}>
                     Simulacija plaćanja
                 </h2>
 
                 {error && (
-                    <div className="payment-error-message">
-                        <span className="error-icon">⚠️</span>
+                    <div className={styles.paymentErrorMessage}>
+                        <span className={styles.errorIcon}>⚠️</span>
                         <p>{error}</p>
                     </div>
                 )}
 
                 {!error && (
                     <>
-                        <div className="payment-progress-bar">
+                        <div className={styles.paymentProgressBar}>
                             <div 
-                                className="payment-progress-fill" 
+                                className={styles.paymentProgressFill} 
                                 style={{ width: `${(currentStep / steps.length) * 100}%` }}
                             />
                         </div>
 
-                        <ol id="simulation-progress-list" className="payment-steps-list" aria-live="polite">
+                        <ol id="simulation-progress-list" className={styles.paymentStepsList} aria-live="polite">
                             {steps.map((step, index) => {
                                 const stepNumber = index + 1;
                                 const isActive = currentStep === stepNumber && isSimulating;
@@ -144,23 +144,23 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                                 const isFinalStep = stepNumber === steps.length;
 
                                 return (
-                                    <li key={step.id} className="payment-step-item">
-                                        <div className="payment-step-content">
-                                            <div className={`payment-step-circle ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''}`}>
+                                    <li key={step.id} className={styles.paymentStepItem}>
+                                        <div className={styles.paymentStepContent}>
+                                            <div className={`${styles.paymentStepCircle} ${isActive ? styles.active : ''} ${isCompleted ? styles.completed : ''} ${isPending ? styles.pending : ''}`}>
                                                 {isCompleted ? (
-                                                    <span className="payment-checkmark">✓</span>
+                                                    <span className={styles.paymentCheckmark}>✓</span>
                                                 ) : isActive ? (
-                                                    <div className="payment-spinner"></div>
+                                                    <div className={styles.paymentSpinner}></div>
                                                 ) : (
-                                                    <span className="payment-step-number">{stepNumber}</span>
+                                                    <span className={styles.paymentStepNumber}>{stepNumber}</span>
                                                 )}
                                             </div>
-                                            <span className={`payment-step-text ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''} ${isFinalStep && simulationComplete ? 'final' : ''}`}>
+                                            <span className={`${styles.paymentStepText} ${isActive ? styles.active : ''} ${isCompleted ? styles.completed : ''} ${isPending ? styles.pending : ''} ${isFinalStep && simulationComplete ? styles.final : ''}`}>
                                                 {step.text}
                                             </span>
                                         </div>
                                         {index < steps.length - 1 && (
-                                            <div className={`payment-step-connector ${isCompleted ? 'completed' : ''}`}></div>
+                                            <div className={`${styles.paymentStepConnector} ${isCompleted ? styles.completed : ''}`}></div>
                                         )}
                                     </li>
                                 );
@@ -168,17 +168,17 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                         </ol>
 
                         {simulationComplete && transactionData && (
-                            <div className="payment-success-info">
+                            <div className={styles.paymentSuccessInfo}>
                                 <h3>✓ Plaćanje uspešno izvršeno</h3>
-                                <div className="transaction-details">
+                                <div className={styles.transactionDetails}>
                                     <p><strong>Broj potvrde:</strong> {transactionData.transaction?.confirmation_number}</p>
                                     <p><strong>Iznos:</strong> {transactionData.transaction?.amount} RSD</p>
                                     <p><strong>Dobavljač:</strong> {transactionData.invoice?.supplier}</p>
                                     {transactionData.notifications?.payment_notification_sent && (
-                                        <p className="notification-status">📧 Notifikacija poslata</p>
+                                        <p className={styles.notificationStatus}>📧 Notifikacija poslata</p>
                                     )}
                                     {transactionData.notifications?.confirmation_sent && (
-                                        <p className="notification-status">📧 Potvrda poslata</p>
+                                        <p className={styles.notificationStatus}>📧 Potvrda poslata</p>
                                     )}
                                 </div>
                             </div>
@@ -187,7 +187,7 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                 )}
 
                 <button 
-                    className="payment-modal-close-btn"
+                    className={styles.paymentModalCloseBtn}
                     onClick={handleClose}
                     autoFocus
                 >

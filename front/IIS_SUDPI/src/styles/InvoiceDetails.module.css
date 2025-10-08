@@ -1,12 +1,12 @@
 /* Wrapper & Layout */
-.invoice-details-wrapper {
+.invoiceDetailsWrapper {
     display: flex;
     background-color: #f0fdfa;
     min-height: 100vh;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.invoice-details-main {
+.invoiceDetailsMain {
     flex-grow: 1;
     margin-left: 280px;
     transition: margin-left 0.3s ease;
@@ -16,25 +16,25 @@
     padding-bottom: 140px;
 }
 
-.invoice-details-wrapper.sidebar-collapsed .invoice-details-main {
+.invoiceDetailsWrapper.sidebarCollapsed .invoiceDetailsMain {
     margin-left: 80px;
 }
 
-.invoice-details-header {
+.invoiceDetailsHeader {
     background-color: #14b8a6;
     padding: 26px 24px;
     text-align: center;
     box-shadow: 0 2px 6px rgba(20, 184, 166, 0.2);
 }
 
-.invoice-details-header h1 {
+.invoiceDetailsHeader h1 {
     font-size: 34px;
     font-weight: 700;
     color: #ffffff;
     margin: 0;
 }
 
-.invoice-details-content {
+.invoiceDetailsContent {
     max-width: 1280px;
     margin: 0 auto;
     padding: 36px 32px 48px;
@@ -45,7 +45,7 @@
 }
 
 /* Invoice Summary Card */
-.invoice-summary-card {
+.invoiceSummaryCard {
     width: 100%;
     max-width: 960px;
     border-radius: 8px;
@@ -53,34 +53,34 @@
     overflow: hidden;
 }
 
-.invoice-summary-header {
+.invoiceSummaryHeader {
     background-color: #14b8a6;
     padding: 18px 32px;
     text-align: center;
 }
 
-.invoice-summary-header h2 {
+.invoiceSummaryHeader h2 {
     font-size: 26px;
     font-weight: 700;
     color: #ffffff;
     margin: 0;
 }
 
-.invoice-summary-row {
+.invoiceSummaryRow {
     display: flex;
     justify-content: space-between;
     padding: 18px 32px;
 }
 
-.invoice-summary-row.row-light {
+.invoiceSummaryRow.rowLight {
     background-color: #ecfdf5;
 }
 
-.invoice-summary-row.row-medium {
+.invoiceSummaryRow.rowMedium {
     background-color: #d1fae5;
 }
 
-.summary-col {
+.summaryCol {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -88,25 +88,25 @@
     color: #134e4a;
 }
 
-.summary-col + .summary-col {
+.summaryCol + .summaryCol {
     border-left: 1px solid #a7f3d0;
     padding-left: 32px;
 }
 
-.summary-label {
+.summaryLabel {
     font-size: 15px;
     font-weight: 600;
     color: #0f766e;
 }
 
-.summary-value {
+.summaryValue {
     font-size: 18px;
     font-weight: 600;
     color: #065f46;
 }
 
 /* Process Flow */
-.process-flow {
+.processFlow {
     width: 100%;
     max-width: 600px;
     border-radius: 8px;
@@ -114,20 +114,20 @@
     overflow: hidden;
 }
 
-.process-flow-header {
+.processFlowHeader {
     background-color: #14b8a6;
     padding: 16px 24px;
     text-align: center;
 }
 
-.process-flow-header h3 {
+.processFlowHeader h3 {
     font-size: 22px;
     font-weight: 700;
     color: #ffffff;
     margin: 0;
 }
 
-.process-flow-body {
+.processFlowBody {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -136,7 +136,7 @@
     background-color: #ecfdf5;
 }
 
-.process-step {
+.processStep {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -145,7 +145,7 @@
     text-align: center;
 }
 
-.step-circle {
+.stepCircle {
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -160,27 +160,27 @@
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.step-label {
+.stepLabel {
     font-size: 15px;
     font-weight: 500;
     color: #134e4a;
 }
 
-.process-step.completed .step-circle {
+.processStep.completed .stepCircle {
     background-color: #14b8a6;
     color: #ffffff;
     border-color: #0f766e;
     box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.2);
 }
 
-.process-step.active .step-circle {
+.processStep.active .stepCircle {
     background-color: #0f766e;
     color: #ffffff;
     border-color: #0b4f4a;
     box-shadow: 0 0 0 4px rgba(6, 95, 70, 0.25);
 }
 
-.step-connector {
+.stepConnector {
     flex: 1;
     height: 2px;
     background-color: #14b8a6;
@@ -189,7 +189,7 @@
 }
 
 /* Bottom Cards */
-.bottom-cards {
+.bottomCards {
     width: 100%;
     max-width: 960px;
     display: grid;
@@ -197,8 +197,8 @@
     gap: 24px;
 }
 
-.discrepancy-card,
-.notification-card {
+.discrepancyCard,
+.notificationCard {
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
     display: flex;
@@ -207,21 +207,21 @@
     border: 1px solid #a7f3d0;
 }
 
-.card-header {
+.cardHeader {
     background-color: #14b8a6;
     padding: 16px 24px;
     text-align: center;
     border-radius: 8px 8px 0 0;
 }
 
-.card-header h3 {
+.cardHeader h3 {
     font-size: 22px;
     font-weight: 700;
     color: #ffffff;
     margin: 0;
 }
 
-.card-body {
+.cardBody {
     background-color: #ecfdf5;
     padding: 26px 28px;
     border-radius: 0 0 8px 8px;
@@ -230,32 +230,32 @@
     flex-direction: column;
 }
 
-.discrepancy-card .card-body {
+.discrepancyCard .cardBody {
     justify-content: flex-start;
     color: #134e4a;
     line-height: 1.6;
 }
 
-.notification-card .card-body {
+.notificationCard .cardBody {
     gap: 20px;
     align-items: center;
     text-align: center;
 }
 
-.notification-question {
+.notificationQuestion {
     font-size: 16px;
     color: #134e4a;
     line-height: 1.6;
     margin: 0;
 }
 
-.notification-actions {
+.notificationActions {
     display: flex;
     gap: 16px;
     justify-content: center;
 }
 
-.notification-btn {
+.notificationBtn {
     background-color: #14b8a6;
     color: #ffffff;
     border: none;
@@ -269,17 +269,17 @@
     box-shadow: 0 4px 10px rgba(20, 184, 166, 0.2);
 }
 
-.notification-btn:hover {
+.notificationBtn:hover {
     background-color: #0f766e;
     transform: translateY(-2px);
 }
 
-.notification-btn:active {
+.notificationBtn:active {
     transform: translateY(0);
 }
 
 /* Simulation Button */
-.simulate-payment-btn {
+.simulatePaymentBtn {
     background-color: #14b8a6;
     color: #ffffff;
     border: none;
@@ -292,92 +292,92 @@
     transition: all 0.3s ease;
 }
 
-.simulate-payment-btn:hover {
+.simulatePaymentBtn:hover {
     background-color: #0f766e;
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(20, 184, 166, 0.4);
 }
 
-.simulate-payment-btn:active {
+.simulatePaymentBtn:active {
     transform: translateY(0);
 }
 
 /* Responsive */
 @media (max-width: 1200px) {
-    .invoice-details-main {
+    .invoiceDetailsMain {
         margin-left: 260px;
     }
 
-    .invoice-details-wrapper.sidebar-collapsed .invoice-details-main {
+    .invoiceDetailsWrapper.sidebarCollapsed .invoiceDetailsMain {
         margin-left: 72px;
     }
 
-    .invoice-summary-card,
-    .bottom-cards {
+    .invoiceSummaryCard,
+    .bottomCards {
         max-width: 100%;
     }
 }
 
 @media (max-width: 992px) {
-    .invoice-details-main {
+    .invoiceDetailsMain {
         margin-left: 240px;
     }
 
-    .bottom-cards {
+    .bottomCards {
         grid-template-columns: 1fr;
     }
 
-    .simulate-payment-btn {
+    .simulatePaymentBtn {
         right: 24px;
     }
 }
 
 @media (max-width: 768px) {
-    .invoice-details-main {
+    .invoiceDetailsMain {
         margin-left: 0;
     }
 
-    .invoice-details-wrapper.sidebar-collapsed .invoice-details-main {
+    .invoiceDetailsWrapper.sidebarCollapsed .invoiceDetailsMain {
         margin-left: 0;
     }
 
-    .invoice-details-content {
+    .invoiceDetailsContent {
         padding: 24px 20px 80px;
         align-items: stretch;
     }
 
-    .invoice-summary-row {
+    .invoiceSummaryRow {
         flex-direction: column;
         gap: 12px;
     }
 
-    .summary-col + .summary-col {
+    .summaryCol + .summaryCol {
         border-left: none;
         padding-left: 0;
         border-top: 1px solid #b5b9bd;
         padding-top: 16px;
     }
 
-    .process-flow {
+    .processFlow {
         max-width: 100%;
     }
 
-    .process-flow-body {
+    .processFlowBody {
         flex-direction: column;
         gap: 24px;
     }
 
-    .step-connector {
+    .stepConnector {
         flex: none;
         width: 2px;
         height: 40px;
     }
 
-    .bottom-cards {
+    .bottomCards {
         gap: 20px;
     }
 
-    .simulate-payment-btn {
+    .simulatePaymentBtn {
         position: static;
         margin: 0 0 32px;
         align-self: center;
@@ -385,41 +385,41 @@
         max-width: 320px;
     }
 
-    .action-buttons {
+    .actionButtons {
         bottom: 16px;
         right: 16px;
     }
 
-    .back-btn {
+    .backBtn {
         padding: 14px 20px;
         font-size: 15px;
     }
 }
 
 @media (max-width: 480px) {
-    .invoice-summary-header h2 {
+    .invoiceSummaryHeader h2 {
         font-size: 22px;
     }
 
-    .invoice-details-header h1 {
+    .invoiceDetailsHeader h1 {
         font-size: 28px;
     }
 
-    .invoice-summary-row {
+    .invoiceSummaryRow {
         padding: 16px 20px;
     }
 
-    .process-flow-body {
+    .processFlowBody {
         padding: 24px;
     }
 
-    .card-body {
+    .cardBody {
         padding: 24px 20px;
     }
 }
 
 /* Action Buttons */
-.action-buttons {
+.actionButtons {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -428,7 +428,7 @@
     z-index: 1000;
 }
 
-.back-btn {
+.backBtn {
     background-color: #14b8a6;
     color: white;
     border: none;
@@ -441,28 +441,28 @@
     transition: all 0.3s ease;
 }
 
-.back-btn:hover {
+.backBtn:hover {
     background-color: #0f766e;
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(20, 184, 166, 0.4);
 }
 
 /* Loading and Error Messages */
-.loading-message,
-.error-message {
+.loadingMessage,
+.errorMessage {
     text-align: center;
     padding: 60px 20px;
     font-size: 18px;
     color: #6b7280;
 }
 
-.error-message {
+.errorMessage {
     color: #dc2626;
 }
 
 /* New Card Types */
-.items-card,
-.transaction-card {
+.itemsCard,
+.transactionCard {
     width: 100%;
     max-width: 460px;
     border-radius: 8px;
@@ -472,45 +472,45 @@
     overflow: hidden;
 }
 
-.items-card .card-header,
-.transaction-card .card-header {
+.itemsCard .cardHeader,
+.transactionCard .cardHeader {
     background-color: #14b8a6;
     padding: 16px 20px;
 }
 
-.items-card .card-header h3,
-.transaction-card .card-header h3 {
+.itemsCard .cardHeader h3,
+.transactionCard .cardHeader h3 {
     font-size: 20px;
     font-weight: 600;
     color: #ffffff;
     margin: 0;
 }
 
-.items-card .card-body,
-.transaction-card .card-body {
+.itemsCard .cardBody,
+.transactionCard .cardBody {
     padding: 20px;
 }
 
-.invoice-item {
+.invoiceItem {
     padding: 12px 0;
     border-bottom: 1px solid #e5e7eb;
 }
 
-.invoice-item:last-child {
+.invoiceItem:last-child {
     border-bottom: none;
 }
 
-.invoice-item p {
+.invoiceItem p {
     margin: 4px 0;
     color: #374151;
     font-size: 14px;
 }
 
 /* Process Step Status Colors */
-.process-step.rejected .step-circle {
+.processStep.rejected .stepCircle {
     background-color: #dc2626;
 }
 
-.process-step.rejected .step-label {
+.processStep.rejected .stepLabel {
     color: #dc2626;
 }
