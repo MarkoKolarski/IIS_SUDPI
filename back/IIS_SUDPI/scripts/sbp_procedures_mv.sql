@@ -101,104 +101,133 @@ CREATE INDEX IDX_REKLAMACIJA_DOBAVLJAC ON REKLAMACIJA(dobavljac_id, datum_prijem
 
 
 -- 4. Kompleksan izveštaj
-CREATE OR REPLACE PROCEDURE GENERISI_IZVESTAJ_DOBAVLJACA(
-    p_period_od DATE,
-    p_period_do DATE
+
+-- Custom types for report generation
+CREATE OR REPLACE TYPE dobavljac_statistika_t AS OBJECT (
+    sifra_d NUMBER,
+    naziv VARCHAR2(200),
+    ime_sirovine VARCHAR2(200),
+    prosecna_ocena NUMBER,
+    broj_reklamacija NUMBER,
+    broj_poseta NUMBER,
+    prosecno_vreme_resavanja_reklamacija NUMBER,
+    procenat_otkazanih_poseta NUMBER
+);
+/
+
+CREATE OR REPLACE TYPE dobavljac_statistika_tbl AS TABLE OF dobavljac_statistika_t;
+/
+
+-- Complex report generation procedure
+CREATE OR REPLACE PROCEDURE GENERISI_IZVESTAJ_DOBAVLJACA (
+    p_datum_od IN DATE,
+    p_datum_do IN DATE,
+    p_min_broj_reklamacija IN NUMBER DEFAULT 1,
+    p_kreirao_id IN NUMBER  -- Add parameter for user ID
 ) IS
-    -- Kursor za dobavljače
-    CURSOR c_dobavljaci IS
+    v_statistika dobavljac_statistika_tbl;
+    v_json_izvestaj CLOB;
+    v_izvestaj_id NUMBER;
+BEGIN
+    -- Koristimo WITH klauzulu za pripremu međurezultata
+    WITH reklamacije_stats AS (
         SELECT 
             d.sifra_d,
-            d.naziv,
-            d.ime_sirovine,
-            COUNT(DISTINCT r.reklamacija_id) as broj_reklamacija,
-            ROUND(AVG(NVL(r.jacina_zalbe, 0)), 2) as prosecna_jacina_zalbi,
-            COUNT(DISTINCT p.poseta_id) as broj_poseta,
-            d.ocena as trenutna_ocena
-        FROM DOBAVLJAC d
-        LEFT JOIN REKLAMACIJA r ON r.dobavljac_id = d.sifra_d 
-            AND r.datum_prijema BETWEEN p_period_od AND p_period_do
-        LEFT JOIN POSETA p ON p.dobavljac_id = d.sifra_d 
-            AND p.datum_od BETWEEN p_period_od AND p_period_do
-        GROUP BY d.sifra_d, d.naziv, d.ime_sirovine, d.ocena
-        ORDER BY d.ocena;
+            COUNT(r.reklamacija_id) as broj_reklamacija,
+            AVG(r.vreme_trajanja) as prosecno_vreme_resavanja
+        FROM dobavljac d
+        LEFT JOIN reklamacija r ON d.sifra_d = r.dobavljac_id
+        WHERE r.datum_prijema BETWEEN p_datum_od AND p_datum_do
+        GROUP BY d.sifra_d
+    ),
+    posete_stats AS (
+        SELECT 
+            d.sifra_d,
+            COUNT(p.poseta_id) as ukupno_poseta,
+            SUM(CASE WHEN p.status = 'otkazana' THEN 1 ELSE 0 END) as otkazane_posete
+        FROM dobavljac d
+        LEFT JOIN poseta p ON d.sifra_d = p.dobavljac_id
+        WHERE p.datum_od BETWEEN p_datum_od AND p_datum_do
+        GROUP BY d.sifra_d
+    )
+    -- BULK COLLECT za efikasno punjenje kolekcije
+    SELECT dobavljac_statistika_t(
+        d.sifra_d,
+        d.naziv,
+        d.ime_sirovine,
+        d.ocena,
+        NVL(r.broj_reklamacija, 0),
+        NVL(p.ukupno_poseta, 0),
+        NVL(r.prosecno_vreme_resavanja, 0),
+        CASE 
+            WHEN p.ukupno_poseta > 0 
+            THEN (NVL(p.otkazane_posete, 0) / p.ukupno_poseta) * 100 
+            ELSE 0 
+        END
+    )
+    BULK COLLECT INTO v_statistika
+    FROM dobavljac d
+    LEFT JOIN reklamacije_stats r ON d.sifra_d = r.sifra_d
+    LEFT JOIN posete_stats p ON d.sifra_d = p.sifra_d
+    WHERE EXISTS (
+        SELECT 1 
+        FROM reklamacija rk 
+        WHERE rk.dobavljac_id = d.sifra_d 
+        AND rk.datum_prijema BETWEEN p_datum_od AND p_datum_do
+        HAVING COUNT(*) >= p_min_broj_reklamacija
+    )
+    ORDER BY d.ocena DESC;
 
-    -- Varijable
-    v_json_rezultat CLOB;
-    v_temp_json CLOB;
-    v_dobavljaci_json CLOB := '[';
-    v_first_row BOOLEAN := TRUE;
-    
-    -- Varijable za kursor
-    v_sifra_d NUMBER;
-    v_naziv VARCHAR2(200);
-    v_ime_sirovine VARCHAR2(200);
-    v_broj_reklamacija NUMBER;
-    v_prosecna_jacina_zalbi NUMBER;
-    v_broj_poseta NUMBER;
-    v_trenutna_ocena NUMBER;
-BEGIN
-    -- Generisanje JSON-a
-    OPEN c_dobavljaci;
-    LOOP
-        FETCH c_dobavljaci INTO 
-            v_sifra_d, v_naziv, v_ime_sirovine, 
-            v_broj_reklamacija, v_prosecna_jacina_zalbi, 
-            v_broj_poseta, v_trenutna_ocena;
-        EXIT WHEN c_dobavljaci%NOTFOUND;
-        
-        -- Dodaj zarez između objekata ako nije prvi red
-        IF NOT v_first_row THEN
-            v_dobavljaci_json := v_dobavljaci_json || ',';
-        END IF;
-        
-        -- Kreiraj JSON objekat za trenutnog dobavljača
-        SELECT JSON_OBJECT(
-            'sifra' VALUE v_sifra_d,
-            'naziv' VALUE v_naziv,
-            'sirovina' VALUE v_ime_sirovine,
-            'statistika' VALUE JSON_OBJECT(
-                'broj_reklamacija' VALUE v_broj_reklamacija,
-                'prosecna_jacina_zalbi' VALUE v_prosecna_jacina_zalbi,
-                'broj_poseta' VALUE v_broj_poseta,
-                'trenutna_ocena' VALUE v_trenutna_ocena
-            )
-        ) INTO v_temp_json FROM DUAL;
-        
-        v_dobavljaci_json := v_dobavljaci_json || v_temp_json;
-        v_first_row := FALSE;
-    END LOOP;
-    
-    CLOSE c_dobavljaci;
-    
-    v_dobavljaci_json := v_dobavljaci_json || ']';
-    
-    -- Kreiraj finalni JSON
+    -- Generisanje JSON izveštaja
     SELECT JSON_OBJECT(
-        'period' VALUE JSON_OBJECT('od' VALUE p_period_od, 'do' VALUE p_period_do),
-        'dobavljaci' VALUE v_dobavljaci_json FORMAT JSON
-    ) INTO v_json_rezultat FROM DUAL;
+        'period' VALUE JSON_OBJECT('od' VALUE p_datum_od, 'do' VALUE p_datum_do),
+        'datum_generisanja' VALUE SYSDATE,
+        'dobavljaci' VALUE (
+            SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'sifra_d' VALUE d.sifra_d,
+                    'naziv' VALUE d.naziv,
+                    'ime_sirovine' VALUE d.ime_sirovine,
+                    'statistika' VALUE JSON_OBJECT(
+                        'prosecna_ocena' VALUE d.prosecna_ocena,
+                        'broj_reklamacija' VALUE d.broj_reklamacija,
+                        'broj_poseta' VALUE d.broj_poseta,
+                        'prosecno_vreme_resavanja_reklamacija' VALUE d.prosecno_vreme_resavanja_reklamacija,
+                        'procenat_otkazanih_poseta' VALUE d.procenat_otkazanih_poseta
+                    )
+                )
+                ORDER BY d.prosecna_ocena DESC
+            )
+            FROM TABLE(v_statistika) d
+        )
+    FORMAT JSON) INTO v_json_izvestaj
+    FROM dual;
 
-    -- Sačuvaj izveštaj
-    INSERT INTO IZVESTAJ (
-        sifra_i,
-        datum_i,
+    -- Čuvanje izveštaja u tabeli
+    INSERT INTO izvestaj (
         tip_i,
-        sadrzaj_i
+        sadrzaj_i,
+        datum_i,
+        kreirao_id  -- Add this column
     ) VALUES (
-        seq_izvestaj.NEXTVAL,
-        SYSDATE,
         'dobavljaci',
-        v_json_rezultat
-    );
-    
+        v_json_izvestaj,
+        SYSDATE,
+        p_kreirao_id  -- Add the parameter value
+    ) RETURNING sifra_i INTO v_izvestaj_id;
+
     COMMIT;
+
+    -- Logovanje uspešnog generisanja
+    DBMS_OUTPUT.PUT_LINE('Izveštaj uspešno generisan. ID: ' || v_izvestaj_id);
+
 EXCEPTION
     WHEN OTHERS THEN
-        IF c_dobavljaci%ISOPEN THEN
-            CLOSE c_dobavljaci;
-        END IF;
         ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('Greška pri generisanju izveštaja: ' || SQLERRM);
         RAISE;
-END;
+END GENERISI_IZVESTAJ_DOBAVLJACA;
 /
+
+-- Generate report for last 3 months
+EXEC GENERISI_IZVESTAJ_DOBAVLJACA(ADD_MONTHS(SYSDATE, -3), SYSDATE, 1, 1);
