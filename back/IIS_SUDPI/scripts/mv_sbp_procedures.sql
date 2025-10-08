@@ -174,170 +174,84 @@ END;
 CREATE INDEX IDX_REKLAMACIJA_DOBAVLJAC ON REKLAMACIJA(dobavljac_id, datum_prijema);
 
 
--- 4. Kompleksan izveštaj
+-- Izvestaj
 
-BEGIN
-  -- 1. Odbaciti proceduru koja zavisi od tipova
-  EXECUTE IMMEDIATE 'DROP PROCEDURE GENERISI_IZVESTAJ_DOBAVLJACA';
-EXCEPTION WHEN OTHERS THEN NULL;
-END;
-/
+-- 4. PL/SQL Izveštaj
 
-BEGIN
-  -- 2. Odbaciti tabelarni tip, jer zavisi od objektnog tipa
-  EXECUTE IMMEDIATE 'DROP TYPE dobavljac_statistika_tbl';
-EXCEPTION WHEN OTHERS THEN NULL;
-END;
-/
-
-BEGIN
-  -- 3. Odbaciti objektni tip
-  EXECUTE IMMEDIATE 'DROP TYPE dobavljac_statistika_t CASCADE CONSTRAINTS';
-EXCEPTION WHEN OTHERS THEN NULL;
-END;
-/
-
--- Custom types for report generation
--- Custom types for report generation
-CREATE OR REPLACE TYPE dobavljac_statistika_t AS OBJECT (
-    sifra_d NUMBER,
-    naziv VARCHAR2(200),
+-- Definicija složenih tipova
+CREATE OR REPLACE TYPE DobavljacOcenaRecord AS OBJECT (
+    naziv_dobavljaca VARCHAR2(200),
     ime_sirovine VARCHAR2(200),
     prosecna_ocena NUMBER,
-    broj_reklamacija NUMBER,
-    broj_poseta NUMBER,
-    prosecno_vreme_resavanja_reklamacija NUMBER,
-    procenat_otkazanih_poseta NUMBER
+    ukupan_broj_reklamacija NUMBER
 );
 /
 
-CREATE OR REPLACE TYPE dobavljac_statistika_tbl AS TABLE OF dobavljac_statistika_t;
+CREATE OR REPLACE TYPE DobavljacOcenaTable AS TABLE OF DobavljacOcenaRecord;
 /
 
--- Complex report generation procedure
-CREATE OR REPLACE PROCEDURE GENERISI_IZVESTAJ_DOBAVLJACA (
-    p_datum_od IN DATE,
-    p_datum_do IN DATE,
-    p_min_broj_reklamacija IN NUMBER DEFAULT 1,
-    p_kreirao_id IN NUMBER
-) IS
-    v_statistika dobavljac_statistika_tbl;
-    v_json_izvestaj CLOB;
-    v_izvestaj_id NUMBER; -- Deklaracija
-BEGIN
-    -- Koristimo WITH klauzulu za pripremu međurezultata
-    WITH reklamacije_stats AS (
-        SELECT 
-            d.sifra_d,
-            COUNT(r.reklamacija_id) as broj_reklamacija,
-            AVG(r.vreme_trajanja) as prosecno_vreme_resavanja
-        FROM dobavljac d
-        LEFT JOIN reklamacija r ON d.sifra_d = r.dobavljac_id
-        WHERE r.datum_prijema BETWEEN p_datum_od AND p_datum_do
-        GROUP BY d.sifra_d
-    ),
-    posete_stats AS (
-        SELECT 
-            d.sifra_d,
-            COUNT(p.poseta_id) as ukupno_poseta,
-            SUM(CASE WHEN p.status = 'otkazana' THEN 1 ELSE 0 END) as otkazane_posete
-        FROM dobavljac d
-        LEFT JOIN poseta p ON d.sifra_d = p.dobavljac_id
-        WHERE p.datum_od BETWEEN p_datum_od AND p_datum_do
-        GROUP BY d.sifra_d
-    )
-    -- BULK COLLECT za efikasno punjenje kolekcije
-    SELECT dobavljac_statistika_t(
-        d.sifra_d,
-        d.naziv,
-        d.ime_sirovine,
-        d.ocena,
-        NVL(r.broj_reklamacija, 0),
-        NVL(p.ukupno_poseta, 0),
-        NVL(r.prosecno_vreme_resavanja, 0),
-        CASE 
-            WHEN p.ukupno_poseta > 0 
-            THEN (NVL(p.otkazane_posete, 0) / p.ukupno_poseta) * 100 
-            ELSE 0 
-        END
-    )
-    BULK COLLECT INTO v_statistika
-    FROM dobavljac d
-    LEFT JOIN reklamacije_stats r ON d.sifra_d = r.sifra_d
-    LEFT JOIN posete_stats p ON d.sifra_d = p.sifra_d
-    WHERE EXISTS (
-        SELECT 1 
-        FROM reklamacija rk 
-        WHERE rk.dobavljac_id = d.sifra_d 
-        AND rk.datum_prijema BETWEEN p_datum_od AND p_datum_do
-        HAVING COUNT(*) >= p_min_broj_reklamacija
-    )
-    ORDER BY d.ocena DESC;
-
-    -- Generisanje JSON izveštaja (Ispravno)
-    SELECT JSON_OBJECT(
-        'period' VALUE JSON_OBJECT('od' VALUE p_datum_od, 'do' VALUE p_datum_do),
-        'datum_generisanja' VALUE SYSDATE,
-        'dobavljaci' VALUE (
-            SELECT JSON_ARRAYAGG(
-                JSON_OBJECT(
-                    'sifra_d' VALUE d.sifra_d,
-                    'naziv' VALUE d.naziv,
-                    'ime_sirovine' VALUE d.ime_sirovine,
-                    'statistika' VALUE JSON_OBJECT(
-                        'prosecna_ocena' VALUE d.prosecna_ocena,
-                        'broj_reklamacija' VALUE d.broj_reklamacija,
-                        'broj_poseta' VALUE d.broj_poseta,
-                        'prosecno_vreme_resavanja_reklamacija' VALUE d.prosecno_vreme_resavanja_reklamacija,
-                        'procenat_otkazanih_poseta' VALUE d.procenat_otkazanih_poseta
-                    )
-                )
-                ORDER BY d.prosecna_ocena DESC
-            )
-            FROM TABLE(v_statistika) d
+-- PL/SQL funkcija za generisanje izveštaja
+CREATE OR REPLACE FUNCTION Generisi_Izvestaj_Ocena_Dobavljaca
+RETURN DobavljacOcenaTable PIPELINED
+AS
+    v_dobavljac_record DobavljacOcenaRecord;
+    
+    CURSOR c_dobavljaci IS
+        WITH DobavljaciSirovine AS (
+            SELECT 
+                d.sifra_d,
+                d.naziv AS naziv_dobavljaca,
+                d.ime_sirovine
+            FROM 
+                DOBAVLJAC d
+        ),
+        ProsecneOcene AS (
+            SELECT 
+                d.sifra_d,
+                AVG(d.ocena) AS prosecna_ocena
+            FROM 
+                DOBAVLJAC d
+            GROUP BY 
+                d.sifra_d
+        ),
+        BrojReklamacija AS (
+            SELECT 
+                r.dobavljac_id,
+                COUNT(*) AS ukupan_broj_reklamacija
+            FROM 
+                REKLAMACIJA r
+            GROUP BY 
+                r.dobavljac_id
         )
-    FORMAT JSON) INTO v_json_izvestaj
-    FROM dual;
-
-    -- Čuvanje izveštaja u tabeli - ISPRAVKA ORA-01400: Dodato SIFRA_I i izvestaj_seq.NEXTVAL
-    INSERT INTO izvestaj (
-        sifra_i, -- Dodata kolona
-        tip_i,
-        sadrzaj_i,
-        datum_i,
-        kreirao_id
-    ) VALUES (
-        izvestaj_seq.NEXTVAL, -- Korišćenje sekvence za generisanje vrednosti
-        'dobavljaci',
-        v_json_izvestaj,
-        SYSDATE,
-        p_kreirao_id
-    ) RETURNING sifra_i INTO v_izvestaj_id;
-
-    COMMIT;
-
-    -- Logovanje uspešnog generisanja - ISPRAVKA PLS-00201: Korišćenje "v_izvestaj_id"
-    DBMS_OUTPUT.PUT_LINE('Izveštaj uspešno generisan. ID: ' || v_izvestaj_id);
-
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        DBMS_OUTPUT.PUT_LINE('Greška pri generisanju izveštaja: ' || SQLERRM);
-        RAISE;
-END GENERISI_IZVESTAJ_DOBAVLJACA;
-/
-
-DELETE FROM KORISNIK;
-
-INSERT INTO korisnik (sifra_k, ime_k, prz_k, mail_k, tip_k, username, password, is_superuser, is_staff, is_active, date_joined, first_name, last_name)
-VALUES (1, 'Marko', 'Marković', 'marko.markovic@firma.rs', 'finansijski_analiticar', 'marko.markovic@firma.rs', 'pbkdf2_sha256$260000$abc123', 0, 1, 1, SYSTIMESTAMP, 'Marko', 'Marković');
-
+        SELECT 
+            ds.naziv_dobavljaca,
+            ds.ime_sirovine,
+            NVL(po.prosecna_ocena, 0) AS prosecna_ocena,
+            NVL(br.ukupan_broj_reklamacija, 0) AS ukupan_broj_reklamacija
+        FROM 
+            DobavljaciSirovine ds
+        LEFT JOIN 
+            ProsecneOcene po ON ds.sifra_d = po.sifra_d
+        LEFT JOIN 
+            BrojReklamacija br ON ds.sifra_d = br.dobavljac_id
+        WHERE po.prosecna_ocena > 3  -- Primer WHERE uslova
+        ORDER BY ds.naziv_dobavljaca;
 BEGIN
-    GENERISI_IZVESTAJ_DOBAVLJACA(
-        p_datum_od => TO_DATE('2023-01-01', 'YYYY-MM-DD'),
-        p_datum_do => TO_DATE('2023-12-31', 'YYYY-MM-DD'),
-        p_min_broj_reklamacija => 2,
-        p_kreirao_id => 1
-    );
+    FOR rec IN c_dobavljaci LOOP
+        v_dobavljac_record := DobavljacOcenaRecord(
+            rec.naziv_dobavljaca,
+            rec.ime_sirovine,
+            rec.prosecna_ocena,
+            rec.ukupan_broj_reklamacija
+        );
+        
+        PIPE ROW (v_dobavljac_record);
+    END LOOP;
+    
+    RETURN;
 END;
 /
+
+-- Testiranje funkcije
+-- SELECT * FROM TABLE(Generisi_Izvestaj_Ocena_Dobavljaca());
+-- /
