@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../styles/DashboardNM.css";
 import MainSideBar from "../components/MainSideBar";
 import { dashboardAPI } from "../api";
+import axiosInstance from "../api";
 
 const DashboardNM = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -33,18 +34,13 @@ const DashboardNM = () => {
 
     const fetchExpiringCertificates = async () => {
       try {
-        const token = sessionStorage.getItem("access_token");
-        const response = await fetch(`/expiring-certificates/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        console.log("Expiring certificates response:", response.data);
-        setExpCertificates(response.data);
+        const response = await axiosInstance.get("/expiring-certificates/");
+        if (response && response.data) {
+          setExpCertificates(response.data);
+        }
       } catch (error) {
         console.error("Greška pri dohvatanju sertifikata:", error);
+        // Don't set global error, just handle silently for this component
       }
     };
 
