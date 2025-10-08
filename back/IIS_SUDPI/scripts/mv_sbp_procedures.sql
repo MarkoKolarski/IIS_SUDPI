@@ -327,6 +327,11 @@ EXCEPTION
 END GENERISI_IZVESTAJ_DOBAVLJACA;
 /
 
+DELETE FROM KORISNIK;
+
+INSERT INTO korisnik (sifra_k, ime_k, prz_k, mail_k, tip_k, username, password, is_superuser, is_staff, is_active, date_joined, first_name, last_name)
+VALUES (1, 'Marko', 'Marković', 'marko.markovic@firma.rs', 'finansijski_analiticar', 'marko.markovic@firma.rs', 'pbkdf2_sha256$260000$abc123', 0, 1, 1, SYSTIMESTAMP, 'Marko', 'Marković');
+
 BEGIN
     GENERISI_IZVESTAJ_DOBAVLJACA(
         p_datum_od => TO_DATE('2023-01-01', 'YYYY-MM-DD'),
