@@ -101,7 +101,12 @@ class suppliers(generics.ListAPIView):
 
         try:
             supplier = self.get_object(sifra_d)
-            serializer = self.get_serializer(supplier, data=request.data, partial=True)
+            # Remove ocena and datum_ocenjivanja from request data if present
+            request_data = request.data.copy()
+            request_data.pop('ocena', None)
+            request_data.pop('datum_ocenjivanja', None)
+            
+            serializer = self.get_serializer(supplier, data=request_data, partial=True)
             
             if serializer.is_valid():
                 serializer.save()

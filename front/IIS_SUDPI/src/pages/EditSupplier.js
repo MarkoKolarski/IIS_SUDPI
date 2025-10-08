@@ -41,10 +41,15 @@ const EditSupplier = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Create a copy of supplier data without readonly fields
+      const supplierData = { ...supplier };
+      delete supplierData.ocena;
+      delete supplierData.datum_ocenjivanja;
+
       if (supplierId === "new") {
-        await axiosInstance.post("/suppliers/", supplier);
+        await axiosInstance.post("/suppliers/", supplierData);
       } else {
-        await axiosInstance.put(`/suppliers/${supplierId}/`, supplier);
+        await axiosInstance.put(`/suppliers/${supplierId}/`, supplierData);
       }
       navigate("/edit/suppliers");
     } catch (error) {
@@ -182,7 +187,9 @@ const EditSupplier = () => {
               step="0.1"
               value={supplier.ocena}
               onChange={handleChange}
-              required
+              readOnly
+              disabled
+              className="readonly-input"
             />
           </div>
 
@@ -194,7 +201,9 @@ const EditSupplier = () => {
               name="datum_ocenjivanja"
               value={supplier.datum_ocenjivanja}
               onChange={handleChange}
-              required
+              readOnly
+              disabled
+              className="readonly-input"
             />
           </div>
 
