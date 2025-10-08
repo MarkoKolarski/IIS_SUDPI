@@ -91,6 +91,8 @@ BEGIN
 END;
 /
 
+COMMIT;
+
 BEGIN
   FOR i IN 20..3000 LOOP
     INSERT INTO REKLAMACIJA (
@@ -120,6 +122,7 @@ BEGIN
 END;
 /
 
+COMMIT;
 
 -- Funkcija 1: Izračunavanje prosečne ocene dobavljača za sirovinu
 CREATE OR REPLACE FUNCTION IZRACUNAJ_PROSECNU_OCENU_SIROVINE(
