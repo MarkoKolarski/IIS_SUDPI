@@ -1,7 +1,7 @@
 from django.urls import path
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
 from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment
-from .views_mv import suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, busy_visit_slots
+from .views_mv import suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, busy_visit_slots, expiring_certificates
 
 urlpatterns = [
     path('', index, name='index'),
@@ -23,6 +23,7 @@ urlpatterns = [
     path('suppliers/', suppliers.as_view(), name='dobavljaci-list'),
     path('suppliers/<int:sifra_d>/', suppliers.as_view(), name='dobavljaci-detail'),
     path('suppliers/<int:sifra_d>/select/', select_supplier, name='select-supplier'),
+    path('expiring-certificates/', expiring_certificates, name='expiring_certificates'),
 
     # Kontrolor Kvaliteta endpoints
     path('visits/', visits_list, name='visits-list'),

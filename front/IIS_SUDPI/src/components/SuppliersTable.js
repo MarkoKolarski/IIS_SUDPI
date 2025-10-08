@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import "../styles/Suppliers.css";
 import "../styles/SuppliersTable.css";
 import axiosInstance from "../axiosInstance";
-import { FaCheck } from "react-icons/fa";
+import { FaCheck, FaExclamationTriangle } from "react-icons/fa";
 
 const SuppliersTable = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [search, setSearch] = useState("");
+  const [certificates, setCertificates] = useState({});
   const userType = sessionStorage.getItem("user_type");
 
   const fetchSuppliers = async (query = "") => {
@@ -34,8 +35,29 @@ const SuppliersTable = () => {
     }
   };
 
+  const fetchCertificates = async () => {
+    try {
+      const token = sessionStorage.getItem("access_token");
+      const response = await axiosInstance.get("/expiring-certificates/");
+
+      // Group certificates by supplier ID for easy lookup
+      const certificatesBySupplier = {};
+      response.data.forEach((cert) => {
+        if (!certificatesBySupplier[cert.dobavljac_id]) {
+          certificatesBySupplier[cert.dobavljac_id] = [];
+        }
+        certificatesBySupplier[cert.dobavljac_id].push(cert);
+      });
+
+      setCertificates(certificatesBySupplier);
+    } catch (error) {
+      console.error("Error fetching certificates:", error);
+    }
+  };
+
   useEffect(() => {
     fetchSuppliers();
+    fetchCertificates();
   }, []);
 
   useEffect(() => {
@@ -60,6 +82,48 @@ const SuppliersTable = () => {
     }
   };
 
+  // Helper function to determine certificate status for a supplier
+  const getSupplierCertStatus = (supplierId) => {
+    const supplierCerts = certificates[supplierId] || [];
+
+    if (supplierCerts.length === 0) {
+      return { status: "none", message: "Nema sertifikata" };
+    }
+
+    // Find the most critical certificate (lowest days_left)
+    const mostCritical = supplierCerts.reduce(
+      (prev, current) => (prev.days_left < current.days_left ? prev : current),
+      supplierCerts[0]
+    );
+
+    if (mostCritical.days_left <= 7) {
+      return {
+        status: "critical",
+        message: `${mostCritical.naziv} ističe za ${mostCritical.days_left} dana`,
+        cert: mostCritical,
+      };
+    } else if (mostCritical.days_left <= 14) {
+      return {
+        status: "warning",
+        message: `${mostCritical.naziv} ističe za ${mostCritical.days_left} dana`,
+        cert: mostCritical,
+      };
+    } else {
+      return {
+        status: "ok",
+        message: `${supplierCerts.length} sertifikata`,
+        cert: mostCritical,
+      };
+    }
+  };
+
+  // Helper function to format date as DD.MM.YYYY
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("sr-RS"); // Serbian locale for DD.MM.YYYY format
+  };
+
   return (
     <div className="suppliers-container">
       <h1 className="suppliers-title">Dobavljaci</h1>
@@ -78,38 +142,53 @@ const SuppliersTable = () => {
             <th>Sirovina</th>
             <th>Email</th>
             <th>Ocena</th>
-            <th>Status</th>
+            <th>Datum ocenjivanja</th>
+            <th>Rok isporuke</th>
+            <th>Sertifikati</th>
             {userType === "nabavni_menadzer" && <th>Akcije</th>}
           </tr>
         </thead>
         <tbody>
-          {suppliers.map((supplier) => (
-            <tr key={supplier.sifra_d}>
-              <td>{supplier.naziv}</td>
-              <td>{supplier.PIB_d}</td>
-              <td>{supplier.ime_sirovine}</td>
-              <td>{supplier.email}</td>
-              <td>{supplier.ocena}/10</td>
-              <td>{supplier.izabran ? "Izabran" : "Nije izabran"}</td>
-              {userType === "nabavni_menadzer" && (
+          {suppliers.map((supplier) => {
+            const certStatus = getSupplierCertStatus(supplier.sifra_d);
+
+            return (
+              <tr key={supplier.sifra_d}>
+                <td>{supplier.naziv}</td>
+                <td>{supplier.PIB_d}</td>
+                <td>{supplier.ime_sirovine}</td>
+                <td>{supplier.email}</td>
+                <td>{supplier.ocena}/10</td>
+                <td>{formatDate(supplier.datum_ocenjivanja)}</td>
+                <td>{supplier.rok_isporuke} dana</td>
                 <td>
-                  {!supplier.izabran && (
-                    <button
-                      className="supplier-action-button select"
-                      onClick={() => handleSelectSupplier(supplier.sifra_d)}
-                    >
-                      Izaberi dobavljača
-                    </button>
-                  )}
-                  {supplier.izabran && (
-                    <span className="selected-badge">
-                      <FaCheck /> Izabran
-                    </span>
-                  )}
+                  <div className={`certificate-status ${certStatus.status}`}>
+                    {certStatus.status === "critical" && (
+                      <FaExclamationTriangle className="cert-icon" />
+                    )}
+                    {certStatus.message}
+                  </div>
                 </td>
-              )}
-            </tr>
-          ))}
+                {userType === "nabavni_menadzer" && (
+                  <td>
+                    {!supplier.izabran && (
+                      <button
+                        className="supplier-action-button select"
+                        onClick={() => handleSelectSupplier(supplier.sifra_d)}
+                      >
+                        Izaberi dobavljača
+                      </button>
+                    )}
+                    {supplier.izabran && (
+                      <span className="selected-badge">
+                        <FaCheck /> Izabran
+                      </span>
+                    )}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

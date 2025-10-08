@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj
-
+from .models import Faktura, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj, Sertifikat
+from django.utils import timezone
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -449,3 +449,19 @@ class IzvestajSerializer(serializers.ModelSerializer):
     class Meta:
         model = Izvestaj
         fields = '__all__'
+
+class SertifikatSerializer(serializers.ModelSerializer):
+    dobavljac_naziv = serializers.SerializerMethodField()
+    days_left = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Sertifikat
+        fields = ['sertifikat_id', 'naziv', 'tip', 'datum_izdavanja', 'datum_isteka', 
+                 'dobavljac', 'dobavljac_naziv', 'days_left']
+    
+    def get_dobavljac_naziv(self, obj):
+        return obj.dobavljac.naziv if obj.dobavljac else None
+    
+    def get_days_left(self, obj):
+        today = timezone.now().date()
+        return (obj.datum_isteka - today).days if obj.datum_isteka > today else 0
