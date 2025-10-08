@@ -10,6 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+# Business Logic Configuration
+# Ako je True, poslovna logika se izvršava u Django aplikaciji
+# Ako je False, poslovna logika se izvršava u PL/SQL procedurama
+BUSINESS_LOGIC_IN_DJANGO = {
+    'supplier_rating': True,     # Ažuriranje ocene dobavljača
+    'visit_overlap': True        # Provera preklapanja termina poseta
+}
+
 from datetime import timedelta
 from logging import config
 from pathlib import Path

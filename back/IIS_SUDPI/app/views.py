@@ -1163,17 +1163,19 @@ def create_visit(request):
         datum_do = request.data.get('datum_do')
         dobavljac_id = request.data.get('dobavljac_id')
         
-        # Check for overlapping visits
-        overlapping_visits = Poseta.objects.filter(
-            datum_od__lt=datum_do,
-            datum_do__gt=datum_od
-        ).exclude(status='otkazana')
+        # Provera preklapanja termina samo ako je konfiguracija postavljena da koristi Django logiku
+        if settings.BUSINESS_LOGIC_IN_DJANGO.get('visit_overlap', True):
+            # Check for overlapping visits
+            overlapping_visits = Poseta.objects.filter(
+                datum_od__lt=datum_do,
+                datum_do__gt=datum_od
+            ).exclude(status='otkazana')
         
-        if overlapping_visits.exists():
-            return Response(
-                {'error': 'Termin je već zauzet'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            if overlapping_visits.exists():
+                return Response(
+                    {'error': 'Termin je već zauzet'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         dobavljac = get_object_or_404(Dobavljac, sifra_d=dobavljac_id)
         
@@ -1220,6 +1222,8 @@ def complaints_list(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+from django.conf import settings
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['kontrolor_kvaliteta'])
@@ -1241,22 +1245,25 @@ def create_complaint(request):
         try:
             dobavljac = Dobavljac.objects.get(sifra_d=dobavljac_id)
             
-            # Calculate rating penalty based on complaint strength
-            # For jacina_zalbe 1-3: small impact (0.3-0.9)
-            # For jacina_zalbe 4-7: medium impact (1.2-2.1)
-            # For jacina_zalbe 8-10: high impact (2.4-3.0)
-            if jacina_zalbe <= 3:
-                penalty = jacina_zalbe * 0.3
-            elif jacina_zalbe <= 7:
-                penalty = jacina_zalbe * 0.3
-            else:
-                penalty = jacina_zalbe * 0.3
-            
-            # Update supplier's rating
-            new_rating = max(0, min(10, float(dobavljac.ocena) - penalty))
-            dobavljac.ocena = new_rating
-            dobavljac.datum_ocenjivanja = timezone.now().date()
-            dobavljac.save()
+            # Ako je konfiguracija postavljena da se koristi Django logika
+            if settings.BUSINESS_LOGIC_IN_DJANGO.get('supplier_rating', True):
+                # Calculate rating penalty based on complaint strength
+                # For jacina_zalbe 1-3: small impact (0.3-0.9)
+                # For jacina_zalbe 4-7: medium impact (1.2-2.1)
+                # For jacina_zalbe 8-10: high impact (2.4-3.0)
+                if jacina_zalbe <= 3:
+                    penalty = jacina_zalbe * 0.3
+                elif jacina_zalbe <= 7:
+                    penalty = jacina_zalbe * 0.3
+                else:
+                    penalty = jacina_zalbe * 0.3
+                
+                # Update supplier's rating
+                new_rating = max(0, min(10, float(dobavljac.ocena) - penalty))
+                dobavljac.ocena = new_rating
+                dobavljac.datum_ocenjivanja = timezone.now().date()
+                dobavljac.save()
+            # Ako je False, rating će biti ažuriran kroz PL/SQL trigger
 
             # Create complaint data
             complaint_data = {
