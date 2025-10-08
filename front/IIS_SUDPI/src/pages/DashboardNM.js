@@ -36,7 +36,11 @@ const DashboardNM = () => {
       try {
         const response = await axiosInstance.get("/expiring-certificates/");
         if (response && response.data) {
-          setExpCertificates(response.data);
+          // Sort certificates by days_left in ascending order (most critical first)
+          const sortedCertificates = [...response.data].sort(
+            (a, b) => a.days_left - b.days_left
+          );
+          setExpCertificates(sortedCertificates);
         }
       } catch (error) {
         console.error("Greška pri dohvatanju sertifikata:", error);
