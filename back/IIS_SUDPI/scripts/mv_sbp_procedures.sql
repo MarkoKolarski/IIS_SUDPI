@@ -1,5 +1,4 @@
 -- Triger 1: Automatsko ažuriranje ocene dobavljača
-
 CREATE OR REPLACE TRIGGER TRG_UPDATE_SUPPLIER_RATING
 AFTER INSERT ON REKLAMACIJA
 FOR EACH ROW
@@ -64,6 +63,12 @@ BEGIN
 END;
 /
 
+-- Testiranje funkcije
+BEGIN
+    DBMS_OUTPUT.PUT_LINE(IZRACUNAJ_PROSECNU_OCENU_SIROVINE('Čelik X1'));
+END;
+/
+
 -- Funkcija 2: Pronalaženje alternativnih dobavljača
 CREATE OR REPLACE FUNCTION NADJI_ALTERNATIVE_DOBAVLJACE(
     p_dobavljac_id NUMBER
@@ -89,19 +94,77 @@ BEGIN
 END;
 /
 
+DECLARE
+    v_result_cursor SYS_REFCURSOR;
+    v_sifra_d NUMBER;
+    v_naziv VARCHAR2(200);
+    v_ocena NUMBER;
+    v_rok_isporuke NUMBER;
+BEGIN
+    v_result_cursor := NADJI_ALTERNATIVE_DOBAVLJACE(103);
+    
+    LOOP
+        FETCH v_result_cursor INTO v_sifra_d, v_naziv, v_ocena, v_rok_isporuke;
+        EXIT WHEN v_result_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE('- ID: ' || v_sifra_d || ', Naziv: ' || v_naziv || ', Ocena: ' || v_ocena);
+    END LOOP;
+    CLOSE v_result_cursor;
+END;
+/
+
 -- 3. SQL Indeksi
 -- Indeks za brže pretraživanje dobavljača po sirovini i oceni
+BEGIN
+  EXECUTE IMMEDIATE 'DROP INDEX IDX_DOBAVLJAC_SIROVINA_OCENA';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
 CREATE INDEX IDX_DOBAVLJAC_SIROVINA_OCENA ON DOBAVLJAC(ime_sirovine, ocena);
 
 -- Indeks za brže pronalaženje poseta u određenom periodu
+BEGIN
+  EXECUTE IMMEDIATE 'DROP INDEX IDX_POSETA_DATUM';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
 CREATE INDEX IDX_POSETA_DATUM ON POSETA(datum_od, datum_do, status);
 
 -- Indeks za efikasnije pretraživanje reklamacija
+BEGIN
+  EXECUTE IMMEDIATE 'DROP INDEX IDX_REKLAMACIJA_DOBAVLJAC';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
 CREATE INDEX IDX_REKLAMACIJA_DOBAVLJAC ON REKLAMACIJA(dobavljac_id, datum_prijema);
 
 
 -- 4. Kompleksan izveštaj
 
+BEGIN
+  -- 1. Odbaciti proceduru koja zavisi od tipova
+  EXECUTE IMMEDIATE 'DROP PROCEDURE GENERISI_IZVESTAJ_DOBAVLJACA';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+  -- 2. Odbaciti tabelarni tip, jer zavisi od objektnog tipa
+  EXECUTE IMMEDIATE 'DROP TYPE dobavljac_statistika_tbl';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+  -- 3. Odbaciti objektni tip
+  EXECUTE IMMEDIATE 'DROP TYPE dobavljac_statistika_t CASCADE CONSTRAINTS';
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+-- Custom types for report generation
 -- Custom types for report generation
 CREATE OR REPLACE TYPE dobavljac_statistika_t AS OBJECT (
     sifra_d NUMBER,
@@ -123,11 +186,11 @@ CREATE OR REPLACE PROCEDURE GENERISI_IZVESTAJ_DOBAVLJACA (
     p_datum_od IN DATE,
     p_datum_do IN DATE,
     p_min_broj_reklamacija IN NUMBER DEFAULT 1,
-    p_kreirao_id IN NUMBER  -- Add parameter for user ID
+    p_kreirao_id IN NUMBER
 ) IS
     v_statistika dobavljac_statistika_tbl;
     v_json_izvestaj CLOB;
-    v_izvestaj_id NUMBER;
+    v_izvestaj_id NUMBER; -- Deklaracija
 BEGIN
     -- Koristimo WITH klauzulu za pripremu međurezultata
     WITH reklamacije_stats AS (
@@ -178,7 +241,7 @@ BEGIN
     )
     ORDER BY d.ocena DESC;
 
-    -- Generisanje JSON izveštaja
+    -- Generisanje JSON izveštaja (Ispravno)
     SELECT JSON_OBJECT(
         'period' VALUE JSON_OBJECT('od' VALUE p_datum_od, 'do' VALUE p_datum_do),
         'datum_generisanja' VALUE SYSDATE,
@@ -203,22 +266,24 @@ BEGIN
     FORMAT JSON) INTO v_json_izvestaj
     FROM dual;
 
-    -- Čuvanje izveštaja u tabeli
+    -- Čuvanje izveštaja u tabeli - ISPRAVKA ORA-01400: Dodato SIFRA_I i izvestaj_seq.NEXTVAL
     INSERT INTO izvestaj (
+        sifra_i, -- Dodata kolona
         tip_i,
         sadrzaj_i,
         datum_i,
-        kreirao_id  -- Add this column
+        kreirao_id
     ) VALUES (
+        izvestaj_seq.NEXTVAL, -- Korišćenje sekvence za generisanje vrednosti
         'dobavljaci',
         v_json_izvestaj,
         SYSDATE,
-        p_kreirao_id  -- Add the parameter value
+        p_kreirao_id
     ) RETURNING sifra_i INTO v_izvestaj_id;
 
     COMMIT;
 
-    -- Logovanje uspešnog generisanja
+    -- Logovanje uspešnog generisanja - ISPRAVKA PLS-00201: Korišćenje "v_izvestaj_id"
     DBMS_OUTPUT.PUT_LINE('Izveštaj uspešno generisan. ID: ' || v_izvestaj_id);
 
 EXCEPTION
@@ -228,6 +293,3 @@ EXCEPTION
         RAISE;
 END GENERISI_IZVESTAJ_DOBAVLJACA;
 /
-
--- Generate report for last 3 months
-EXEC GENERISI_IZVESTAJ_DOBAVLJACA(ADD_MONTHS(SYSDATE, -3), SYSDATE, 1, 1);
