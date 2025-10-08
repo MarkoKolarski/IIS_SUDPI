@@ -34,6 +34,7 @@ import IzmenaZaliha from "./pages/IzmenaZaliha";
 import DashboardSO from "./pages/DashboardSO";
 import EditProfile from "./pages/EditProfile.js";
 import EditOtherProfile from "./pages/EditOtherProfile.js";
+import LogisticTransport from "./pages/LogisticTransport.js";
 
 const App = () => {
   return (
@@ -242,6 +243,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["administrator"]}>
               <EditSupplier />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/logistics-transport"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <LogisticTransport />
             </ProtectedRoute>
           }
         />

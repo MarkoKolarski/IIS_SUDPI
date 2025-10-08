@@ -15,7 +15,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
+from .models import Vozilo, Vozac, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -32,7 +32,9 @@ from .serializers import (
     DodajArtikalSerializer,
     RizicniArtikalSerializer,
     UserProfileSerializer, 
-    UserProfileUpdateSerializer
+    UserProfileUpdateSerializer,
+    VozacSerializer,
+    VoziloSerializer
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -1884,9 +1886,52 @@ def get_users_list(request):
     if not request.user.tip_k == 'administrator':
         return Response(
             {"error": "Nemate dozvolu za pristup ovoj listi"},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    
+            status=status.HTTP_403_FORBIDDEN)
     users = User.objects.all()
     serializer = UserProfileSerializer(users, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+#@allowed_users(['administrator'])
+def vozaci_list(request):
+
+    try:
+        vozaci = Vozac.objects.all().order_by('sifra_vo')
+        #vozaci = Vozac.get_all_vozila().order_by('sifra_v')
+        serializer = VozacSerializer(vozaci, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju vozača', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+#@allowed_users(['administrator'])
+def vozila_list(request):
+    try:
+        vozila = Vozilo.objects.all().order_by('sifra_v')
+        serializer = VoziloSerializer(vozila, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju vozila', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+@api_view(['GET'])
+def get_vozilo(request, pk):
+    vozilo = get_object_or_404(Vozilo, pk=pk)
+    serializer = VoziloSerializer(vozilo)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+def update_vozilo(request, pk):
+    vozilo = get_object_or_404(Vozilo, pk=pk)
+    serializer = VoziloSerializer(vozilo, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

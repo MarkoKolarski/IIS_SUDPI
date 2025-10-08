@@ -1,0 +1,356 @@
+.logistic-transport-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    margin-left: 250px; /* Prilagodite prema širini vašeg sidebar-a */
+    transition: margin-left 0.3s ease;
+}
+
+/* Header stilovi */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.header h1 {
+    color: #2c5530;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-info {
+    text-align: right;
+}
+
+.user-info div:first-child {
+    font-weight: 600;
+    color: #2c5530;
+}
+
+.user-email {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4a7c59, #2c5530);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Sekcije */
+.transport-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    margin-bottom: 30px;
+    border: 1px solid #e8f5e8;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e8f5e8;
+}
+
+.section-title {
+    color: #2c5530;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Dugmad */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4a7c59, #2c5530);
+    color: white;
+    box-shadow: 0 2px 8px rgba(74, 124, 89, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #3d6a4a, #244428);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 124, 89, 0.4);
+}
+
+.btn-secondary {
+    background: #e8f5e8;
+    color: #2c5530;
+    border: 1px solid #4a7c59;
+}
+
+.btn-secondary:hover {
+    background: #d4edd4;
+    transform: translateY(-1px);
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #4a7c59, #2c5530);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(74, 124, 89, 0.3);
+}
+
+.btn-edit:hover {
+    background: linear-gradient(135deg, #3d6a4a, #244428);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(74, 124, 89, 0.4);
+}
+
+/* Tabela */
+.table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e8f5e8;
+}
+
+.transport-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.transport-table thead {
+    background: linear-gradient(135deg, #4a7c59, #2c5530);
+}
+
+.transport-table th {
+    padding: 16px 20px;
+    text-align: left;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-bottom: 2px solid #3d6a4a;
+}
+
+.transport-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #e8f5e8;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.transport-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.transport-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.transport-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status badge-ovi */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.status-active {
+    background: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.status-busy {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ef6c00;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.status-inactive {
+    background: rgba(244, 67, 54, 0.1);
+    color: #d32f2f;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+/* Loading state */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+/* Responsivnost */
+@media (max-width: 1024px) {
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .section-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .user-profile {
+        align-self: flex-end;
+    }
+    
+    .transport-table {
+        font-size: 0.8rem;
+    }
+    
+    .transport-table th,
+    .transport-table td {
+        padding: 10px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .transport-section {
+        padding: 15px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+    
+    .section-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .section-actions .btn {
+        width: 100%;
+    }
+    .sidebar-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: #e8f5e8;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    margin-left: 250px;
+    transition: all 0.3s ease;
+}
+
+.main-content.collapsed {
+    margin-left: 80px; /* Prilagodite širini collapsed sidebar-a */
+}
+
+/* Header sa flex layout za sidebar toggle */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.header h1 {
+    color: #2c5530;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+}
+
+/* Responsivnost */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+    
+    .main-content.collapsed {
+        margin-left: 0;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .sidebar-toggle {
+        align-self: flex-start;
+    }}
+}

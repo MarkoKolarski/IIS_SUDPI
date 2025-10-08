@@ -108,6 +108,11 @@ export const sidebarLinks = {
       description: "Izmena podataka dobavljača",
     },
     {
+      title: "Logistika i transport",
+      href: "/logistics-transport",
+      description: "Praćenje vozila i kontrola servisa.",
+    },
+    {
       title: "Izmena info. o korisniku",
       href: "/edit-profile",
       description: "Ažuriranje poslovnih podataka korisnika.",

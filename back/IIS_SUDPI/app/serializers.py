@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from decimal import Decimal
-from .models import Faktura, User, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj
+from .models import Faktura, Vozac, User, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -477,7 +477,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         # Samo ažuriraj prosleđena polja
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-            
+
         if password:
             instance.set_password(password)
 
@@ -495,3 +495,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = ['sifra_k', 'ime_k', 'prz_k', 'mail_k', 'tip_k', 'tip_k_display']
         read_only_fields = ['sifra_k']
+
+class VozacSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Vozac
+        fields = '__all__'
+        #fields = ['sifra_vo', 'ime_vo', 'prz_vo', 'br_voznji', 'status', 'status_display']

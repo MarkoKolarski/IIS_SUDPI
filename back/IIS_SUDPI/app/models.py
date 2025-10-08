@@ -599,3 +599,26 @@ class voziloOmogucavaTemperatura(models.Model):
             return Upozorenje(isporuka = self.isporuka, tip = 'temperatura', poruka = 'Temperatura je izvan opsega.' )
     class Meta:
         db_table = 'temperaturaVozilo'
+
+class Vozac(models.Model):
+    sifra_vo = models.AutoField(primary_key=True)
+    ime_vo = models.CharField(max_length=100)
+    prz_vo = models.CharField(max_length=100)
+    br_voznji = models.IntegerField()
+    status_choices = [
+        ('slobodan', 'Slobodan'),
+        ('zauzet', 'Zauzet'),
+        ('na_odmoru', 'Na odmoru'),
+    ]
+    status = models.CharField(max_length=20, choices=status_choices, default='slobodan')
+    class Meta:
+        db_table = 'vozac'
+    @property
+    def id(self):
+        return self.sifra_vo
+    def __str__(self):
+        return f"{self.ime_vo} {self.prz_vo} ({self.br_voznji} vožnji)"
+    status = models.CharField(max_length=20, choices=status_choices, default='slobodan')
+    def get_all_vozaci(request):
+        vozaci = Vozac.objects.all()
+        return vozaci

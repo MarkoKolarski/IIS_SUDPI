@@ -64,4 +64,8 @@ urlpatterns = [
     
     # Lista svih korisnika (samo admin)
     path('api/users/', views.get_users_list, name='get_users_list'),
+
+    # Lista svih vozaca i vozila (samo admin)
+    path('api/vozila/', views.vozila_list, name='vozila_list'),
+    path('api/vozaci/', views.vozaci_list, name='vozaci_list'),
 ]
