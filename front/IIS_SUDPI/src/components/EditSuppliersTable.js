@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
-import { FaSearch, FaEdit } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
 
 const EditSuppliersTable = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -12,6 +12,18 @@ const EditSuppliersTable = () => {
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery) {
+        handleSearch();
+      } else {
+        fetchSuppliers();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const fetchSuppliers = async () => {
     try {
@@ -26,12 +38,15 @@ const EditSuppliersTable = () => {
 
   const handleSearch = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get(
-        `/suppliers/?search=${searchQuery}`
+        `/suppliers/?search=${encodeURIComponent(searchQuery)}`
       );
       setSuppliers(response.data);
     } catch (error) {
       console.error("Error searching suppliers:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,20 +56,13 @@ const EditSuppliersTable = () => {
 
   return (
     <div className="suppliers-table-container">
-      <div className="suppliers-table-controls">
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Pretraži dobavljače..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-          />
-          <button onClick={handleSearch}>
-            <FaSearch />
-          </button>
-        </div>
-      </div>
+      <input
+        type="text"
+        className="suppliers-search"
+        placeholder="Pretraži po nazivu, sirovini ili PIB-u..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
 
       {loading ? (
         <div className="loading">Učitavanje...</div>
