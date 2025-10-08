@@ -8,6 +8,7 @@ const DashboardNM = () => {
   const [dashboardData, setDashboardData] = useState({
     profitabilnost_dobavljaca: [],
   });
+  const [expCertificates, setExpCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -30,8 +31,33 @@ const DashboardNM = () => {
       }
     };
 
+    const fetchExpiringCertificates = async () => {
+      try {
+        const token = sessionStorage.getItem("access_token");
+        const response = await fetch(`/expiring-certificates/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log("Expiring certificates response:", response.data);
+        setExpCertificates(response.data);
+      } catch (error) {
+        console.error("Greška pri dohvatanju sertifikata:", error);
+      }
+    };
+
     fetchDashboardData();
+    fetchExpiringCertificates();
   }, []);
+
+  // Helper function to determine certificate urgency class
+  const getCertificateUrgencyClass = (daysLeft) => {
+    if (daysLeft <= 7) return "certificate-critical";
+    if (daysLeft <= 14) return "certificate-warning";
+    return "certificate-notice";
+  };
 
   return (
     <div
@@ -56,6 +82,49 @@ const DashboardNM = () => {
 
         {!loading && !error && (
           <div className="dashboard-content">
+            {/* Certificate Expiration Notifications */}
+            {expCertificates && expCertificates.length > 0 && (
+              <div className="certificates-notification-section">
+                <h2>Obaveštenja o sertifikatima</h2>
+                <div className="certificates-container">
+                  {expCertificates.map((cert) => (
+                    <div
+                      key={cert.sertifikat_id}
+                      className={`certificate-card ${getCertificateUrgencyClass(
+                        cert.days_left
+                      )}`}
+                    >
+                      <div className="certificate-header">
+                        <span className="certificate-type">{cert.tip}</span>
+                        <span className="days-left">
+                          {cert.days_left}{" "}
+                          {cert.days_left === 1 ? "dan" : "dana"}
+                        </span>
+                      </div>
+                      <h3 className="certificate-name">{cert.naziv}</h3>
+                      <div className="certificate-supplier">
+                        Dobavljač: {cert.dobavljac_naziv}
+                      </div>
+                      <div className="certificate-dates">
+                        <div>
+                          Izdavanje:{" "}
+                          {new Date(cert.datum_izdavanja).toLocaleDateString(
+                            "sr-RS"
+                          )}
+                        </div>
+                        <div>
+                          Ističe:{" "}
+                          {new Date(cert.datum_isteka).toLocaleDateString(
+                            "sr-RS"
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="dashboard-grid">
               {/* Card 1: Profitabilnost dobavljača */}
               <div className="dashboard-card">

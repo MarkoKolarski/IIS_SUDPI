@@ -6,11 +6,12 @@ from rest_framework.decorators import api_view, permission_classes
 from django.shortcuts import get_object_or_404
 from django.db.models import Max
 from django.utils import timezone
-from .models import Dobavljac, Poseta, Reklamacija
-from .serializers import DobavljacSerializer, VisitSerializer, ComplaintSerializer
+from .models import Dobavljac, Poseta, Reklamacija, Sertifikat
+from .serializers import DobavljacSerializer, VisitSerializer, ComplaintSerializer, SertifikatSerializer
 import pytz
 from django.conf import settings
 from .decorators import allowed_users
+from datetime import timedelta
 
 class suppliers(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -371,5 +372,48 @@ def create_complaint(request):
     except Exception as e:
         return Response(
             {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['nabavni_menadzer'])
+def expiring_certificates(request):
+    """
+    API endpoint za dobijanje sertifikata dobavljača koji ističu u narednih 30 dana
+    """
+    try:
+        # Današnji datum
+        today = timezone.now().date()
+        
+        # Datum za 30 dana unapred
+        thirty_days_ahead = today + timedelta(days=30)
+        
+        # Pronađi sertifikate koji ističu u narednih 30 dana
+        expiring_certs = Sertifikat.objects.filter(
+            datum_isteka__gt=today,
+            datum_isteka__lte=thirty_days_ahead
+        ).select_related('dobavljac')
+        
+        results = []
+        for cert in expiring_certs:
+            days_left = (cert.datum_isteka - today).days
+            results.append({
+                'sertifikat_id': cert.sertifikat_id,
+                'naziv': cert.naziv,
+                'tip': cert.tip,
+                'datum_izdavanja': cert.datum_izdavanja,
+                'datum_isteka': cert.datum_isteka,
+                'dobavljac_id': cert.dobavljac.sifra_d,
+                'dobavljac_naziv': cert.dobavljac.naziv,
+                'days_left': days_left,
+            })
+        
+        return Response(results, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(e)
+        return Response(
+            {'error': f'Greška pri dohvatanju sertifikata koji ističu {str(e)}', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
