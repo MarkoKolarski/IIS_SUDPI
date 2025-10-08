@@ -48,9 +48,6 @@ BEGIN
 END;
 /
 
-DELETE FROM DOBAVLJAC;
-COMMIT;
-
 BEGIN
   FOR i IN 20..30 LOOP
     INSERT INTO DOBAVLJAC (
@@ -253,5 +250,4 @@ END;
 /
 
 -- Testiranje funkcije
--- SELECT * FROM TABLE(Generisi_Izvestaj_Ocena_Dobavljaca());
--- /
+SELECT * FROM TABLE(Generisi_Izvestaj_Ocena_Dobavljaca());
