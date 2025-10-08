@@ -24,6 +24,8 @@ const InvoiceDetails = () => {
 
   const closePaymentSimulation = () => {
     setIsPaymentModalOpen(false);
+    // Osveži podatke fakture nakon zatvaranja simulacije
+    loadInvoiceDetails();
   };
 
   const loadInvoiceDetails = useCallback(async () => {
@@ -309,6 +311,7 @@ const InvoiceDetails = () => {
       <PaymentSimulationModal
         isOpen={isPaymentModalOpen}
         onClose={closePaymentSimulation}
+        invoiceId={invoiceId}
       />
     </div>
   );

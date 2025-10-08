@@ -40,6 +40,8 @@
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
+    align-items: flex-end; /* Poravnanje na dno */
+    justify-content: flex-start; /* Flex-start za ostale elemente */
 }
 
 .filter-dropdown {
@@ -84,6 +86,106 @@
 .filter-dropdown select option {
     background-color: white;
     color: #134e4a;
+}
+
+/* Check Violations Button */
+.check-violations-btn {
+    background-color: #14b8a6 !important;
+    color: white !important;
+    border: none;
+    border-radius: 6px;
+    padding: 0 20px;
+    height: 46px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(20, 184, 166, 0.2);
+    min-width: 260px;
+}
+
+.check-violations-btn:hover:not(:disabled) {
+    background-color: #0f766e !important;
+    box-shadow: 0 4px 6px rgba(20, 184, 166, 0.3);
+    transform: translateY(-1px);
+}
+
+.check-violations-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.check-violations-btn span:first-child {
+    font-size: 18px;
+}
+
+/* Spinner Animation */
+.spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #14b8a6;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Violation Message Notification */
+.violation-message {
+    margin: 0 32px;
+    padding: 16px 24px;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideDown 0.3s ease-out;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.violation-message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.violation-message.success::before {
+    content: "✓";
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.violation-message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.violation-message.error::before {
+    content: "✕";
+    font-size: 20px;
+    font-weight: bold;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Table Section */

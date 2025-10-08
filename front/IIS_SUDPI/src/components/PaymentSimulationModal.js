@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import axiosInstance from '../axiosInstance';
 import '../styles/PaymentSimulationModal.css';
 
-const PaymentSimulationModal = ({ isOpen, onClose }) => {
+const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSimulating, setIsSimulating] = useState(false);
     const [simulationComplete, setSimulationComplete] = useState(false);
+    const [error, setError] = useState(null);
+    const [transactionData, setTransactionData] = useState(null);
 
     const steps = useMemo(() => [
         { id: 1, text: 'Pokretanje simulacije...', duration: 1500 },
@@ -14,44 +17,59 @@ const PaymentSimulationModal = ({ isOpen, onClose }) => {
         { id: 5, text: 'Simulacija uspešno završena!', duration: 0 }
     ], []);
 
-    const startSimulation = useCallback(() => {
+    const startSimulation = useCallback(async () => {
+        if (!invoiceId) {
+            setError('ID fakture nije prosleđen');
+            return;
+        }
+
         setIsSimulating(true);
         setCurrentStep(1);
+        setError(null);
         
-        let stepIndex = 0;
-        
-        const processStep = () => {
-            if (stepIndex < steps.length - 1) {
-                setTimeout(() => {
-                    stepIndex++;
-                    setCurrentStep(stepIndex + 1);
-                    processStep();
-                }, steps[stepIndex].duration);
-            } else {
-                setIsSimulating(false);
-                setSimulationComplete(true);
+        try {
+            // Pozovi backend za stvarno plaćanje
+            const response = await axiosInstance.post(`invoices/${invoiceId}/simulate-payment/`);
+            
+            // Procesiranje koraka sa backend odgovorima
+            for (let i = 0; i < steps.length; i++) {
+                setCurrentStep(i + 1);
+                await new Promise(resolve => setTimeout(resolve, steps[i].duration));
             }
-        };
-        
-        processStep();
-    }, [steps]);
+            
+            // Sačuvaj podatke o transakciji
+            setTransactionData(response.data);
+            setSimulationComplete(true);
+            
+        } catch (err) {
+            console.error('Greška pri simulaciji:', err);
+            const errorMessage = err.response?.data?.error 
+                || err.response?.data?.detail
+                || err.message 
+                || 'Greška pri izvršavanju plaćanja';
+            setError(errorMessage);
+            setIsSimulating(false);
+        } finally {
+            setIsSimulating(false);
+        }
+    }, [invoiceId, steps]);
 
     const resetSimulation = useCallback(() => {
         setCurrentStep(0);
         setIsSimulating(false);
         setSimulationComplete(false);
+        setError(null);
+        setTransactionData(null);
     }, []);
 
     useEffect(() => {
-        if (isOpen && !isSimulating && !simulationComplete) {
+        if (isOpen && !isSimulating && !simulationComplete && !error) {
             startSimulation();
         }
         if (!isOpen) {
             resetSimulation();
         }
-    }, [isOpen, isSimulating, simulationComplete, startSimulation, resetSimulation]);
-
-
+    }, [isOpen, isSimulating, simulationComplete, error, startSimulation, resetSimulation]);
 
     const handleClose = useCallback(() => {
         if (isSimulating) {
@@ -101,44 +119,72 @@ const PaymentSimulationModal = ({ isOpen, onClose }) => {
                     Simulacija plaćanja
                 </h2>
 
-                <div className="payment-progress-bar">
-                    <div 
-                        className="payment-progress-fill" 
-                        style={{ width: `${(currentStep / steps.length) * 100}%` }}
-                    />
-                </div>
+                {error && (
+                    <div className="payment-error-message">
+                        <span className="error-icon">⚠️</span>
+                        <p>{error}</p>
+                    </div>
+                )}
 
-                <ol id="simulation-progress-list" className="payment-steps-list" aria-live="polite">
-                    {steps.map((step, index) => {
-                        const stepNumber = index + 1;
-                        const isActive = currentStep === stepNumber && isSimulating;
-                        const isCompleted = currentStep > stepNumber || (currentStep === stepNumber && simulationComplete);
-                        const isPending = currentStep < stepNumber;
-                        const isFinalStep = stepNumber === steps.length;
+                {!error && (
+                    <>
+                        <div className="payment-progress-bar">
+                            <div 
+                                className="payment-progress-fill" 
+                                style={{ width: `${(currentStep / steps.length) * 100}%` }}
+                            />
+                        </div>
 
-                        return (
-                            <li key={step.id} className="payment-step-item">
-                                <div className="payment-step-content">
-                                    <div className={`payment-step-circle ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''}`}>
-                                        {isCompleted ? (
-                                            <span className="payment-checkmark">✓</span>
-                                        ) : isActive ? (
-                                            <div className="payment-spinner"></div>
-                                        ) : (
-                                            <span className="payment-step-number">{stepNumber}</span>
+                        <ol id="simulation-progress-list" className="payment-steps-list" aria-live="polite">
+                            {steps.map((step, index) => {
+                                const stepNumber = index + 1;
+                                const isActive = currentStep === stepNumber && isSimulating;
+                                const isCompleted = currentStep > stepNumber || (currentStep === stepNumber && simulationComplete);
+                                const isPending = currentStep < stepNumber;
+                                const isFinalStep = stepNumber === steps.length;
+
+                                return (
+                                    <li key={step.id} className="payment-step-item">
+                                        <div className="payment-step-content">
+                                            <div className={`payment-step-circle ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''}`}>
+                                                {isCompleted ? (
+                                                    <span className="payment-checkmark">✓</span>
+                                                ) : isActive ? (
+                                                    <div className="payment-spinner"></div>
+                                                ) : (
+                                                    <span className="payment-step-number">{stepNumber}</span>
+                                                )}
+                                            </div>
+                                            <span className={`payment-step-text ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''} ${isFinalStep && simulationComplete ? 'final' : ''}`}>
+                                                {step.text}
+                                            </span>
+                                        </div>
+                                        {index < steps.length - 1 && (
+                                            <div className={`payment-step-connector ${isCompleted ? 'completed' : ''}`}></div>
                                         )}
-                                    </div>
-                                    <span className={`payment-step-text ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''} ${isFinalStep && simulationComplete ? 'final' : ''}`}>
-                                        {step.text}
-                                    </span>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+
+                        {simulationComplete && transactionData && (
+                            <div className="payment-success-info">
+                                <h3>✓ Plaćanje uspešno izvršeno</h3>
+                                <div className="transaction-details">
+                                    <p><strong>Broj potvrde:</strong> {transactionData.transaction?.confirmation_number}</p>
+                                    <p><strong>Iznos:</strong> {transactionData.transaction?.amount} RSD</p>
+                                    <p><strong>Dobavljač:</strong> {transactionData.invoice?.supplier}</p>
+                                    {transactionData.notifications?.payment_notification_sent && (
+                                        <p className="notification-status">📧 Notifikacija poslata</p>
+                                    )}
+                                    {transactionData.notifications?.confirmation_sent && (
+                                        <p className="notification-status">📧 Potvrda poslata</p>
+                                    )}
                                 </div>
-                                {index < steps.length - 1 && (
-                                    <div className={`payment-step-connector ${isCompleted ? 'completed' : ''}`}></div>
-                                )}
-                            </li>
-                        );
-                    })}
-                </ol>
+                            </div>
+                        )}
+                    </>
+                )}
 
                 <button 
                     className="payment-modal-close-btn"

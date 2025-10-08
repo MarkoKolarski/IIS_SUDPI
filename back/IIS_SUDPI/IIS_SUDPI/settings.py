@@ -193,6 +193,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'onlybuns.isa@gmail.com'
 EMAIL_HOST_PASSWORD = 'uxuwqvwefovkufvq '
+DEFAULT_FROM_EMAIL = 'onlybuns.isa@gmail.com'
 
 #JWT
 SIMPLE_JWT = {
@@ -205,6 +206,9 @@ SIMPLE_JWT = {
 #URLS
 FRONTEND_URL = 'http://localhost:3000'
 BACKEND_URL = 'http://localhost:8000'
+
+# MIKROSERVIS - InfluxDB Financial Events Analysis Service
+MIKROSERVIS_URL = env('MIKROSERVIS_URL', default='http://localhost:8001')
 
 # Logging konfiguracija za automatsku proveru artikala
 LOGGING = {
