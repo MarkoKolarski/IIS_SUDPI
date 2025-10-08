@@ -1069,9 +1069,8 @@ def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji="")
 
 def check_contract_violations():
     """
-    Proverava sve aktivne ugovore i detektuje kršenja:
-    - Istekli ugovori koji nisu označeni kao istekli
-    - Ugovori koji su prešli rok isporuke (ako postoje fakture koje kasne)
+    Proverava sve aktivne ugovore i detektuje kršenja od strane dobavljača:
+    - Istekli ugovori koji nisu označeni kao istekli (administrativna greška)
     
     Returns:
         list: Lista dictionary-ja sa detaljima o prekršajima
@@ -1094,33 +1093,6 @@ def check_contract_violations():
                 'iznos_penala': Decimal('5000.00'),  # Fiksni penal za neažurirane ugovore
                 'detalji': f'Ugovor br. {ugovor.sifra_u} je trebao biti zatvoren pre {(danas - ugovor.datum_isteka_u).days} dana.'
             })
-        
-        # 2. PROVERA: Fakture koje kasne više od 30 dana sa rokom plaćanja
-        pre_30_dana = danas - timedelta(days=30)
-        fakture_koje_kasne = Faktura.objects.filter(
-            status_f__in=['primljena', 'verifikovana'],
-            rok_placanja_f__lt=pre_30_dana
-        ).select_related('ugovor__dobavljac')
-        
-        for faktura in fakture_koje_kasne:
-            # Proveri da li već postoji penal za ovu fakturu
-            vec_penalizovano = Penal.objects.filter(
-                ugovor=faktura.ugovor,
-                razlog_p__icontains=f'Faktura {faktura.sifra_f}'
-            ).exists()
-            
-            if not vec_penalizovano:
-                dana_kasnjenja = (danas - faktura.rok_placanja_f).days
-                iznos_penala = Decimal('1000.00') + (Decimal('100.00') * dana_kasnjenja)  # 1000 + 100 RSD po danu
-                
-                violations.append({
-                    'ugovor': faktura.ugovor,
-                    'tip_krsenja': 'kasnjenje_placanja',
-                    'razlog': f'Faktura {faktura.sifra_f} kasni {dana_kasnjenja} dana sa rokom plaćanja',
-                    'iznos_penala': min(iznos_penala, Decimal('50000.00')),  # Maksimalno 50,000 RSD
-                    'detalji': f'Rok plaćanja je bio {faktura.rok_placanja_f.strftime("%d.%m.%Y")}, a danas je {danas.strftime("%d.%m.%Y")}. Ukupno kašnjenje: {dana_kasnjenja} dana.',
-                    'faktura': faktura
-                })
         
         logger.info(f"Provera kršenja ugovora završena. Pronađeno {len(violations)} kršenja.")
         return violations
