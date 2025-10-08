@@ -245,7 +245,7 @@ CREATE OR REPLACE TYPE DobavljacOcenaTable AS TABLE OF DobavljacOcenaRecord;
 /
 
 -- PL/SQL funkcija za generisanje izveštaja
-CREATE OR REPLACE FUNCTION Generisi_Izvestaj_Ocena_Dobavljaca
+CREATE OR REPLACE FUNCTION GenerisiIZvestajZaIzabraneSirovine
 RETURN DobavljacOcenaTable PIPELINED
 AS
     v_dobavljac_record DobavljacOcenaRecord;
@@ -255,7 +255,8 @@ AS
             SELECT 
                 d.sifra_d,
                 d.naziv AS naziv_dobavljaca,
-                d.ime_sirovine
+                d.ime_sirovine AS ime_sirovine,
+                d.izabran as izabran
             FROM 
                 DOBAVLJAC d
         ),
@@ -288,7 +289,7 @@ AS
             ProsecneOcene po ON ds.sifra_d = po.sifra_d
         LEFT JOIN 
             BrojReklamacija br ON ds.sifra_d = br.dobavljac_id
-        WHERE po.prosecna_ocena > 3  -- Primer WHERE uslova
+        WHERE ds.izabran = 1
         ORDER BY ds.naziv_dobavljaca;
 BEGIN
     FOR rec IN c_dobavljaci LOOP
@@ -307,4 +308,4 @@ END;
 /
 
 -- Testiranje funkcije
-SELECT * FROM TABLE(Generisi_Izvestaj_Ocena_Dobavljaca());
+SELECT * FROM TABLE(GenerisiIZvestajZaIzabraneSirovine());
