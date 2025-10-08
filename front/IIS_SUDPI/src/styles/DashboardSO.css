@@ -47,6 +47,13 @@
     gap: 24px;
 }
 
+/* Desktop i większe ekrany - osiguraj da grid ostane 2x2 */
+@media (min-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
 /* Card Styling */
 .dashboard-card {
     background-color: #ffffff; /* White background for cards */
@@ -207,12 +214,21 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
+@media (max-width: 768px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
     .dashboard-content {
-        padding: 24px;
+        padding: 16px;
+    }
+    .dashboard-so-main-content {
+        margin-left: 80px; /* Collapsed sidebar width */
+    }
+    .dashboard-so-wrapper.sidebar-collapsed .dashboard-so-main-content {
+        margin-left: 0;
+    }
+    .dashboard-header h1 {
+        font-size: 24px;
     }
 }
 
@@ -247,20 +263,7 @@
     background: #f1f5f9;
 }
 
-@media (max-width: 768px) {
-    .dashboard-so-main-content {
-        margin-left: 80px; /* Collapsed sidebar width */
-    }
-    .dashboard-so-wrapper.sidebar-collapsed .dashboard-so-main-content {
-        margin-left: 0;
-    }
-    .dashboard-content {
-        padding: 16px;
-    }
-    .dashboard-header h1 {
-        font-size: 24px;
-    }
-}
+
 
 /* Artikli Table Styles */
 .artikli-table-container {

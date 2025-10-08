@@ -144,7 +144,7 @@ class Zalihe(models.Model):
     
     class Meta:
         db_table = 'zalihe'
-        unique_together = ('artikal', 'skladiste')
+        # Uklonjeno unique_together ograničenje
     
     def __str__(self):
         return f"Zalihe {self.artikal.naziv_a} u {self.skladiste.mesto_s}: {self.trenutna_kolicina_a}"

@@ -1738,12 +1738,20 @@ def izmeni_zalihu(request, zaliha_id):
         
         # Ažuriraj polja
         if 'trenutna_kolicina_a' in request.data:
-            zaliha.trenutna_kolicina_a = request.data['trenutna_kolicina_a']
+            nova_kolicina = request.data['trenutna_kolicina_a']
+            # Validacija količine
+            if nova_kolicina is None or nova_kolicina < 0:
+                return Response(
+                    {'error': 'Količina mora biti pozitivna vrednost'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            zaliha.trenutna_kolicina_a = nova_kolicina
         
         if 'skladiste' in request.data:
             try:
                 skladiste = Skladiste.objects.get(sifra_s=request.data['skladiste'])
                 zaliha.skladiste = skladiste
+                
             except Skladiste.DoesNotExist:
                 return Response(
                     {'error': 'Skladište ne postoji'},
@@ -1751,8 +1759,14 @@ def izmeni_zalihu(request, zaliha_id):
                 )
         
         # Validacija pre čuvanja
-        zaliha.full_clean()
-        zaliha.save()
+        try:
+            zaliha.full_clean()
+            zaliha.save()
+        except Exception as validation_error:
+            return Response(
+                {'error': f'Greška validacije: {str(validation_error)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # Vraćaj ažurirane podatke
         zaliha_data = {
@@ -1778,6 +1792,8 @@ def izmeni_zalihu(request, zaliha_id):
         )
     except Exception as e:
         print(f"Greška u izmeni_zalihu: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return Response(
             {'error': 'Greška pri ažuriranju zalihe', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
