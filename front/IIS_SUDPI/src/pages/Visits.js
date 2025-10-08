@@ -3,6 +3,11 @@ import "../styles/DashboardKK.css";
 import MainSideBar from "../components/MainSideBar";
 import axiosInstance from "../axiosInstance";
 import VisitSupplierTable from "../components/VisitSupplierTable";
+import {
+  convertToBelgradeTime,
+  formatFullDateTimeSR,
+  compareDates,
+} from "../utils/dateUtils";
 
 const Visits = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -92,11 +97,9 @@ const Visits = () => {
                 </thead>
                 <tbody>
                   {visits.map((visit) => {
-                    const startDate = new Date(visit.datum_od);
-                    const endDate = new Date(visit.datum_do);
-                    const duration = Math.round(
-                      (endDate - startDate) / (1000 * 60 * 60)
-                    );
+                    const duration =
+                      Math.abs(compareDates(visit.datum_do, visit.datum_od)) /
+                      (1000 * 60 * 60);
 
                     return (
                       <tr key={visit.poseta_id}>
@@ -107,24 +110,12 @@ const Visits = () => {
                         </td>
                         <td>
                           <span className="visit-date">
-                            {startDate.toLocaleString("sr-RS", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {formatFullDateTimeSR(visit.datum_od)}
                           </span>
                         </td>
                         <td>
                           <span className="visit-date">
-                            {endDate.toLocaleString("sr-RS", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {formatFullDateTimeSR(visit.datum_do)}
                           </span>
                         </td>
                         <td>

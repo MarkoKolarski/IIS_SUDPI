@@ -5,16 +5,27 @@ import "react-calendar/dist/Calendar.css";
 import MainSideBar from "../components/MainSideBar";
 import axiosInstance from "../axiosInstance";
 import "../styles/ScheduleVisit.css";
+import {
+  convertISOToLocalTime,
+  convertToBelgradeTime,
+  convertToISOString,
+} from "../utils/dateUtils";
 
 const ScheduleVisit = () => {
   const { supplierId } = useParams();
   const navigate = useNavigate();
   const [supplier, setSupplier] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [visitTime, setVisitTime] = useState("09:00");
+  const [visitTime, setVisitTime] = useState(() => {
+    const now = new Date();
+    return `${String(now.getHours() + 1).padStart(2, "0")}:${String(
+      now.getMinutes()
+    ).padStart(2, "0")}`;
+  });
   const [duration, setDuration] = useState(2);
   const [error, setError] = useState(null);
-  const [busySlots, setBusySlots] = useState([]);
+
+  console.log(convertISOToLocalTime(new Date()));
 
   useEffect(() => {
     const fetchSupplier = async () => {
@@ -26,38 +37,8 @@ const ScheduleVisit = () => {
       }
     };
 
-    const fetchBusySlots = async () => {
-      try {
-        const response = await axiosInstance.get("/visits/busy-slots/");
-        setBusySlots(
-          response.data.map((slot) => ({
-            start: new Date(slot.datum_od),
-            end: new Date(slot.datum_do),
-          }))
-        );
-      } catch (err) {
-        console.error("Error fetching busy slots:", err);
-      }
-    };
-
     fetchSupplier();
-    fetchBusySlots();
   }, [supplierId]);
-
-  const isDateBusy = (date) => {
-    return busySlots.some((slot) => {
-      const slotDate = new Date(slot.start);
-      return slotDate.toDateString() === date.toDateString();
-    });
-  };
-
-  const isTimeSlotBusy = (selectedDateTime) => {
-    return busySlots.some((slot) => {
-      const startTime = new Date(slot.start);
-      const endTime = new Date(slot.end);
-      return selectedDateTime >= startTime && selectedDateTime <= endTime;
-    });
-  };
 
   const isDateDisabled = ({ date }) => {
     const today = new Date();
@@ -67,11 +48,6 @@ const ScheduleVisit = () => {
   };
 
   const handleDateChange = (date) => {
-    const now = new Date();
-    if (date < now) {
-      setError("Ne možete zakazati posetu u prošlosti");
-      return;
-    }
     setSelectedDate(date);
     setError(null);
   };
@@ -79,10 +55,10 @@ const ScheduleVisit = () => {
   const handleTimeChange = (e) => {
     const selectedDateTime = new Date(selectedDate);
     const [hours, minutes] = e.target.value.split(":");
-    selectedDateTime.setHours(parseInt(hours), parseInt(minutes));
+    selectedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     const now = new Date();
-    if (selectedDateTime < now) {
+    if (selectedDateTime.getTime() < now.getTime()) {
       setError("Ne možete zakazati posetu u prošlosti");
       return;
     }
@@ -95,23 +71,15 @@ const ScheduleVisit = () => {
     try {
       const visitDate = new Date(selectedDate);
       const [hours, minutes] = visitTime.split(":");
-      visitDate.setHours(parseInt(hours), parseInt(minutes));
+      visitDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
       const endDate = new Date(visitDate);
       endDate.setHours(endDate.getHours() + duration);
 
-      // Check if the selected time slot is busy
-      if (isTimeSlotBusy(visitDate)) {
-        setError(
-          "Izabrani termin je već zauzet. Molimo izaberite drugi termin."
-        );
-        return;
-      }
-
       await axiosInstance.post("/visits/create/", {
         dobavljac_id: supplierId,
-        datum_od: visitDate.toISOString(),
-        datum_do: endDate.toISOString(),
+        datum_od: convertToISOString(visitDate),
+        datum_do: convertToISOString(endDate),
       });
 
       navigate("/visits");
@@ -122,10 +90,6 @@ const ScheduleVisit = () => {
         setError("Greška pri zakazivanju posete");
       }
     }
-  };
-
-  const tileClassName = ({ date }) => {
-    return isDateBusy(date) ? "busy" : "";
   };
 
   if (!supplier) return <div>Učitavanje...</div>;
@@ -148,25 +112,19 @@ const ScheduleVisit = () => {
                 value={selectedDate}
                 minDate={new Date()}
                 className="visit-calendar"
-                tileClassName={tileClassName}
                 tileDisabled={isDateDisabled}
               />
-              {isDateBusy(selectedDate) && (
-                <div className="time-slot-warning">
-                  Izabrani datum ima već zakazane posete. Proverite dostupne
-                  termine.
-                </div>
-              )}
             </div>
 
             <div className="visit-details">
               <div className="form-group">
-                <label>Vreme posete:</label>
+                <label>Vreme posete (24h):</label>
                 <input
                   type="time"
                   value={visitTime}
                   onChange={handleTimeChange}
                   required
+                  step="900"
                 />
               </div>
 

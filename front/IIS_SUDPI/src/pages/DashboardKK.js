@@ -4,6 +4,12 @@ import MainSideBar from "../components/MainSideBar";
 import "react-calendar/dist/Calendar.css";
 import "../styles/DashboardKK.css";
 import axiosInstance from "../axiosInstance";
+import {
+  formatDateTimeSR,
+  formatFullDateTimeSR,
+  compareDates,
+  isSameDay,
+} from "../utils/dateUtils";
 
 const DashboardKK = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,17 +42,17 @@ const DashboardKK = () => {
   const getVisitsForDate = (date) => {
     return visits.filter((visit) => {
       const visitDate = new Date(visit.datum_od);
-      return visitDate.toDateString() === date.toDateString();
+      return isSameDay(visitDate, date);
     });
   };
 
   // Helper function to get today's visits
   const getTodayVisits = () => {
     const today = new Date();
-    return visits.filter(
-      (visit) =>
-        new Date(visit.datum_od).toDateString() === today.toDateString()
-    );
+    return visits.filter((visit) => {
+      const visitDate = new Date(visit.datum_od);
+      return isSameDay(visitDate, today);
+    });
   };
 
   // Helper function to get visits by status
@@ -69,16 +75,17 @@ const DashboardKK = () => {
   const calculateDuration = (startDate, endDate) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const hours = Math.round((end - start) / (1000 * 60 * 60));
+    const hours = Math.round(
+      (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    );
     return `${hours} ${hours === 1 ? "sat" : "sati"}`;
   };
 
   // Update the calendar tile class function
   const getTileClassName = ({ date }) => {
     const dayVisits = getVisitsForDate(date);
-    if (dayVisits.length === 0) return null;
+    if (dayVisits.length === 0) return "";
 
-    // If multiple visits exist, return classes for all statuses
     const statusClasses = dayVisits.map(
       (visit) => `has-visits ${visit.status}`
     );
@@ -95,7 +102,7 @@ const DashboardKK = () => {
         <div className="visit-count">{dayVisits.length}</div>
         {dayVisits.map((visit, index) => (
           <div key={index} className={`visit-time ${visit.status}`}>
-            {new Date(visit.datum_od).toLocaleTimeString("sr-RS", {
+            {formatDateTimeSR(visit.datum_od, {
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -168,8 +175,10 @@ const DashboardKK = () => {
                 <h2>Predstojeće posete</h2>
                 <div className="visits-timeline">
                   {visits
-                    .filter((visit) => new Date(visit.datum_od) >= new Date())
-                    .sort((a, b) => new Date(a.datum_od) - new Date(b.datum_od))
+                    .filter(
+                      (visit) => compareDates(visit.datum_od, new Date()) >= 0
+                    )
+                    .sort((a, b) => compareDates(a.datum_od, b.datum_od))
                     .slice(0, 5)
                     .map((visit) => (
                       <div
@@ -177,33 +186,19 @@ const DashboardKK = () => {
                         className={`timeline-item ${visit.status}`}
                       >
                         <div className="timeline-date">
-                          <div className="date-day">
-                            {new Date(visit.datum_od).toLocaleDateString(
-                              "sr-RS",
-                              {
-                                day: "numeric",
-                              }
-                            )}
-                          </div>
-                          <div className="date-month">
-                            {new Date(visit.datum_od).toLocaleDateString(
-                              "sr-RS",
-                              {
-                                month: "short",
-                              }
-                            )}
-                          </div>
+                          {formatDateTimeSR(visit.datum_od, {
+                            day: "numeric",
+                            month: "short",
+                          })}
                         </div>
                         <div className="timeline-content">
                           <h4>{visit.dobavljac}</h4>
                           <div className="timeline-time">
-                            {new Date(visit.datum_od).toLocaleTimeString(
-                              "sr-RS",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
+                            {new Intl.DateTimeFormat("sr-RS", {
+                              timeZone: "Europe/Belgrade",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }).format(new Date(visit.datum_od))}
                           </div>
                           <div className="visit-duration">
                             Trajanje:{" "}

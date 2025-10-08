@@ -14,8 +14,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 # Ako je True, poslovna logika se izvršava u Django aplikaciji
 # Ako je False, poslovna logika se izvršava u PL/SQL procedurama
 BUSINESS_LOGIC_IN_DJANGO = {
-    'supplier_rating': True,     # Ažuriranje ocene dobavljača
-    'visit_overlap': True        # Provera preklapanja termina poseta
+    'supplier_rating': False,     # Ažuriranje ocene dobavljača
+    'visit_overlap': False        # Provera preklapanja termina poseta
 }
 
 from datetime import timedelta
