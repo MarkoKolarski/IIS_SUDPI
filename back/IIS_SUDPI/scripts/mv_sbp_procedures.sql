@@ -293,3 +293,13 @@ EXCEPTION
         RAISE;
 END GENERISI_IZVESTAJ_DOBAVLJACA;
 /
+
+BEGIN
+    GENERISI_IZVESTAJ_DOBAVLJACA(
+        p_datum_od => TO_DATE('2023-01-01', 'YYYY-MM-DD'),
+        p_datum_do => TO_DATE('2023-12-31', 'YYYY-MM-DD'),
+        p_min_broj_reklamacija => 2,
+        p_kreirao_id => 1
+    );
+END;
+/
