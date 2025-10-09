@@ -15,7 +15,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Vozilo, Vozac, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
+from .models import Ruta, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -34,7 +34,12 @@ from .serializers import (
     UserProfileSerializer, 
     UserProfileUpdateSerializer,
     VozacSerializer,
-    VoziloSerializer
+    VoziloSerializer,
+    ServisSerializer,
+    IsporukaSerializer,
+    RutaSerializer,
+    UpozorenjeSerializer,
+    TemperaturaSerializer
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -1909,7 +1914,7 @@ def vozaci_list(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-#@allowed_users(['administrator'])
+@allowed_users(['administrator'])
 def vozila_list(request):
     try:
         vozila = Vozilo.objects.all().order_by('sifra_v')
@@ -1928,9 +1933,122 @@ def get_vozilo(request, pk):
     return Response(serializer.data)
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['administrator'])
 def update_vozilo(request, pk):
     vozilo = get_object_or_404(Vozilo, pk=pk)
-    serializer = VoziloSerializer(vozilo, data=request.data)
+    serializer = VoziloSerializer(vozilo, data=request.data, partial = True)
+    allowed_fields = ['status', 'registracija', 'kapacitet']
+    for field in request.data.keys():
+        if field not in allowed_fields:
+            return Response(
+                {"error": f"Polje '{field}' ne može da se menja."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_vozilo(request, pk):
+    vozilo = get_object_or_404(Vozilo, pk=pk)
+    vozilo.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+# servis
+@api_view(['POST'])
+def create_servis(request):
+    serializer = ServisSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def list_servisi(request):
+    servisi = Servis.objects.select_related('vozilo').all()
+    serializer = ServisSerializer(servisi, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_servis(request, pk):
+    servis = get_object_or_404(Servis, pk=pk)
+    serializer = ServisSerializer(servis)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+def update_servis(request, pk):
+    servis = get_object_or_404(Servis, pk=pk)
+    serializer = ServisSerializer(servis, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_servis(request, pk):
+    servis = get_object_or_404(Servis, pk=pk)
+    servis.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+def servisi_po_vozilu(request, vozilo_id):
+    servisi = Servis.objects.filter(vozilo_id=vozilo_id).order_by('-datum_servisa')
+    serializer = ServisSerializer(servisi, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+# rute
+@api_view(['GET'])
+def list_rute(request):
+    rute = Ruta.objects.all()
+    serializer = RutaSerializer(rute, many=True)
+    return Response(serializer.data)
+
+# isporuka
+@api_view(['GET'])
+def list_isporuke(request):
+    isporuke = Isporuka.objects.select_related('vozilo', 'ruta').all()
+    serializer = IsporukaSerializer(isporuke, many=True)
+    return Response(serializer.data)
+
+
+# upozorenje
+@api_view(['GET'])
+def list_upozorenja(request):
+    upozorenja = Upozorenje.objects.select_related('isporuka').all()
+    serializer = UpozorenjeSerializer(upozorenja, many=True)
+    return Response(serializer.data)
+
+
+# temperatura
+@api_view(['GET'])
+def list_temperature(request):
+    temperature = Temperatura.objects.all()
+    serializer = TemperaturaSerializer(temperature, many=True)
+    return Response(serializer.data)
+
+# @api_view(['GET'])
+# def list_vozilo_temperatura(request):
+#     veze = voziloOmogucavaTemperatura.objects.select_related('sifra_temp', 'sifra_vozila', 'isporuka').all()
+#     serializer = VoziloTemperaturaSerializer(veze, many=True)
+#     return Response(serializer.data)
+
+# notifikacija
+@api_view(['GET'])
+def list_notifikacije(request):
+    notifikacije = Notifikacija.objects.select_related('korisnik').all()
+    serializer = NotifikacijaSerializer(notifikacije, many=True)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['administrator'])
+def update_status_vozaca(request, pk):
+    vozac = get_object_or_404(Vozac, pk=pk)
+    serializer = VozacSerializer(vozac, data=request.data, partial = True)
+        
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)

@@ -68,4 +68,20 @@ urlpatterns = [
     # Lista svih vozaca i vozila (samo admin)
     path('api/vozila/', views.vozila_list, name='vozila_list'),
     path('api/vozaci/', views.vozaci_list, name='vozaci_list'),
+
+    # Vozila
+    path('vozila/<int:pk>/', views.get_vozilo, name='get_vozilo'),
+    path('vozila/update/<int:pk>/', views.update_vozilo, name='update_vozilo'),
+    path('vozila/delete/<int:pk>/', views.delete_vozilo, name='delete_vozilo'),
+    path('vozila/<int:vozilo_id>/servisi/', views.servisi_po_vozilu, name='servisi_po_vozilu'),
+
+    # Servisi
+    path('servisi/', views.list_servisi, name='list_servisi'),
+    path('servisi/<int:pk>/', views.get_servis, name='get_servis'),
+    path('servisi/create/', views.create_servis, name='create_servis'),
+    path('servisi/update/<int:pk>/', views.update_servis, name='update_servis'),
+    path('servisi/delete/<int:pk>/', views.delete_servis, name='delete_servis'),
+
+    # Vozac update_status_vozaca
+    path('vozaci/update-status/<int:pk>/', views.update_status_vozaca, name='update_status_vozaca'),
 ]

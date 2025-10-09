@@ -478,14 +478,19 @@ class Notifikacija(models.Model):
     
     def __str__(self):
         return f"Notifikacija za {self.korisnik.ime_k} {self.korisnik.prz_k} - {self.datum_n.strftime('%d.%m.%Y')}"
+
+def get_isporuka_for_vehicle(self):
+    raise NotImplementedError
     
 
 class Vozilo(models.Model):
     sifra_v = models.AutoField(primary_key=True)
     marka = models.CharField(max_length=50)
     model = models.CharField(max_length=50)
-    registracija = models.DateTimeField(auto_now_add=True)
+    #registracija = models.DateField(auto_now_add=True)
+    registracija = models.DateField(null=False, blank=True)
     kapacitet = models.DecimalField(max_digits=10, decimal_places=2)
+    #isporuka = models.ForeignKey(Isporuka, on_delete=models.CASCADE);
     status_choices = [
         ('zauzeto', 'Zauzeto'),
         ('slobodno', 'Slobodno'),
@@ -497,8 +502,21 @@ class Vozilo(models.Model):
     def __str__(self):
         return f"{self.marka} {self.model} ({self.registracija})"
     
+    def get_isporuka_for_vehicle(self):
+        return Isporuka.objects.filter(vozilo=self, status__in=['u_toku']).first()
+    
+    def save(self, *args, **kwargs):
+        # if self.status in ['u_kvaru', 'na_servisu']:
+        #     Upozorenje.objects.create(
+        #         tip='kvar',
+        #         poruka=f'Vozilo {self.marka} {self.model} je trenutno {self.status}.',
+        #         isporuka = get_isporuka_for_vehicle(self) 
+        #     )
+        super().save(*args, **kwargs)
+    
     class Meta:
         db_table = 'vozilo'
+    
 
 class Servis(models.Model):
     sifra_s = models.AutoField(primary_key=True)
@@ -545,7 +563,7 @@ class Isporuka(models.Model):
     vozilo = models.ForeignKey(Vozilo, on_delete=models.CASCADE)
     vozac = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vozac_isporuke')
     status_choices = [
-        ('aktivna_nova', 'Aktivna - Nova'),
+        ('aktivna', 'Nova'),
         ('u_toku', 'U toku'),
         ('spremna', 'Spremna'),
         ('zavrsena', 'Završena'),

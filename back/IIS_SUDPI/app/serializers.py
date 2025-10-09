@@ -403,7 +403,9 @@ class VoziloSerializer(serializers.ModelSerializer):
 class ServisSerializer(serializers.ModelSerializer):
     vozilo_info = serializers.CharField(source='vozilo.registracija', read_only=True)
     vrsta_display = serializers.CharField(source='get_vrsta_display', read_only=True)
-    
+    vozilo_id = serializers.PrimaryKeyRelatedField(
+        queryset=Vozilo.objects.all(), source='vozilo', write_only=True
+    )
     class Meta:
         model = Servis
         fields = '__all__'
@@ -420,7 +422,17 @@ class IsporukaSerializer(serializers.ModelSerializer):
     vozilo_info = serializers.CharField(source='vozilo.registracija', read_only=True)
     vozac_info = serializers.CharField(source='vozac.ime', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    ruta = RutaSerializer(read_only=True)
+    vozilo = VoziloSerializer(read_only=True)
     
+    # vozac = serializers.StringRelatedField()
+
+    # ruta_id = serializers.PrimaryKeyRelatedField(
+    #     queryset=Ruta.objects.all(), source='ruta', write_only=True
+    # )
+    # vozilo_id = serializers.PrimaryKeyRelatedField(
+    #     queryset=Vozilo.objects.all(), source='vozilo', write_only=True
+    # )
     class Meta:
         model = Isporuka
         fields = '__all__'

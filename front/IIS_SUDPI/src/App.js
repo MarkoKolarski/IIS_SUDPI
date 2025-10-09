@@ -35,6 +35,7 @@ import DashboardSO from "./pages/DashboardSO";
 import EditProfile from "./pages/EditProfile.js";
 import EditOtherProfile from "./pages/EditOtherProfile.js";
 import LogisticTransport from "./pages/LogisticTransport.js";
+import EditVozilo from "./pages/VoziloEdit.js";
 
 const App = () => {
   return (
@@ -262,6 +263,7 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/vozila/update/:id" element={<EditVozilo />} />
 
         {/* Catch all route - redirect to appropriate dashboard or login */}
         <Route path="*" element={<Navigate to="/login" />} />
