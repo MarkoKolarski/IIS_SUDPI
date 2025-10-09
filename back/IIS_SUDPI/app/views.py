@@ -15,7 +15,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Ruta, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
+from .models import Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -39,7 +39,8 @@ from .serializers import (
     IsporukaSerializer,
     RutaSerializer,
     UpozorenjeSerializer,
-    TemperaturaSerializer
+    TemperaturaSerializer,
+    NotifikacijaSerializer
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -2013,6 +2014,14 @@ def list_isporuke(request):
     serializer = IsporukaSerializer(isporuke, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_aktivne_isporuke(request):
+    aktivne_isporuke = Isporuka.objects.select_related('vozilo', 'ruta').filter(
+        status__in=['aktivna'])
+    
+    serializer = IsporukaSerializer(aktivne_isporuke, many=True)
+    return Response(serializer.data)
 
 # upozorenje
 @api_view(['GET'])
@@ -2041,6 +2050,14 @@ def list_notifikacije(request):
     notifikacije = Notifikacija.objects.select_related('korisnik').all()
     serializer = NotifikacijaSerializer(notifikacije, many=True)
     return Response(serializer.data)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def mark_notifikacija_as_read(request, pk):
+    notifikacija = get_object_or_404(Notifikacija, pk=pk)
+    notifikacija.procitana_n = True
+    notifikacija.save()
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
