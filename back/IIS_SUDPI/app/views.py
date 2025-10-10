@@ -40,6 +40,9 @@ from django.core.mail import send_mail
 from django.conf import settings
 import logging
 import uuid
+from django.contrib.auth.views import LoginView as DjangoLoginView
+from django.urls import reverse_lazy
+from django.contrib.auth import login, authenticate
 
 # Postavi logging
 logger = logging.getLogger(__name__)
@@ -48,8 +51,27 @@ def index(request):
     html = render_to_string("index.js", {})
     return HttpResponse(html)
     
-class LoginView(TokenObtainPairView):
-    permission_classes = [AllowAny]
+class LoginView(DjangoLoginView):
+    """
+    Custom login view for the application
+    """
+    template_name = 'app/login.html'
+    redirect_authenticated_user = True
+    
+    def get_success_url(self):
+        """Determine where to redirect user after login based on user type"""
+        user = self.request.user
+        if user.tip_k == 'finansijski_analiticar':
+            return reverse_lazy('dashboard_finansijski_analiticar')
+        elif user.tip_k == 'kontrolor_kvaliteta':
+            return reverse_lazy('visits-list')
+        elif user.tip_k == 'nabavni_menadzer':
+            return reverse_lazy('dobavljaci-list')
+        elif user.tip_k == 'skladisni_operater':
+            return reverse_lazy('artikli-list')
+        elif user.tip_k == 'administrator':
+            return reverse_lazy('admin:index')
+        return reverse_lazy('index')
 
     def post(self, request):
         email = request.data.get('mail_k')

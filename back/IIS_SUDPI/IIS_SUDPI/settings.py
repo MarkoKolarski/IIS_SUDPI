@@ -210,6 +210,9 @@ BACKEND_URL = 'http://localhost:8000'
 # MIKROSERVIS - InfluxDB Financial Events Analysis Service
 MIKROSERVIS_URL = env('MIKROSERVIS_URL', default='http://localhost:8001')
 
+# MIKROSERVIS - Supplier Analysis Microservice Settings
+SUPPLIER_ANALYSIS_MS_URL = os.environ.get('SUPPLIER_ANALYSIS_MS_URL', 'http://localhost:8001/')
+
 # Logging konfiguracija za automatsku proveru artikala
 LOGGING = {
     'version': 1,

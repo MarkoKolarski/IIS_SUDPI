@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+neo4j
+python-dotenv
+reportlab
+matplotlib
+requests
+numpy
+python-multipart
+pytest

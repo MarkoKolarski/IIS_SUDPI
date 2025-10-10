@@ -1,0 +1,260 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Analiza dobavljača{% endblock %}
+
+{% block custom_styles %}
+<style>
+    .card {
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+    }
+    .status-online {
+        background-color: #28a745;
+        color: white;
+    }
+    .status-offline {
+        background-color: #dc3545;
+        color: white;
+    }
+    .analysis-header {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .report-card {
+        border-left: 4px solid #007bff;
+    }
+    .risk-high {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .risk-medium {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    .risk-low {
+        color: #28a745;
+        font-weight: bold;
+    }
+    .spinner-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+    .spinner-container.show {
+        display: flex;
+    }
+    #suppliersTable {
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="spinner-container" id="spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="analysis-header">Analiza dobavljača</h1>
+        </div>
+        <div class="col-auto">
+            <span id="serviceStatus" class="status-badge status-offline">Servis nije dostupan</span>
+        </div>
+    </div>
+    
+    <!-- Sync Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Sinhronizacija podataka sa mikroservisom</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button id="syncSuppliers" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-sync mr-2"></i> Sinhronizuj dobavljače
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button id="syncComplaints" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-sync mr-2"></i> Sinhronizuj reklamacije
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button id="syncCertificates" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-sync mr-2"></i> Sinhronizuj sertifikate
+                    </button>
+                </div>
+            </div>
+            <div id="syncResults" class="mt-3 alert alert-info" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <!-- Supplier Analysis Section -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card report-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Izveštaji za pojedinačne dobavljače</h5>
+                </div>
+                <div class="card-body">
+                    <form id="supplierReportForm">
+                        <div class="form-group">
+                            <label for="supplierId">Izaberite dobavljača:</label>
+                            <select class="form-control" id="supplierId" required>
+                                <option value="">-- Izaberite dobavljača --</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="far fa-file-pdf mr-2"></i> Generiši izveštaj
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card report-card mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Uporedna analiza dobavljača</h5>
+                </div>
+                <div class="card-body">
+                    <form id="comparisonReportForm">
+                        <div class="form-group">
+                            <label>Izaberite dobavljače za poređenje:</label>
+                            <select class="form-control select2" id="supplierCompare" multiple required>
+                            </select>
+                            <small class="form-text text-muted">Izaberite najmanje dva dobavljača</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-chart-bar mr-2"></i> Generiši uporedni izveštaj
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card report-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Izveštaji po materijalima</h5>
+                </div>
+                <div class="card-body">
+                    <form id="materialReportForm">
+                        <div class="form-group">
+                            <label for="materialName">Izaberite materijal:</label>
+                            <select class="form-control" id="materialName" required>
+                                <option value="">-- Izaberite materijal --</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="far fa-file-pdf mr-2"></i> Generiši izveštaj za materijal
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Analiza rizičnih dobavljača</h5>
+                </div>
+                <div class="card-body">
+                    <button id="getRiskAnalysis" class="btn btn-outline-danger mb-3">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Prikaži rizične dobavljače
+                    </button>
+                    <div id="riskAnalysisResults" style="display: none;">
+                        <h6 class="mt-3">Rezultati analize rizika:</h6>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Dobavljač</th>
+                                    <th>Materijal</th>
+                                    <th>Broj reklamacija</th>
+                                    <th>Nivo rizika</th>
+                                </tr>
+                            </thead>
+                            <tbody id="riskTable">
+                                <!-- Risk data will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alternative Suppliers Section -->
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Pronađi alternativne dobavljače</h5>
+        </div>
+        <div class="card-body">
+            <form id="alternativeSuppliersForm" class="mb-4">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label for="altMaterialName">Izaberite materijal:</label>
+                            <select class="form-control" id="altMaterialName" required>
+                                <option value="">-- Izaberite materijal --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="minRating">Minimalna ocena:</label>
+                            <input type="number" class="form-control" id="minRating" min="0" max="10" step="0.1" value="7.0">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-search mr-2"></i> Pronađi alternativne dobavljače
+                </button>
+            </form>
+            
+            <div id="alternativeResults" style="display: none;">
+                <h6>Alternativni dobavljači:</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Naziv</th>
+                                <th>Ocena</th>
+                                <th>Cena</th>
+                                <th>Rok isporuke</th>
+                                <th>Akcije</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alternativeTable">
+                            <!-- Alternative suppliers will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'app/js/supplier_analysis.js' %}"></script>
+{% endblock %}
