@@ -2126,3 +2126,21 @@ def update_status_vozaca(request, pk):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def predlozi_vozaca(request):
+    try:
+        slobodni_vozaci = Vozac.objects.filter(
+            status='slobodan'
+        ).order_by('-br_voznji')
+
+        if slobodni_vozaci.exists():
+            vozac = slobodni_vozaci.first()
+        else:
+            vozac = Vozac.objects.order_by('-br_voznji').first()
+
+        serializer = VozacSerializer(vozac)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

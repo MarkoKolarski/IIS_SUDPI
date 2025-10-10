@@ -84,7 +84,7 @@ urlpatterns = [
 
     # Vozac update_status_vozaca
     path('vozaci/update-status/<int:pk>/', views.update_status_vozaca, name='update_status_vozaca'),
-
+    path('vozaci/predlozi-vozaca/', views.predlozi_vozaca, name='predlozi_vozaca'),
     # Isporuke
     path('isporuke/', views.list_isporuke, name='list_isporuke'),
     path('isporuke/aktivne/', views.list_aktivne_isporuke, name='list_aktivne_isporuke'),
