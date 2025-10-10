@@ -34,7 +34,7 @@ INSERT INTO SKLADISNI_OPERATER (ID,KORISNIK_ID) values (1,5);
 INSERT INTO LOGISTICKI_KOORDINATOR (ID,KORISNIK_ID) values (1,6);
 COMMIT;
 
--- Insert DOBAVLJAC records first
+-- Insert DOBAVLJAC records with properly named materials using CASE statement
 BEGIN
   FOR i IN 1..50 LOOP
     INSERT INTO DOBAVLJAC (
@@ -53,7 +53,16 @@ BEGIN
       'Dobavljac_' || i,
       'email' || i || '@example.com',
       'PIB' || LPAD(i, 2, '0'),
-      'Sirovina_' || i,
+      CASE MOD(i, 8)
+        WHEN 0 THEN 'Pšenično brašno'
+        WHEN 1 THEN 'Mleko u prahu'
+        WHEN 2 THEN 'Šećer'
+        WHEN 3 THEN 'Kakao prah'
+        WHEN 4 THEN 'Jestivo ulje'
+        WHEN 5 THEN 'Kuhinjska so'
+        WHEN 6 THEN 'Med'
+        WHEN 7 THEN 'Voćni koncentrat'
+      END,
       ROUND(DBMS_RANDOM.VALUE(50, 500), 2),
       TRUNC(DBMS_RANDOM.VALUE(1, 30)),
       ROUND(DBMS_RANDOM.VALUE(1, 5), 1),
