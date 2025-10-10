@@ -10,9 +10,8 @@ from .views_mv2 import (
     create_complaint_with_rating, get_supplier_risk_analysis, get_alternative_suppliers,
     get_suppliers, get_material_suppliers_report_post, get_performance_trends_report,
     get_risk_analysis_report, get_alternative_suppliers_post, get_supplier_performance_trends,
-    get_material_market_dynamics
+    get_material_market_dynamics, supplier_analysis_dashboard, supplier_complaint_transaction
 )
-from .views_mv3 import supplier_analysis_dashboard, supplier_complaint_transaction
 from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
@@ -92,6 +91,6 @@ urlpatterns = [
     path('api/supplier-analysis/analysis/alternative-suppliers/', get_alternative_suppliers_post, name='alternative_suppliers_post'),
     path('api/supplier-analysis/analysis/supplier-performance-trends/', get_supplier_performance_trends, name='supplier_performance_trends'),
     path('api/supplier-analysis/analysis/material-market-dynamics/', get_material_market_dynamics, name='material_market_dynamics'),
-    path('api/supplier-analysis/suppliers/', get_suppliers, name='get_suppliers'),  # Add the new suppliers endpoint
+    path('api/supplier-analysis/suppliers/', get_suppliers, name='get_suppliers'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 ]
