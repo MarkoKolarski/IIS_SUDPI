@@ -54,14 +54,14 @@ BEGIN
       'email' || i || '@example.com',
       'PIB' || LPAD(i, 2, '0'),
       CASE MOD(i, 8)
-        WHEN 0 THEN 'Pšenično brašno'
-        WHEN 1 THEN 'Mleko u prahu'
-        WHEN 2 THEN 'Šećer'
-        WHEN 3 THEN 'Kakao prah'
-        WHEN 4 THEN 'Jestivo ulje'
-        WHEN 5 THEN 'Kuhinjska so'
+        WHEN 0 THEN 'Cimet'
+        WHEN 1 THEN 'Mleko'
+        WHEN 2 THEN 'Biber'
+        WHEN 3 THEN 'Kakao'
+        WHEN 4 THEN 'Ulje'
+        WHEN 5 THEN 'So'
         WHEN 6 THEN 'Med'
-        WHEN 7 THEN 'Voćni koncentrat'
+        WHEN 7 THEN 'Secer'
       END,
       ROUND(DBMS_RANDOM.VALUE(50, 500), 2),
       TRUNC(DBMS_RANDOM.VALUE(1, 30)),
