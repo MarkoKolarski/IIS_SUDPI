@@ -31,7 +31,7 @@ class Supplier(SupplierBase):
     supplier_id: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class MaterialBase(BaseModel):
     name: str
@@ -46,7 +46,7 @@ class Material(MaterialBase):
     suppliers: List[int] = []
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ComplaintBase(BaseModel):
     problem_description: str
@@ -69,7 +69,7 @@ class Complaint(ComplaintBase):
     reception_date: date
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CertificateBase(BaseModel):
     name: str
@@ -85,7 +85,7 @@ class Certificate(CertificateBase):
     supplier_id: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ReportRequest(BaseModel):
     start_date: Optional[date] = None

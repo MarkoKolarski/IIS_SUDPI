@@ -14,12 +14,17 @@ from app.schemas import (
 )
 from app.services.analysis import SupplierAnalysisService
 from app.services.report import ReportGenerator
-from app.database import neo4j_db
+from app.database import get_neo4j_connection
 from app.api.custom_json_encoders import serialize_neo4j_types
 
 router = APIRouter()
 analysis_service = SupplierAnalysisService()
 report_generator = ReportGenerator()
+
+# Helper function to ensure proper serialization
+def safe_serialize(data):
+    """Ensure data is properly serialized before returning"""
+    return serialize_neo4j_types(data)
 
 # Health check endpoint
 @router.get("/health")
@@ -27,11 +32,22 @@ def health_check():
     """Check if the service is running"""
     try:
         # Test connection to Neo4j
+        neo4j_db = get_neo4j_connection()
         neo4j_db.run_query("RETURN 1 as test")
         return {"status": "ok", "neo4j_status": "connected"}
     except Exception as e:
         logging.error(f"Health check error: {e}")
         return {"status": "error", "message": str(e)}
+
+@router.get("/clear", response_model=Dict[str, Any])
+def clear_database():
+    """Clear the entire database"""
+    try:
+        crud.clear_database()
+        return {"status": "success", "message": "Database cleared"}
+    except Exception as e:
+        logging.error(f"Error clearing database: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error clearing database: {str(e)}")
 
 # Supplier endpoints
 @router.post("/suppliers/", response_model=Dict[str, Any])
@@ -48,13 +64,13 @@ def create_supplier(supplier: SupplierCreate):
             existing = crud.get_supplier(supplier_dict['supplier_id'])
             if existing:
                 result = crud.update_supplier(supplier_dict['supplier_id'], supplier_dict)
-                return {"message": "Supplier updated successfully", "data": serialize_neo4j_types(result)}
+                return {"message": "Supplier updated successfully", "data": safe_serialize(result)}
         except Exception:
             # If error happens during check, continue with create attempt
             pass
             
         result = crud.create_supplier(supplier_dict)
-        return {"message": "Supplier created successfully", "data": serialize_neo4j_types(result)}
+        return {"message": "Supplier created successfully", "data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error creating supplier: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating supplier: {str(e)}")
@@ -64,7 +80,7 @@ def get_suppliers():
     """Get all suppliers"""
     try:
         suppliers = crud.get_all_suppliers()
-        return serialize_neo4j_types(suppliers)
+        return safe_serialize(suppliers)
     except Exception as e:
         logging.error(f"Error fetching suppliers: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching suppliers: {str(e)}")
@@ -76,7 +92,7 @@ def get_supplier(supplier_id: int = Path(..., description="The ID of the supplie
         supplier = crud.get_supplier(supplier_id)
         if not supplier:
             raise HTTPException(status_code=404, detail="Supplier not found")
-        return serialize_neo4j_types(supplier)
+        return safe_serialize(supplier)
     except HTTPException:
         raise
     except Exception as e:
@@ -97,7 +113,7 @@ def update_supplier(
             
         # Update the supplier
         result = crud.update_supplier(supplier_id, supplier_data.dict(exclude_unset=True))
-        return result
+        return safe_serialize(result)
     except HTTPException:
         raise
     except Exception as e:
@@ -129,7 +145,7 @@ def create_material(material: MaterialCreate):
     try:
         material_dict = material.dict()
         result = crud.create_material(material_dict)
-        return {"message": "Material created successfully", "data": result}
+        return {"message": "Material created successfully", "data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error creating material: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating material: {str(e)}")
@@ -169,12 +185,12 @@ def create_complaint(complaint: ComplaintCreate):
             
             return {
                 "message": "Complaint created successfully, supplier rating updated",
-                "data": result,
+                "data": safe_serialize(result),
                 "previous_rating": current_rating,
                 "new_rating": new_rating
             }
             
-        return {"message": "Complaint created successfully", "data": result}
+        return {"message": "Complaint created successfully", "data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error creating complaint: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating complaint: {str(e)}")
@@ -183,7 +199,8 @@ def create_complaint(complaint: ComplaintCreate):
 def get_supplier_complaints(supplier_id: int = Path(..., description="The ID of the supplier")):
     """Get all complaints for a supplier"""
     try:
-        return crud.get_supplier_complaints(supplier_id)
+        complaints = crud.get_supplier_complaints(supplier_id)
+        return safe_serialize(complaints)
     except Exception as e:
         logging.error(f"Error fetching complaints: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching complaints: {str(e)}")
@@ -205,7 +222,7 @@ def create_certificate(certificate: CertificateCreate):
             certificate_dict["certificate_id"] = max_id + 1
             
         result = crud.create_certificate(certificate_dict)
-        return {"message": "Certificate created successfully", "data": result}
+        return {"message": "Certificate created successfully", "data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error creating certificate: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating certificate: {str(e)}")
@@ -214,7 +231,8 @@ def create_certificate(certificate: CertificateCreate):
 def get_supplier_certificates(supplier_id: int = Path(..., description="The ID of the supplier")):
     """Get all certificates for a supplier"""
     try:
-        return crud.get_supplier_certificates(supplier_id)
+        certificates = crud.get_supplier_certificates(supplier_id)
+        return safe_serialize(certificates)
     except Exception as e:
         logging.error(f"Error fetching certificates: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching certificates: {str(e)}")
@@ -228,7 +246,7 @@ def get_alternative_suppliers(
     """Find alternative suppliers for a material"""
     try:
         suppliers = crud.find_alternative_suppliers(material_name, min_rating)
-        return {"suppliers": suppliers, "count": len(suppliers)}
+        return {"suppliers": safe_serialize(suppliers), "count": len(suppliers)}
     except Exception as e:
         logging.error(f"Error finding alternative suppliers: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error finding alternative suppliers: {str(e)}")
@@ -241,7 +259,7 @@ def get_better_suppliers(
     """Find suppliers with better ratings for the same material"""
     try:
         suppliers = crud.find_better_suppliers(supplier_id, rating_increase)
-        return {"suppliers": suppliers, "count": len(suppliers)}
+        return {"suppliers": safe_serialize(suppliers), "count": len(suppliers)}
     except Exception as e:
         logging.error(f"Error finding better suppliers: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error finding better suppliers: {str(e)}")
@@ -253,7 +271,7 @@ def get_supplier_relationships(supplier_id: int = Path(..., description="The ID 
         result = crud.analyze_supplier_relationships(supplier_id)
         if not result:
             return {"message": "No relationships found", "data": {}}
-        return {"data": result}
+        return {"data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error analyzing supplier relationships: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error analyzing supplier relationships: {str(e)}")
@@ -265,7 +283,7 @@ def get_supplier_rating_history(supplier_id: int = Path(..., description="The ID
         result = crud.track_supplier_rating_history(supplier_id)
         if not result:
             return {"message": "No rating history found", "data": {}}
-        return {"data": result}
+        return {"data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error fetching supplier rating history: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching supplier rating history: {str(e)}")
@@ -275,7 +293,7 @@ def get_supplier_risk_patterns():
     """Identify risk patterns in supplier complaints"""
     try:
         result = crud.identify_supplier_risk_patterns()
-        return {"patterns": result, "count": len(result)}
+        return {"patterns": safe_serialize(result), "count": len(result)}
     except Exception as e:
         logging.error(f"Error identifying supplier risk patterns: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error identifying supplier risk patterns: {str(e)}")
@@ -287,7 +305,7 @@ def get_supplier_analytics(supplier_id: int = Path(..., description="The ID of t
         result = analysis_service.get_supplier_analytics(supplier_id)
         if not result:
             raise HTTPException(status_code=404, detail="Supplier not found or no analytics available")
-        return result
+        return safe_serialize(result)
     except HTTPException:
         raise
     except Exception as e:
@@ -299,7 +317,7 @@ def get_complaint_trends(days: int = Query(90, description="Number of days to an
     """Analyze complaint trends over a period of time"""
     try:
         result = analysis_service.analyze_complaint_trends(days)
-        return {"trends": result, "days_analyzed": days}
+        return {"trends": safe_serialize(result), "days_analyzed": days}
     except Exception as e:
         logging.error(f"Error analyzing complaint trends: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error analyzing complaint trends: {str(e)}")
@@ -309,7 +327,7 @@ def get_supplier_ranking(material_name: Optional[str] = Query(None, description=
     """Get ranking of suppliers by material, rating, and price"""
     try:
         result = analysis_service.get_supplier_ranking_by_material(material_name)
-        return {"rankings": result}
+        return {"rankings": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error getting supplier rankings: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting supplier rankings: {str(e)}")
@@ -322,7 +340,7 @@ def get_supplier_recommendations(
     """Get recommendations for alternative suppliers"""
     try:
         result = analysis_service.recommend_alternative_suppliers(supplier_id, min_rating)
-        return {"recommendations": result, "count": len(result)}
+        return {"recommendations": safe_serialize(result), "count": len(result)}
     except Exception as e:
         logging.error(f"Error getting supplier recommendations: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting supplier recommendations: {str(e)}")

@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from app.database import neo4j_db
+from app.database import get_neo4j_connection
 import logging
 
 class SupplierAnalysisService:
@@ -29,6 +29,7 @@ class SupplierAnalysisService:
                END AS risk_assessment
         """
         
+        neo4j_db = get_neo4j_connection()
         result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
         return result[0] if result else None
 
@@ -52,6 +53,7 @@ class SupplierAnalysisService:
         ORDER BY complaint_date
         """
         
+        neo4j_db = get_neo4j_connection()
         return neo4j_db.execute_read(query, {"days": days})
 
     @staticmethod
@@ -89,6 +91,7 @@ class SupplierAnalysisService:
         """
         
         params = {"material_name": material_name} if material_name else {}
+        neo4j_db = get_neo4j_connection()
         return neo4j_db.execute_read(query, params)
 
     @staticmethod
@@ -126,6 +129,7 @@ class SupplierAnalysisService:
         ORDER BY s1.material_name
         """
         
+        neo4j_db = get_neo4j_connection()
         result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
         return result[0] if result else None
 
@@ -169,6 +173,7 @@ class SupplierAnalysisService:
         LIMIT 5
         """
         
+        neo4j_db = get_neo4j_connection()
         return neo4j_db.execute_read(query, {
             "supplier_id": supplier_id,
             "minimum_rating": minimum_rating

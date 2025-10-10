@@ -5,26 +5,23 @@ import sys
 from datetime import date
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from neo4j.exceptions import ServiceUnavailable
 from fastapi.responses import JSONResponse
 from neo4j.time import Date as Neo4jDate, DateTime as Neo4jDateTime
 from fastapi.encoders import jsonable_encoder
-from pydantic.json import ENCODERS_BY_TYPE
-from contextlib import asynccontextmanager
 
-
-# Add custom encoders for Neo4j types
-ENCODERS_BY_TYPE[Neo4jDate] = lambda v: date(v.year, v.month, v.day).isoformat()
-ENCODERS_BY_TYPE[Neo4jDateTime] = lambda v: f"{v.year:04d}-{v.month:02d}-{v.day:02d}T{v.hour:02d}:{v.minute:02d}:{v.second:02d}.{v.nanosecond // 1000000:03d}Z"
-
+from app import crud
+from app.api import sync
 from app.api.routes import router as api_router
-from app.database import neo4j_db
+from app.database import get_neo4j_connection
 from app.api.custom_json_encoders import serialize_neo4j_types
+
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler()
     ]
@@ -39,9 +36,14 @@ def wait_for_neo4j():
     max_retries = 30
     retry_interval = 2  # seconds
     
+    logger.info("Starting Neo4j connection attempts...")
+    
     for i in range(max_retries):
         try:
-            logger.info(f"Attempting to connect to Neo4j (attempt {i+1}/{max_retries})...")
+            logger.info(f"Neo4j connection attempt {i+1}/{max_retries}...")
+            # Get the connection instance and try to connect
+            neo4j_db = get_neo4j_connection()
+            
             # Try to make a simple query to check if Neo4j is ready
             neo4j_db.run_query("RETURN 1 as test")
             logger.info("Successfully connected to Neo4j!")
@@ -59,10 +61,9 @@ def wait_for_neo4j():
 # Override default JSONResponse class to handle Neo4j Date objects
 class CustomJSONResponse(JSONResponse):
     def render(self, content):
-        # Serialize Neo4j types in the content
+        # Serialize Neo4j types in the content FIRST
         if content is not None:
             content = serialize_neo4j_types(content)
-            content = jsonable_encoder(content)
         return super().render(content)
 
 # Create the FastAPI application
@@ -84,47 +85,82 @@ app.add_middleware(
 
 # Include the router
 app.include_router(api_router, prefix="/api")
+app.include_router(sync.router, prefix="/api", tags=["synchronization"])
+
+# Add root level redirects for convenience
+@app.get("/suppliers")
+def redirect_suppliers():
+    """Redirect /suppliers to /api/suppliers"""
+    return RedirectResponse(url="/api/suppliers")
+
+@app.get("/suppliers/{supplier_id}")
+def redirect_supplier_detail(supplier_id: int):
+    """Redirect /suppliers/{id} to /api/suppliers/{id}"""
+    return RedirectResponse(url=f"/api/suppliers/{supplier_id}")
+
+@app.get("/complaints")
+def redirect_complaints():
+    """Redirect /complaints to /api/complaints"""
+    return RedirectResponse(url="/api/complaints")
+
+@app.get("/certificates")
+def redirect_certificates():
+    """Redirect /certificates to /api/certificates"""
+    return RedirectResponse(url="/api/certificates")
 
 # Startup event
-def startup_db_client():
+@app.on_event("startup")
+async def startup_db_client():
     """
-    Create necessary constraints in Neo4j when the application starts.
+    Create necessary constraints in Neo4j and clear the database when the application starts.
     """
     try:
+        logger.info("Application startup initiated...")
+        
         # Wait for Neo4j to become available before proceeding
+        logger.info("Waiting for Neo4j to become available...")
         if not wait_for_neo4j():
             logger.error("Could not connect to Neo4j, but continuing startup...")
             # We continue anyway to allow the app to start, it will try to reconnect on requests
+            return
         
-        logger.info("Creating Neo4j constraints...")
-        neo4j_db.create_constraints()
-        logger.info("Neo4j constraints created successfully")
+        # Get the connection instance
+        neo4j_db = get_neo4j_connection()
+        
+        # Clear the database first
+        try:
+            logger.info("Clearing database on startup...")
+            crud.clear_database()
+            logger.info("Database cleared successfully")
+        except Exception as e:
+            logger.error(f"Error clearing database: {str(e)}")
+        
+        # Then create constraints
+        try:
+            logger.info("Creating Neo4j constraints...")
+            neo4j_db.create_constraints()
+            logger.info("Neo4j constraints created successfully")
+        except Exception as e:
+            logger.error(f"Error creating constraints: {str(e)}")
+            
+        logger.info("Application startup completed successfully")
+            
     except Exception as e:
         logger.error(f"Error during startup: {e}")
 
 # Shutdown event
-def shutdown_db_client():
+@app.on_event("shutdown")
+async def shutdown_db_client():
     """
     Close the Neo4j connection when the application shuts down.
     """
     try:
+        neo4j_db = get_neo4j_connection()
         neo4j_db.close()
         logger.info("Neo4j connection closed")
     except Exception as e:
         logger.error(f"Error closing Neo4j connection: {e}")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup logic
-    print("Starting up...")
-    startup_db_client
-    
-    yield  # ← app runs while paused here
-    
-    # Shutdown logic
-    print("Shutting down...")
-    shutdown_db_client
-    
 # Root endpoint
 @app.get("/")
 def root():
@@ -145,6 +181,7 @@ def health():
     """
     try:
         # Check if Neo4j is responsive
+        neo4j_db = get_neo4j_connection()
         neo4j_db.run_query("RETURN 1 as test")
         return {"status": "healthy", "neo4j_status": "connected"}
     except Exception as e:

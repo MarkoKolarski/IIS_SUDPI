@@ -255,6 +255,6 @@ if __name__ == "__main__":
         
     except Exception as e:
         logger.error(f"Error during data seeding: {e}")
-    finally:
+        # Don't exit with error code, let the main app start
         # Close the Neo4j connection
         neo4j_db.close()

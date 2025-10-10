@@ -2,14 +2,39 @@ from typing import List, Dict, Any, Optional
 from datetime import date, datetime
 import logging
 
-from app.database import neo4j_db
+from app.database import get_neo4j_connection
 from neo4j.exceptions import ClientError, ConstraintError
+
+# Get the Neo4j connection instance
+def get_db():
+    return get_neo4j_connection()
+
+# Add a function to clear the database
+def clear_database() -> bool:
+    """
+    Clear all data from the Neo4j database.
+    Returns True if successful, raises an exception otherwise.
+    """
+    try:
+        # Delete all nodes and relationships in the database
+        query = """
+        MATCH (n)
+        DETACH DELETE n
+        """
+        neo4j_db = get_db()
+        neo4j_db.execute_write(query)
+        logging.info("Database cleared successfully")
+        return True
+    except Exception as e:
+        logging.error(f"Error clearing database: {e}")
+        raise ValueError(f"Failed to clear database: {e}")
 
 # Supplier CRUD Operations
 def create_supplier(supplier_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a new supplier node in Neo4j
     """
+    neo4j_db = get_db()
     try:
         # Always check if supplier with this ID already exists first
         supplier_id = supplier_data['supplier_id']
@@ -66,6 +91,7 @@ def get_supplier(supplier_id: int) -> Dict[str, Any]:
     MATCH (s:Supplier {supplier_id: $supplier_id})
     RETURN s
     """
+    neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
     return result[0]['s'] if result else None
 
@@ -77,6 +103,7 @@ def get_all_suppliers() -> List[Dict[str, Any]]:
     MATCH (s:Supplier)
     RETURN s
     """
+    neo4j_db = get_db()
     result = neo4j_db.execute_read(query)
     return [record['s'] for record in result]
 
@@ -84,6 +111,7 @@ def update_supplier(supplier_id: int, supplier_data: Dict[str, Any]) -> Dict[str
     """
     Update a supplier
     """
+    neo4j_db = get_db()
     set_clauses = []
     for key, value in supplier_data.items():
         if value is not None:
@@ -114,6 +142,7 @@ def delete_supplier(supplier_id: int) -> bool:
     MATCH (s:Supplier {supplier_id: $supplier_id})
     DETACH DELETE s
     """
+    neo4j_db = get_db()
     neo4j_db.execute_write(query, {"supplier_id": supplier_id})
     return True
 
@@ -131,6 +160,7 @@ def create_material(material_data: Dict[str, Any]) -> Dict[str, Any]:
     })
     RETURN m
     """
+    neo4j_db = get_db()
     result = neo4j_db.execute_write(query, material_data)
     return result
 
@@ -145,6 +175,7 @@ def link_supplier_to_material(supplier_id: int, material_id: str) -> Dict[str, A
     ON CREATE SET r.since = date()
     RETURN s, r, m
     """
+    neo4j_db = get_db()
     result = neo4j_db.execute_write(query, {
         "supplier_id": supplier_id,
         "material_id": material_id
@@ -156,6 +187,19 @@ def create_complaint(complaint_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a new complaint node and link it to a supplier
     """
+    neo4j_db = get_db()
+    
+    # Generate complaint_id if not provided
+    if 'complaint_id' not in complaint_data:
+        # Get the highest existing complaint_id and add 1
+        max_id_query = """
+        MATCH (c:Complaint)
+        RETURN COALESCE(MAX(c.complaint_id), 0) AS max_id
+        """
+        result = neo4j_db.execute_read(max_id_query)
+        max_id = result[0]['max_id'] if result else 0
+        complaint_data['complaint_id'] = max_id + 1
+    
     # First create the complaint node
     create_query = """
     CREATE (c:Complaint {
@@ -195,22 +239,13 @@ def create_complaint(complaint_data: Dict[str, Any]) -> Dict[str, Any]:
     
     return result
 
-def get_supplier_complaints(supplier_id: int) -> List[Dict[str, Any]]:
-    """
-    Get all complaints for a supplier
-    """
-    query = """
-    MATCH (s:Supplier {supplier_id: $supplier_id})-[:HAS_COMPLAINT]->(c:Complaint)
-    RETURN c
-    """
-    result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
-    return [record['c'] for record in result]
-
 # Certificate CRUD Operations
 def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a new certificate node and link it to a supplier
     """
+    neo4j_db = get_db()
+    
     create_query = """
     CREATE (cert:Certificate {
         certificate_id: $certificate_id,
@@ -248,17 +283,6 @@ def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
     
     return result
 
-def get_supplier_certificates(supplier_id: int) -> List[Dict[str, Any]]:
-    """
-    Get all certificates for a supplier
-    """
-    query = """
-    MATCH (s:Supplier {supplier_id: $supplier_id})-[:HAS_CERTIFICATE]->(cert:Certificate)
-    RETURN cert
-    """
-    result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
-    return [record['cert'] for record in result]
-
 # Complex Query 1: Find alternative suppliers for a material
 def find_alternative_suppliers(material_name: str, min_rating: float = 0.0) -> List[Dict[str, Any]]:
     """
@@ -270,6 +294,7 @@ def find_alternative_suppliers(material_name: str, min_rating: float = 0.0) -> L
     RETURN s
     ORDER BY s.rating DESC
     """
+    neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {
         "material_name": material_name,
         "min_rating": min_rating
@@ -292,6 +317,7 @@ def find_better_suppliers(supplier_id: int, rating_increase: float = 1.0) -> Lis
            CASE WHEN s2.price <= s1.price THEN 'cheaper_or_equal' ELSE 'more_expensive' END AS price_comparison
     ORDER BY s2.rating DESC
     """
+    neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {
         "supplier_id": supplier_id,
         "rating_increase": rating_increase
@@ -336,6 +362,7 @@ def analyze_supplier_relationships(supplier_id: int) -> Dict[str, Any]:
            }) AS related_suppliers
     """
     
+    neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
     return result[0] if result else None
 
@@ -362,6 +389,7 @@ def track_supplier_rating_history(supplier_id: int) -> List[Dict[str, Any]]:
                               END)) AS estimated_current_rating
     """
     
+    neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
     return result[0] if result else None
 
@@ -399,5 +427,30 @@ def identify_supplier_risk_patterns() -> List[Dict[str, Any]]:
       END, complaint_count DESC
     """
     
+    neo4j_db = get_db()
     result = neo4j_db.execute_read(query)
     return result
+
+def get_supplier_complaints(supplier_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all complaints for a supplier
+    """
+    query = """
+    MATCH (s:Supplier {supplier_id: $supplier_id})-[:HAS_COMPLAINT]->(c:Complaint)
+    RETURN c
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
+    return [record['c'] for record in result]
+
+def get_supplier_certificates(supplier_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all certificates for a supplier
+    """
+    query = """
+    MATCH (s:Supplier {supplier_id: $supplier_id})-[:HAS_CERTIFICATE]->(cert:Certificate)
+    RETURN cert
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
+    return [record['cert'] for record in result]

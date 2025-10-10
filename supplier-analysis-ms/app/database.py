@@ -5,6 +5,8 @@ import os
 import time
 from neo4j.exceptions import ServiceUnavailable
 
+# Configure logging to ensure it's set up
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class Neo4jConnection:
@@ -17,50 +19,67 @@ class Neo4jConnection:
         if cls._instance is None:
             cls._instance = super(Neo4jConnection, cls).__new__(cls)
             cls._instance.driver = None
-            cls._instance.connect()
+            cls._instance._connected = False
         return cls._instance
 
     def connect(self, max_retries=5, retry_interval=2):
         """
         Connect to Neo4j with retry mechanism
         """
+        if self._connected and self.driver is not None:
+            logger.info("Neo4j already connected, skipping connection attempt")
+            return True
+            
         uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
         username = os.environ.get("NEO4J_USER", "neo4j")
         password = os.environ.get("NEO4J_PASSWORD", "password")
         
+        logger.info(f"Attempting to connect to Neo4j at {uri} with user {username}")
+        
         for attempt in range(max_retries):
             try:
+                logger.info(f"Connection attempt {attempt+1}/{max_retries}")
                 self.driver = GraphDatabase.driver(uri, auth=(username, password))
                 # Test the connection
                 with self.driver.session() as session:
                     session.run("RETURN 1")
-                logger.info(f"Connected to Neo4j at {uri}")
+                logger.info(f"Successfully connected to Neo4j at {uri}")
+                self._connected = True
                 return True
             except ServiceUnavailable as e:
                 logger.warning(f"Neo4j connection attempt {attempt+1}/{max_retries} failed: {e}")
                 if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_interval} seconds...")
                     time.sleep(retry_interval)
             except Exception as e:
                 logger.error(f"Unexpected error connecting to Neo4j: {e}")
                 if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_interval} seconds...")
                     time.sleep(retry_interval)
         
         logger.error(f"Failed to connect to Neo4j after {max_retries} attempts")
+        self._connected = False
         return False
 
     def close(self):
         if self.driver is not None:
             self.driver.close()
             self.driver = None
+            self._connected = False
             logger.info("Neo4j connection closed")
+
+    def _ensure_connection(self):
+        """Ensure we have a valid connection before executing queries"""
+        if not self._connected or self.driver is None:
+            logger.info("No active connection, attempting to connect...")
+            self.connect()
 
     def run_query(self, query: str, params: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """
         Execute a Cypher query and return the results.
         """
         try:
-            if self.driver is None:
-                self.connect()
+            self._ensure_connection()
                 
             if self.driver is None:
                 logger.error("Cannot run query, Neo4j connection not available")
@@ -72,6 +91,7 @@ class Neo4jConnection:
         except Exception as e:
             logger.error(f"Neo4j query error: {e}")
             # Try to reconnect
+            self._connected = False
             self.connect()
             raise
 
@@ -80,8 +100,7 @@ class Neo4jConnection:
         Execute a Cypher write query and return the result.
         """
         try:
-            if self.driver is None:
-                self.connect()
+            self._ensure_connection()
                 
             if self.driver is None:
                 logger.error("Cannot execute write, Neo4j connection not available")
@@ -95,6 +114,7 @@ class Neo4jConnection:
         except Exception as e:
             logger.error(f"Neo4j write error: {e}")
             # Try to reconnect
+            self._connected = False
             self.connect()
             raise
 
@@ -103,8 +123,7 @@ class Neo4jConnection:
         Execute a Cypher read query and return the results.
         """
         try:
-            if self.driver is None:
-                self.connect()
+            self._ensure_connection()
                 
             if self.driver is None:
                 logger.error("Cannot execute read, Neo4j connection not available")
@@ -118,6 +137,7 @@ class Neo4jConnection:
         except Exception as e:
             logger.error(f"Neo4j read error: {e}")
             # Try to reconnect
+            self._connected = False
             self.connect()
             raise
 
@@ -129,23 +149,57 @@ class Neo4jConnection:
             logger.warning("Cannot create constraints, Neo4j connection not available")
             return False
             
-        constraints = [
-            "CREATE CONSTRAINT supplier_id IF NOT EXISTS FOR (s:Supplier) REQUIRE s.supplier_id IS UNIQUE",
-            "CREATE CONSTRAINT material_id IF NOT EXISTS FOR (m:Material) REQUIRE m.material_id IS UNIQUE",
-            "CREATE CONSTRAINT complaint_id IF NOT EXISTS FOR (c:Complaint) REQUIRE c.complaint_id IS UNIQUE",
-            "CREATE CONSTRAINT certificate_id IF NOT EXISTS FOR (cert:Certificate) REQUIRE cert.certificate_id IS UNIQUE"
-        ]
-        
-        success = True
-        with self.driver.session() as session:
-            for constraint in constraints:
-                try:
-                    session.run(constraint)
-                    logger.info(f"Created constraint: {constraint}")
-                except Exception as e:
-                    logger.warning(f"Constraint creation error: {e}")
-                    success = False
-                    
-        return success
+        try:
+            # First check if constraints already exist
+            constraints_query = "SHOW CONSTRAINTS"
+            constraints = self.run_query(constraints_query)
+            
+            # Create unique constraint on supplier_id if it doesn't exist
+            if not any(c.get('name') == 'unique_supplier_id' for c in constraints):
+                logger.info("Creating unique constraint on Supplier.supplier_id")
+                self.run_query("CREATE CONSTRAINT unique_supplier_id IF NOT EXISTS FOR (s:Supplier) REQUIRE s.supplier_id IS UNIQUE")
+            
+            # Create unique constraint on material_id if it doesn't exist
+            if not any(c.get('name') == 'unique_material_id' for c in constraints):
+                logger.info("Creating unique constraint on Material.material_id")
+                self.run_query("CREATE CONSTRAINT unique_material_id IF NOT EXISTS FOR (m:Material) REQUIRE m.material_id IS UNIQUE")
+            
+            # Create unique constraint on complaint_id if it doesn't exist
+            if not any(c.get('name') == 'unique_complaint_id' for c in constraints):
+                logger.info("Creating unique constraint on Complaint.complaint_id")
+                self.run_query("CREATE CONSTRAINT unique_complaint_id IF NOT EXISTS FOR (c:Complaint) REQUIRE c.complaint_id IS UNIQUE")
+            
+            # Create unique constraint on certificate_id if it doesn't exist
+            if not any(c.get('name') == 'unique_certificate_id' for c in constraints):
+                logger.info("Creating unique constraint on Certificate.certificate_id")
+                self.run_query("CREATE CONSTRAINT unique_certificate_id IF NOT EXISTS FOR (cert:Certificate) REQUIRE cert.certificate_id IS UNIQUE")
+            
+            logger.info("All constraints created or already exist")
+            return True
+        except Exception as e:
+            logger.error(f"Error creating constraints: {e}")
+            raise
 
-neo4j_db = Neo4jConnection()
+# Remove global instance creation - make it lazy
+_neo4j_instance = None
+
+def get_neo4j_connection():
+    """Get or create the Neo4j connection instance"""
+    global _neo4j_instance
+    if _neo4j_instance is None:
+        logger.info("Creating Neo4j connection instance")
+        _neo4j_instance = Neo4jConnection()
+    return _neo4j_instance
+
+# For backward compatibility - create actual instance, not property
+neo4j_db = get_neo4j_connection()
+
+def get_db():
+    """
+    Dependency to get the Neo4j database connection
+    """
+    try:
+        db = get_neo4j_connection()
+        yield db
+    finally:
+        pass  # Connection will be closed on application shutdown
