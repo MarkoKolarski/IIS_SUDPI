@@ -3,34 +3,54 @@ from datetime import date, datetime
 import logging
 
 from app.database import neo4j_db
+from neo4j.exceptions import ClientError
 
 # Supplier CRUD Operations
 def create_supplier(supplier_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Create a new supplier node in Neo4j
     """
-    query = """
-    CREATE (s:Supplier {
-        supplier_id: $supplier_id,
-        name: $name,
-        email: $email,
-        pib: $pib,
-        material_name: $material_name,
-        price: $price,
-        delivery_time: $delivery_time,
-        rating: $rating,
-        rating_date: $rating_date,
-        selected: $selected
-    })
-    RETURN s
-    """
-    
-    # Convert date to string format for Neo4j
-    if isinstance(supplier_data.get('rating_date'), date):
-        supplier_data['rating_date'] = supplier_data['rating_date'].isoformat()
+    try:
+        # Always check if supplier with this ID already exists first
+        supplier_id = supplier_data['supplier_id']
+        existing = get_supplier(supplier_id)
         
-    result = neo4j_db.execute_write(query, supplier_data)
-    return result
+        if existing:
+            # If supplier exists, update it instead of creating a new one
+            logging.info(f"Supplier with ID {supplier_id} already exists. Updating instead.")
+            return update_supplier(supplier_id, supplier_data)
+        
+        # Convert date to string format for Neo4j if needed
+        if isinstance(supplier_data.get('rating_date'), date):
+            supplier_data['rating_date'] = supplier_data['rating_date'].isoformat()
+            
+        query = """
+        CREATE (s:Supplier {
+            supplier_id: $supplier_id,
+            name: $name,
+            email: $email,
+            pib: $pib,
+            material_name: $material_name,
+            price: $price,
+            delivery_time: $delivery_time,
+            rating: $rating,
+            rating_date: $rating_date,
+            selected: $selected
+        })
+        RETURN s
+        """
+        
+        result = neo4j_db.execute_write(query, supplier_data)
+        return result
+    except Exception as e:
+        logging.error(f"Error creating supplier: {e}")
+        # If this is a constraint violation, try updating instead
+        if "already exists" in str(e):
+            try:
+                return update_supplier(supplier_data['supplier_id'], supplier_data)
+            except Exception as update_error:
+                logging.error(f"Error updating supplier: {update_error}")
+        raise ValueError(f"Error creating supplier: {e}")
 
 def get_supplier(supplier_id: int) -> Dict[str, Any]:
     """

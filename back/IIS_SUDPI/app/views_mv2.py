@@ -10,10 +10,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime
 
+from .serializers import DobavljacSerializer
+
 from .models import Dobavljac, Reklamacija, Sertifikat, User
 from .decorators import allowed_users
 from .services.supplier_analysis_service import SupplierAnalysisService
-from .serializers import DobavljacSerializer
 
 logger = logging.getLogger(__name__)
 supplier_service = SupplierAnalysisService()
@@ -58,15 +59,8 @@ def sync_suppliers(request):
                 "selected": supplier.izabran
             }
             
-            # Check if supplier exists in microservice
-            existing_supplier = supplier_service.get_supplier(supplier.sifra_d)
-            
-            if existing_supplier:
-                # Update existing supplier
-                result = supplier_service.update_supplier(supplier.sifra_d, supplier_data)
-            else:
-                # Create new supplier
-                result = supplier_service.create_supplier(supplier_data)
+            # We don't need to check if it exists first - our service now handles that
+            result = supplier_service.create_supplier(supplier_data)
             
             if result:
                 success_count += 1

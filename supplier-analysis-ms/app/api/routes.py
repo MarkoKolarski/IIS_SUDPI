@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, Body, Query, Path
 from fastapi.responses import JSONResponse, Response
 from typing import List, Dict, Any, Optional
 import logging
-from datetime import date
+from datetime import date, datetime
+from neo4j.time import Date as Neo4jDate
 
 from app import crud
 from app.schemas import (
@@ -13,6 +14,8 @@ from app.schemas import (
 )
 from app.services.analysis import SupplierAnalysisService
 from app.services.report import ReportGenerator
+from app.database import neo4j_db
+from app.api.custom_json_encoders import serialize_neo4j_types
 
 router = APIRouter()
 analysis_service = SupplierAnalysisService()
@@ -36,8 +39,22 @@ def create_supplier(supplier: SupplierCreate):
     """Create a new supplier"""
     try:
         supplier_dict = supplier.dict()
+        # Handle date conversion
+        if isinstance(supplier_dict.get('rating_date'), date):
+            supplier_dict['rating_date'] = supplier_dict['rating_date'].isoformat()
+        
+        # First check if supplier exists - if it does, update it
+        try:
+            existing = crud.get_supplier(supplier_dict['supplier_id'])
+            if existing:
+                result = crud.update_supplier(supplier_dict['supplier_id'], supplier_dict)
+                return {"message": "Supplier updated successfully", "data": serialize_neo4j_types(result)}
+        except Exception:
+            # If error happens during check, continue with create attempt
+            pass
+            
         result = crud.create_supplier(supplier_dict)
-        return {"message": "Supplier created successfully", "data": result}
+        return {"message": "Supplier created successfully", "data": serialize_neo4j_types(result)}
     except Exception as e:
         logging.error(f"Error creating supplier: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating supplier: {str(e)}")
@@ -46,7 +63,8 @@ def create_supplier(supplier: SupplierCreate):
 def get_suppliers():
     """Get all suppliers"""
     try:
-        return crud.get_all_suppliers()
+        suppliers = crud.get_all_suppliers()
+        return serialize_neo4j_types(suppliers)
     except Exception as e:
         logging.error(f"Error fetching suppliers: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching suppliers: {str(e)}")
@@ -58,7 +76,7 @@ def get_supplier(supplier_id: int = Path(..., description="The ID of the supplie
         supplier = crud.get_supplier(supplier_id)
         if not supplier:
             raise HTTPException(status_code=404, detail="Supplier not found")
-        return supplier
+        return serialize_neo4j_types(supplier)
     except HTTPException:
         raise
     except Exception as e:
@@ -122,23 +140,7 @@ def create_complaint(complaint: ComplaintCreate):
     """Create a new complaint"""
     try:
         complaint_dict = complaint.dict()
-        # Generate complaint ID if not provided
-        if not complaint_dict.get("complaint_id"):
-            # Get max complaint ID from existing complaints
-            existing_complaints = crud.get_supplier_complaints(complaint_dict["supplier_id"])
-            max_id = 0
-            for c in existing_complaints:
-                if "complaint_id" in c and isinstance(c["complaint_id"], int) and c["complaint_id"] > max_id:
-                    max_id = c["complaint_id"]
-            complaint_dict["complaint_id"] = max_id + 1
-        
-        # Set reception date to today if not provided
-        if not complaint_dict.get("reception_date"):
-            complaint_dict["reception_date"] = date.today()
-        
-        # Set default status if not provided
-        if not complaint_dict.get("status"):
-            complaint_dict["status"] = "prijem"
+        complaint_dict["status"] = "prijem"
             
         result = crud.create_complaint(complaint_dict)
         

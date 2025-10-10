@@ -2,12 +2,22 @@ import logging
 import os
 import time
 import sys
-from fastapi import FastAPI, Depends
+from datetime import date
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from neo4j.exceptions import ServiceUnavailable
+from fastapi.responses import JSONResponse
+from neo4j.time import Date as Neo4jDate, DateTime as Neo4jDateTime
+from fastapi.encoders import jsonable_encoder
+from pydantic.json import ENCODERS_BY_TYPE
+
+# Add custom encoders for Neo4j types
+ENCODERS_BY_TYPE[Neo4jDate] = lambda v: date(v.year, v.month, v.day).isoformat()
+ENCODERS_BY_TYPE[Neo4jDateTime] = lambda v: f"{v.year:04d}-{v.month:02d}-{v.day:02d}T{v.hour:02d}:{v.minute:02d}:{v.second:02d}.{v.nanosecond // 1000000:03d}Z"
 
 from app.api.routes import router as api_router
 from app.database import neo4j_db
+from app.api.custom_json_encoders import serialize_neo4j_types
 
 # Configure logging
 logging.basicConfig(
@@ -44,17 +54,27 @@ def wait_for_neo4j():
     logger.error(f"Failed to connect to Neo4j after {max_retries} attempts")
     return False
 
+# Override default JSONResponse class to handle Neo4j Date objects
+class CustomJSONResponse(JSONResponse):
+    def render(self, content):
+        # Serialize Neo4j types in the content
+        if content is not None:
+            content = serialize_neo4j_types(content)
+            content = jsonable_encoder(content)
+        return super().render(content)
+
 # Create the FastAPI application
 app = FastAPI(
     title="Supplier Analysis Microservice",
     description="Microservice for analyzing supplier quality and reputation",
-    version="1.0.0"
+    version="1.0.0",
+    default_response_class=CustomJSONResponse
 )
 
 # Add CORS middleware to allow cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict this to specific origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

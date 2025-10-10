@@ -2,8 +2,11 @@
 set -e
 
 echo "Waiting for Neo4j to be ready..."
-# Simple wait approach to give Neo4j time to start
+# Give Neo4j a chance to start up (simple wait approach)
 sleep 15
+
+echo "Checking and fixing duplicate supplier IDs..."
+python -m scripts.fix_supplier_ids
 
 echo "Starting supplier analysis microservice..."
 exec "$@"
