@@ -46,7 +46,7 @@ function checkServiceHealth() {
 
 function loadSuppliers() {
   showSpinner();
-  fetch("/suppliers/")
+  fetch("/api/supplier-analysis/suppliers/")  // Changed from "/suppliers/"
     .then((response) => response.json())
     .then((suppliers) => {
       const supplierSelect = document.getElementById("supplierId");
@@ -84,7 +84,7 @@ function loadSuppliers() {
 
 function loadMaterials() {
   showSpinner();
-  fetch("/suppliers/")
+  fetch("/api/supplier-analysis/suppliers/")  // Changed from "/suppliers/"
     .then((response) => response.json())
     .then((suppliers) => {
       // Extract unique material names

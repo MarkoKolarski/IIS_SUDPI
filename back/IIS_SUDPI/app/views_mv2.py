@@ -13,9 +13,13 @@ from datetime import datetime
 from .models import Dobavljac, Reklamacija, Sertifikat, User
 from .decorators import allowed_users
 from .services.supplier_analysis_service import SupplierAnalysisService
+from .serializers import DobavljacSerializer
 
 logger = logging.getLogger(__name__)
 supplier_service = SupplierAnalysisService()
+
+
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -453,5 +457,22 @@ def get_alternative_suppliers(request, material_name):
         logger.error(f"Error getting alternative suppliers: {str(e)}")
         return Response(
             {"error": f"Error getting alternative suppliers: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_suppliers(request):
+    """
+    Get all suppliers without authentication
+    """
+    try:
+        suppliers = Dobavljac.objects.all()
+        serializer = DobavljacSerializer(suppliers, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error fetching suppliers: {str(e)}")
+        return Response(
+            {"error": f"Error fetching suppliers: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

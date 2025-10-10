@@ -4,7 +4,12 @@ from . import views_mv
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
 from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment
 from .views_mv import suppliers, expiring_certificates, visits_list, visit_detail, create_visit, busy_visit_slots, complaints_list, create_complaint
-from .views_mv2 import check_service_health, sync_suppliers, sync_complaints, sync_certificates, get_supplier_report, get_supplier_comparison_report, get_material_suppliers_report, create_complaint_with_rating, get_supplier_risk_analysis, get_alternative_suppliers
+from .views_mv2 import (
+    check_service_health, sync_suppliers, sync_complaints, sync_certificates, 
+    get_supplier_report, get_supplier_comparison_report, get_material_suppliers_report, 
+    create_complaint_with_rating, get_supplier_risk_analysis, get_alternative_suppliers,
+    get_suppliers  # Add this import
+)
 from .views_mv3 import supplier_analysis_dashboard, supplier_complaint_transaction
 from django.contrib.auth.views import LogoutView
 
@@ -79,5 +84,6 @@ urlpatterns = [
     path('api/supplier-analysis/complaints/create/', create_complaint_with_rating, name='create_complaint_with_rating'),
     path('api/supplier-analysis/risk-analysis/', get_supplier_risk_analysis, name='supplier_risk_analysis'),
     path('api/supplier-analysis/alternative-suppliers/<str:material_name>/', get_alternative_suppliers, name='alternative_suppliers'),
+    path('api/supplier-analysis/suppliers/', get_suppliers, name='get_suppliers'),  # Add the new suppliers endpoint
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 ]
