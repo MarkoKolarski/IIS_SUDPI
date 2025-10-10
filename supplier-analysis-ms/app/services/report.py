@@ -687,10 +687,10 @@ class ReportGenerator:
                     f"{float(supplier.get('final_composite_score', 0)):.2f}",
                     str(supplier.get('complaint_count', 0)),
                     str(supplier.get('certificate_count', 0)),
-                    supplier.get('recommendation', 'N/A')[:50] + ('...' if len(supplier.get('recommendation', '')) > 20 else '')
+                    supplier.get('recommendation', 'N/A')[:80] + ('...' if len(supplier.get('recommendation', '')) > 20 else '')
                 ])
             
-            perf_table = Table(perf_table_data, colWidths=[0.5*inch, 0.5*inch, 2*inch, 0.5*inch, 0.7*inch, 0.7*inch, 3*inch])
+            perf_table = Table(perf_table_data, colWidths=[0.5*inch, 0.5*inch, 1*inch, 0.5*inch, 0.7*inch, 0.7*inch, 3*inch])
             perf_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.white),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
