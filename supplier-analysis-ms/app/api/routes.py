@@ -10,7 +10,8 @@ from app.schemas import (
     SupplierCreate, SupplierUpdate, Supplier,
     ComplaintCreate, ComplaintUpdate, Complaint,
     CertificateCreate, Certificate,
-    MaterialCreate, ReportRequest
+    MaterialCreate, ReportRequest,
+    SupplierComparisonRequest, MaterialSuppliersReportRequest
 )
 from app.services.analysis import SupplierAnalysisService
 from app.services.report import ReportGenerator
@@ -423,11 +424,56 @@ def generate_supplier_report(supplier_id: int = Path(..., description="The ID of
         raise HTTPException(status_code=500, detail=f"Error generating supplier report: {str(e)}")
 
 @router.post("/reports/supplier-comparison", response_class=Response)
-def generate_supplier_comparison_report(supplier_ids: List[int] = Body(..., description="List of supplier IDs to compare")):
+def generate_supplier_comparison_report(request: SupplierComparisonRequest):
     """Generate a PDF report comparing multiple suppliers"""
     try:
-        if len(supplier_ids) < 2:
-            raise HTTPException(status_code=400, detail="At least two supplier IDs must be provided")
+        supplier_ids = request.supplier_ids
+        
+        # Validate that suppliers exist
+        existing_suppliers = []
+        for supplier_id in supplier_ids:
+            supplier = crud.get_supplier(supplier_id)
+            if supplier:
+                existing_suppliers.append(supplier_id)
+            else:
+                logging.warning(f"Supplier with ID {supplier_id} not found, skipping")
+        
+        if len(existing_suppliers) < 2:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"At least two valid suppliers are required. Found {len(existing_suppliers)} valid suppliers."
+            )
+            
+        # Generate the report with existing suppliers only
+        pdf_data = report_generator.generate_supplier_comparison_report(existing_suppliers)
+        
+        # Return the PDF
+        return Response(
+            content=pdf_data,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=supplier_comparison.pdf"}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error generating supplier comparison report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating supplier comparison report: {str(e)}")
+
+# Add a GET endpoint for testing
+@router.get("/reports/supplier-comparison-test/{supplier_id1}/{supplier_id2}", response_class=Response)
+def generate_supplier_comparison_report_test(
+    supplier_id1: int = Path(..., description="First supplier ID"),
+    supplier_id2: int = Path(..., description="Second supplier ID")
+):
+    """Generate a test PDF report comparing two suppliers (GET method for easy testing)"""
+    try:
+        supplier_ids = [supplier_id1, supplier_id2]
+        
+        # Validate that suppliers exist
+        for supplier_id in supplier_ids:
+            supplier = crud.get_supplier(supplier_id)
+            if not supplier:
+                raise HTTPException(status_code=404, detail=f"Supplier with ID {supplier_id} not found")
             
         # Generate the report
         pdf_data = report_generator.generate_supplier_comparison_report(supplier_ids)
@@ -436,7 +482,7 @@ def generate_supplier_comparison_report(supplier_ids: List[int] = Body(..., desc
         return Response(
             content=pdf_data,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=supplier_comparison.pdf"}
+            headers={"Content-Disposition": f"attachment; filename=supplier_comparison_{supplier_id1}_{supplier_id2}.pdf"}
         )
     except HTTPException:
         raise

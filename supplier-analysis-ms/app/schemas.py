@@ -112,3 +112,10 @@ class AlternativeSupplier(BaseModel):
     price: float
     rating: float
     similarity_score: float
+
+class SupplierComparisonRequest(BaseModel):
+    supplier_ids: List[int] = Field(..., min_items=2, description="List of supplier IDs to compare (minimum 2)")
+    
+class MaterialSuppliersReportRequest(BaseModel):
+    material_name: str = Field(..., description="Name of the material")
+    min_rating: Optional[float] = Field(0.0, ge=0.0, le=10.0, description="Minimum rating filter")
