@@ -50,7 +50,7 @@ BEGIN
       IZABRAN
     ) VALUES (
       i,
-      'Dobavljac_' || i,
+      'Dob' || i,
       'email' || i || '@example.com',
       'PIB' || LPAD(i, 2, '0'),
       CASE MOD(i, 8)
