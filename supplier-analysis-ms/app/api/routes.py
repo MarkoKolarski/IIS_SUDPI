@@ -211,6 +211,7 @@ def create_certificate(certificate: CertificateCreate):
     """Create a new certificate"""
     try:
         certificate_dict = certificate.dict()
+        
         # Generate certificate ID if not provided
         if not certificate_dict.get("certificate_id"):
             # Get max certificate ID from existing certificates
@@ -222,20 +223,71 @@ def create_certificate(certificate: CertificateCreate):
             certificate_dict["certificate_id"] = max_id + 1
             
         result = crud.create_certificate(certificate_dict)
+        
+        # Check if it was an update operation
+        if "certificate_id" in certificate_dict:
+            existing = crud.get_certificate(certificate_dict["certificate_id"])
+            if existing:
+                return {"message": "Certificate updated successfully", "data": safe_serialize(result)}
+        
         return {"message": "Certificate created successfully", "data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error creating certificate: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating certificate: {str(e)}")
 
-@router.get("/suppliers/{supplier_id}/certificates", response_model=List[Dict[str, Any]])
-def get_supplier_certificates(supplier_id: int = Path(..., description="The ID of the supplier")):
-    """Get all certificates for a supplier"""
+@router.get("/certificates/{certificate_id}", response_model=Dict[str, Any])
+def get_certificate(certificate_id: int = Path(..., description="The ID of the certificate to get")):
+    """Get a certificate by ID"""
     try:
-        certificates = crud.get_supplier_certificates(supplier_id)
-        return safe_serialize(certificates)
+        certificate = crud.get_certificate(certificate_id)
+        if not certificate:
+            raise HTTPException(status_code=404, detail="Certificate not found")
+        return safe_serialize(certificate)
+    except HTTPException:
+        raise
     except Exception as e:
-        logging.error(f"Error fetching certificates: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching certificates: {str(e)}")
+        logging.error(f"Error fetching certificate: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching certificate: {str(e)}")
+
+@router.put("/certificates/{certificate_id}", response_model=Dict[str, Any])
+def update_certificate(
+    certificate_data: CertificateCreate,
+    certificate_id: int = Path(..., description="The ID of the certificate to update")
+):
+    """Update a certificate"""
+    try:
+        # Check if certificate exists
+        certificate = crud.get_certificate(certificate_id)
+        if not certificate:
+            raise HTTPException(status_code=404, detail="Certificate not found")
+            
+        # Update the certificate
+        certificate_dict = certificate_data.dict()
+        result = crud.update_certificate(certificate_id, certificate_dict)
+        return {"message": "Certificate updated successfully", "data": safe_serialize(result)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error updating certificate: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error updating certificate: {str(e)}")
+
+@router.delete("/certificates/{certificate_id}")
+def delete_certificate(certificate_id: int = Path(..., description="The ID of the certificate to delete")):
+    """Delete a certificate"""
+    try:
+        # Check if certificate exists
+        certificate = crud.get_certificate(certificate_id)
+        if not certificate:
+            raise HTTPException(status_code=404, detail="Certificate not found")
+            
+        # Delete the certificate
+        crud.delete_certificate(certificate_id)
+        return {"message": "Certificate deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting certificate: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting certificate: {str(e)}")
 
 # Analysis endpoints
 @router.get("/analysis/alternative-suppliers/{material_name}")

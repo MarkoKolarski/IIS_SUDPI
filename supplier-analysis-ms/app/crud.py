@@ -246,42 +246,126 @@ def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     neo4j_db = get_db()
     
-    create_query = """
-    CREATE (cert:Certificate {
-        certificate_id: $certificate_id,
-        name: $name,
-        type: $type,
-        issue_date: $issue_date,
-        expiry_date: $expiry_date,
-        supplier_id: $supplier_id
-    })
+    try:
+        # Check if certificate with this ID already exists
+        certificate_id = certificate_data['certificate_id']
+        existing = get_certificate(certificate_id)
+        
+        if existing:
+            # If certificate exists, update it instead of creating a new one
+            logging.info(f"Certificate with ID {certificate_id} already exists. Updating instead.")
+            return update_certificate(certificate_id, certificate_data)
+        
+        create_query = """
+        CREATE (cert:Certificate {
+            certificate_id: $certificate_id,
+            name: $name,
+            type: $type,
+            issue_date: $issue_date,
+            expiry_date: $expiry_date,
+            supplier_id: $supplier_id
+        })
+        RETURN cert
+        """
+        
+        # Convert dates to string
+        if isinstance(certificate_data.get('issue_date'), date):
+            certificate_data['issue_date'] = certificate_data['issue_date'].isoformat()
+        
+        if isinstance(certificate_data.get('expiry_date'), date):
+            certificate_data['expiry_date'] = certificate_data['expiry_date'].isoformat()
+        
+        # Create the certificate
+        result = neo4j_db.execute_write(create_query, certificate_data)
+        
+        # Create the relationship between supplier and certificate
+        relation_query = """
+        MATCH (s:Supplier {supplier_id: $supplier_id})
+        MATCH (cert:Certificate {certificate_id: $certificate_id})
+        MERGE (s)-[r:HAS_CERTIFICATE]->(cert)
+        RETURN s, r, cert
+        """
+        
+        neo4j_db.execute_write(relation_query, {
+            "supplier_id": certificate_data["supplier_id"],
+            "certificate_id": certificate_data["certificate_id"]
+        })
+        
+        return result
+        
+    except ClientError as e:
+        # Handle Neo4j constraint violations
+        if "ConstraintValidation" in str(e) and "already exists" in str(e):
+            logging.warning(f"Certificate constraint violation detected: {e}. Attempting to update instead.")
+            try:
+                return update_certificate(certificate_data['certificate_id'], certificate_data)
+            except Exception as update_error:
+                logging.error(f"Error updating certificate after constraint violation: {update_error}")
+                raise ValueError(f"Failed to create or update certificate: {update_error}")
+        else:
+            logging.error(f"Neo4j client error: {e}")
+            raise ValueError(f"Database error: {e}")
+    except Exception as e:
+        logging.error(f"Unexpected error creating certificate: {e}")
+        raise ValueError(f"Error creating certificate: {e}")
+
+def get_certificate(certificate_id: int) -> Dict[str, Any]:
+    """
+    Get a certificate by ID
+    """
+    query = """
+    MATCH (cert:Certificate {certificate_id: $certificate_id})
+    RETURN cert
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query, {"certificate_id": certificate_id})
+    return result[0]['cert'] if result else None
+
+def update_certificate(certificate_id: int, certificate_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Update a certificate
+    """
+    neo4j_db = get_db()
+    set_clauses = []
+    
+    for key, value in certificate_data.items():
+        if value is not None and key != 'certificate_id':  # Don't update the ID
+            if isinstance(value, date):
+                value = value.isoformat()
+            set_clauses.append(f"cert.{key} = ${key}")
+            
+    if not set_clauses:
+        return get_certificate(certificate_id)
+        
+    query = f"""
+    MATCH (cert:Certificate {{certificate_id: $certificate_id}})
+    SET {', '.join(set_clauses)}
     RETURN cert
     """
     
-    # Convert dates to string
-    if isinstance(certificate_data.get('issue_date'), date):
-        certificate_data['issue_date'] = certificate_data['issue_date'].isoformat()
+    params = certificate_data.copy()
+    params['certificate_id'] = certificate_id
     
-    if isinstance(certificate_data.get('expiry_date'), date):
-        certificate_data['expiry_date'] = certificate_data['expiry_date'].isoformat()
+    # Convert dates to strings
+    if isinstance(params.get('issue_date'), date):
+        params['issue_date'] = params['issue_date'].isoformat()
+    if isinstance(params.get('expiry_date'), date):
+        params['expiry_date'] = params['expiry_date'].isoformat()
     
-    # Create the certificate
-    result = neo4j_db.execute_write(create_query, certificate_data)
-    
-    # Create the relationship between supplier and certificate
-    relation_query = """
-    MATCH (s:Supplier {supplier_id: $supplier_id})
-    MATCH (cert:Certificate {certificate_id: $certificate_id})
-    CREATE (s)-[r:HAS_CERTIFICATE]->(cert)
-    RETURN s, r, cert
-    """
-    
-    neo4j_db.execute_write(relation_query, {
-        "supplier_id": certificate_data["supplier_id"],
-        "certificate_id": certificate_data["certificate_id"]
-    })
-    
+    result = neo4j_db.execute_write(query, params)
     return result
+
+def delete_certificate(certificate_id: int) -> bool:
+    """
+    Delete a certificate
+    """
+    query = """
+    MATCH (cert:Certificate {certificate_id: $certificate_id})
+    DETACH DELETE cert
+    """
+    neo4j_db = get_db()
+    neo4j_db.execute_write(query, {"certificate_id": certificate_id})
+    return True
 
 # Complex Query 1: Find alternative suppliers for a material
 def find_alternative_suppliers(material_name: str, min_rating: float = 0.0) -> List[Dict[str, Any]]:
