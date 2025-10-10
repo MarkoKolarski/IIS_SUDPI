@@ -228,6 +228,17 @@ def create_certificate(certificate: CertificateCreate):
     """Create a new certificate"""
     try:
         certificate_dict = certificate.dict()
+        
+        # Generate certificate ID if not provided
+        if not certificate_dict.get("certificate_id"):
+            # Get max certificate ID from existing certificates
+            existing_certificates = crud.get_all_certificates()
+            max_id = 0
+            for c in existing_certificates:
+                if "certificate_id" in c and isinstance(c["certificate_id"], int) and c["certificate_id"] > max_id:
+                    max_id = c["certificate_id"]
+            certificate_dict["certificate_id"] = max_id + 1
+            
         result = crud.create_certificate(certificate_dict)
         
         # Check if it was an update operation

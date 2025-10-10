@@ -80,6 +80,7 @@ class CertificateBase(BaseModel):
 
 class CertificateCreate(CertificateBase):
     supplier_id: int
+    certificate_id: Optional[int] = None  # Make certificate_id optional
 
 class Certificate(CertificateBase):
     certificate_id: int

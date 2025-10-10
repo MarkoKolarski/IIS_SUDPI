@@ -314,6 +314,17 @@ def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
     neo4j_db = get_db()
     
     try:
+        # Generate certificate_id if not provided
+        if 'certificate_id' not in certificate_data or certificate_data['certificate_id'] is None:
+            # Get the highest existing certificate_id and add 1
+            max_id_query = """
+            MATCH (cert:Certificate)
+            RETURN COALESCE(MAX(cert.certificate_id), 0) AS max_id
+            """
+            result = neo4j_db.execute_read(max_id_query)
+            max_id = result[0]['max_id'] if result else 0
+            certificate_data['certificate_id'] = max_id + 1
+        
         # Check if certificate with this ID already exists
         certificate_id = certificate_data['certificate_id']
         existing = get_certificate(certificate_id)
