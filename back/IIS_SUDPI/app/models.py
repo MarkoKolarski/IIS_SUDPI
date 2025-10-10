@@ -479,8 +479,8 @@ class Notifikacija(models.Model):
     def __str__(self):
         return f"Notifikacija za {self.korisnik.ime_k} {self.korisnik.prz_k} - {self.datum_n.strftime('%d.%m.%Y')}"
 
-def get_isporuka_for_vehicle(self):
-    raise NotImplementedError
+#def get_isporuka_for_vehicle(self):
+#    raise NotImplementedError
     
 
 class Vozilo(models.Model):
@@ -556,19 +556,43 @@ class Ruta(models.Model):
     
     class Meta:
         db_table = 'ruta'
+class Vozac(models.Model):
+    sifra_vo = models.AutoField(primary_key=True)
+    ime_vo = models.CharField(max_length=100)
+    prz_vo = models.CharField(max_length=100)
+    br_voznji = models.IntegerField()
+    status_choices = [
+        ('slobodan', 'Slobodan'),
+        ('zauzet', 'Zauzet'),
+        ('na_odmoru', 'Na odmoru'),
+    ]
+    status = models.CharField(max_length=20, choices=status_choices, default='slobodan')
+    class Meta:
+        db_table = 'vozac'
+    @property
+    def id(self):
+        return self.sifra_vo
+    def __str__(self):
+        return f"{self.ime_vo} {self.prz_vo} ({self.br_voznji} vožnji)"
+    status = models.CharField(max_length=20, choices=status_choices, default='slobodan')
+    def get_all_vozaci(request):
+        vozaci = Vozac.objects.all()
+        return vozaci
+    
 
 class Isporuka(models.Model):
     sifra_i = models.AutoField(primary_key=True)
     ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE)
     vozilo = models.ForeignKey(Vozilo, on_delete=models.CASCADE)
-    vozac = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vozac_isporuke')
+    vozac = models.ForeignKey(Vozac, on_delete=models.CASCADE, related_name='vozac_isporuke')
     status_choices = [
         ('aktivna', 'Nova'),
         ('u_toku', 'U toku'),
         ('spremna', 'Spremna'),
         ('zavrsena', 'Završena'),
     ]
-    status = models.CharField(max_length=20, choices=status_choices, default='aktivna_nova')
+    kolicina_kg = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=status_choices, default='aktivna')
     datum_kreiranja = models.DateTimeField(auto_now_add=True)
     datum_polaska = models.DateTimeField(null=True, blank=True)
     rok_is = models.DateTimeField(null=True, blank=True)
@@ -617,26 +641,3 @@ class voziloOmogucavaTemperatura(models.Model):
             return Upozorenje(isporuka = self.isporuka, tip = 'temperatura', poruka = 'Temperatura je izvan opsega.' )
     class Meta:
         db_table = 'temperaturaVozilo'
-
-class Vozac(models.Model):
-    sifra_vo = models.AutoField(primary_key=True)
-    ime_vo = models.CharField(max_length=100)
-    prz_vo = models.CharField(max_length=100)
-    br_voznji = models.IntegerField()
-    status_choices = [
-        ('slobodan', 'Slobodan'),
-        ('zauzet', 'Zauzet'),
-        ('na_odmoru', 'Na odmoru'),
-    ]
-    status = models.CharField(max_length=20, choices=status_choices, default='slobodan')
-    class Meta:
-        db_table = 'vozac'
-    @property
-    def id(self):
-        return self.sifra_vo
-    def __str__(self):
-        return f"{self.ime_vo} {self.prz_vo} ({self.br_voznji} vožnji)"
-    status = models.CharField(max_length=20, choices=status_choices, default='slobodan')
-    def get_all_vozaci(request):
-        vozaci = Vozac.objects.all()
-        return vozaci

@@ -36,6 +36,7 @@ import EditProfile from "./pages/EditProfile.js";
 import EditOtherProfile from "./pages/EditOtherProfile.js";
 import LogisticTransport from "./pages/LogisticTransport.js";
 import EditVozilo from "./pages/VoziloEdit.js";
+import DashboardLK from "./pages/DashboardLK.js";
 
 const App = () => {
   return (
@@ -213,7 +214,15 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-
+        {/* Logisticki kordinator routes */}
+        <Route
+          path="/dashboard-lk"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <DashboardLK />
+            </ProtectedRoute>
+          }
+        />
         {/* Admin routes */}
         <Route
           path="/dashboard-admin"

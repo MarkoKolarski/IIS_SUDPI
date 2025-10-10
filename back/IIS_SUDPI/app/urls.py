@@ -84,4 +84,15 @@ urlpatterns = [
 
     # Vozac update_status_vozaca
     path('vozaci/update-status/<int:pk>/', views.update_status_vozaca, name='update_status_vozaca'),
+
+    # Isporuke
+    path('isporuke/', views.list_isporuke, name='list_isporuke'),
+    path('isporuke/aktivne/', views.list_aktivne_isporuke, name='list_aktivne_isporuke'),
+    path('isporuke/debug/', views.debug_sve_isporuke, name='debug_sve_isporuke'),
+    # notifikacije
+    path('notifikacije/', views.list_notifikacije, name='list_notifikacije'),
+    path('notifikacije/<int:pk>/mark-as-read/', views.mark_notifikacija_as_read, name='mark_notifikacija_as_read'),
+    path('notifikacije/user/<int:user_id>/', views.list_user_notifikacije, name='list_user_notifikacije'),
+
+
 ]

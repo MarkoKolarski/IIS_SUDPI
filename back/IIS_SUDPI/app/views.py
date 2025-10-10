@@ -2010,19 +2010,61 @@ def list_rute(request):
 # isporuka
 @api_view(['GET'])
 def list_isporuke(request):
-    isporuke = Isporuka.objects.select_related('vozilo', 'ruta').all()
+    #isporuke = Isporuka.objects.select_related('vozilo', 'ruta').all()
+    isporuke = Isporuka.objects.all()
     serializer = IsporukaSerializer(isporuke, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_aktivne_isporuke(request):
-    aktivne_isporuke = Isporuka.objects.select_related('vozilo', 'ruta').filter(
-        status__in=['aktivna'])
-    
-    serializer = IsporukaSerializer(aktivne_isporuke, many=True)
-    return Response(serializer.data)
+    try:
+            aktivne_isporuke = Isporuka.objects.filter(
+                status ='aktivna' 
+                #status__in=['aktivna', 'aktivna_nova']
+            ).select_related('ruta', 'vozilo', 'vozac')
+            isporuke_data = []
+            for isporuka in aktivne_isporuke:
+                isporuke_data.append({
+                    'sifra_i': isporuka.sifra_i,
+                    'naziv': f"Isporuka {isporuka.sifra_i}",
+                    'datum_kreiranja': isporuka.datum_kreiranja,
+                    'kolicina_kg': getattr(isporuka, 'kolicina_kg', None),
+                    'rok_isporuke': getattr(isporuka, 'rok_is', 'N/A'),
+                    'status': isporuka.status,
+                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+                })
+            
+            return Response(isporuke_data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju aktivnih isporuka: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def debug_sve_isporuke(request):
+    """
+    Privremeni endpoint za debug - prikazuje sve isporuke i njihove statuse
+    """
+    try:
+        sve_isporuke = Isporuka.objects.all().select_related('ruta')
+        
+        isporuke_data = []
+        for isporuka in sve_isporuke:
+            isporuke_data.append({
+                'sifra_i': isporuka.sifra_i,
+                'naziv': f"Isporuka {isporuka.sifra_i}",
+                'status': isporuka.status,  # OVO ĆE NAM POKAZATI STVARNE STATUS U BAZI
+                'datum_kreiranja': isporuka.datum_kreiranja,
+                'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+            })
+        
+        return Response({
+            'ukupno_isporuka': sve_isporuke.count(),
+            'isporuke': isporuke_data
+        })
+    except Exception as e:
+        return Response({'detail': f'Greška: {str(e)}'}, status=500)
 # upozorenje
 @api_view(['GET'])
 def list_upozorenja(request):
@@ -2058,6 +2100,20 @@ def mark_notifikacija_as_read(request, pk):
     notifikacija.procitana_n = True
     notifikacija.save()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_user_notifikacije(request, user_id):
+    try:
+        notifikacije = Notifikacija.objects.select_related('korisnik').filter(
+            korisnik_id=user_id
+        ).order_by('-datum_n') 
+        
+        serializer = NotifikacijaSerializer(notifikacije, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju notifikacija za korisnika {user_id}: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])

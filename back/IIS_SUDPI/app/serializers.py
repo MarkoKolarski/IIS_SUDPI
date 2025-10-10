@@ -387,7 +387,7 @@ class TemperaturaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class NotifikacijaSerializer(serializers.ModelSerializer):
-    korisnik_info = serializers.CharField(source='korisnik.ime', read_only=True)
+    korisnik_info = serializers.CharField(source='korisnik.ime_k', read_only=True)
     
     class Meta:
         model = Notifikacija
@@ -416,11 +416,18 @@ class RutaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ruta
         fields = '__all__'
+class VozacSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = Vozac
+        fields = '__all__'
+        #fields = ['sifra_vo', 'ime_vo', 'prz_vo', 'br_voznji', 'status', 'status_display']
 
 class IsporukaSerializer(serializers.ModelSerializer):
     ruta_info = serializers.CharField(source='ruta.polazna_tacka', read_only=True)
     vozilo_info = serializers.CharField(source='vozilo.registracija', read_only=True)
-    vozac_info = serializers.CharField(source='vozac.ime', read_only=True)
+    vozac_info = serializers.CharField(source='vozac.ime_vo', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     ruta = RutaSerializer(read_only=True)
     vozilo = VoziloSerializer(read_only=True)
@@ -507,11 +514,3 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = ['sifra_k', 'ime_k', 'prz_k', 'mail_k', 'tip_k', 'tip_k_display']
         read_only_fields = ['sifra_k']
-
-class VozacSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
-    class Meta:
-        model = Vozac
-        fields = '__all__'
-        #fields = ['sifra_vo', 'ime_vo', 'prz_vo', 'br_voznji', 'status', 'status_display']
