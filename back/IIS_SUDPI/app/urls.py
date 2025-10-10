@@ -1,7 +1,18 @@
-from django.urls import path
+from django.urls import path, include
+from . import views
+from . import views_mv
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
 from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment
-from .views_mv import suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, busy_visit_slots, expiring_certificates
+from .views_mv import suppliers, expiring_certificates, visits_list, visit_detail, create_visit, busy_visit_slots, complaints_list, create_complaint
+from .views_mv2 import (
+    check_service_health, sync_suppliers, sync_complaints, sync_certificates, 
+    get_supplier_report, get_supplier_comparison_report, get_material_suppliers_report, 
+    create_complaint_with_rating, get_supplier_risk_analysis, get_alternative_suppliers,
+    get_suppliers, get_material_suppliers_report_post, get_performance_trends_report,
+    get_risk_analysis_report, get_alternative_suppliers_post, get_supplier_performance_trends,
+    get_material_market_dynamics, supplier_analysis_dashboard, supplier_complaint_transaction
+)
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
     path('', index, name='index'),
@@ -58,4 +69,28 @@ urlpatterns = [
     
     # Grafikon artikala po nedeljama endpoint
     path('artikli/grafikon-po-nedeljama/', artikli_grafikon_po_nedeljama, name='artikli-grafikon-po-nedeljama'),
+
+    # Supplier Analysis Dashboard
+    path('supplier-analysis/', supplier_analysis_dashboard, name='supplier_analysis_dashboard'),
+    path('supplier-complaint-transaction/', supplier_complaint_transaction, name='supplier_complaint_transaction'),
+
+    # Supplier Analysis Microservice integration
+    path('api/supplier-analysis/health/', check_service_health, name='supplier_analysis_health'),
+    path('api/supplier-analysis/sync/suppliers/', sync_suppliers, name='sync_suppliers'),
+    path('api/supplier-analysis/sync/complaints/', sync_complaints, name='sync_complaints'),
+    path('api/supplier-analysis/sync/certificates/', sync_certificates, name='sync_certificates'),
+    path('api/supplier-analysis/reports/supplier/<int:supplier_id>/', get_supplier_report, name='supplier_report'),
+    path('api/supplier-analysis/reports/supplier-comparison/', get_supplier_comparison_report, name='supplier_comparison_report'),
+    path('api/supplier-analysis/reports/material/<str:material_name>/', get_material_suppliers_report, name='material_suppliers_report'),
+    path('api/supplier-analysis/reports/material/', get_material_suppliers_report_post, name='material_suppliers_report_post'),
+    path('api/supplier-analysis/reports/performance-trends/', get_performance_trends_report, name='performance_trends_report'),
+    path('api/supplier-analysis/reports/risk-analysis/', get_risk_analysis_report, name='risk_analysis_report'),
+    path('api/supplier-analysis/complaints/create/', create_complaint_with_rating, name='create_complaint_with_rating'),
+    path('api/supplier-analysis/risk-analysis/', get_supplier_risk_analysis, name='supplier_risk_analysis'),
+    path('api/supplier-analysis/alternative-suppliers/<str:material_name>/', get_alternative_suppliers, name='alternative_suppliers'),
+    path('api/supplier-analysis/analysis/alternative-suppliers/', get_alternative_suppliers_post, name='alternative_suppliers_post'),
+    path('api/supplier-analysis/analysis/supplier-performance-trends/', get_supplier_performance_trends, name='supplier_performance_trends'),
+    path('api/supplier-analysis/analysis/material-market-dynamics/', get_material_market_dynamics, name='material_market_dynamics'),
+    path('api/supplier-analysis/suppliers/', get_suppliers, name='get_suppliers'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 ]

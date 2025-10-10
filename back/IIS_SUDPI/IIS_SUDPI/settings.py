@@ -161,13 +161,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Django REST Framework settings
+# Django REST Framework settings - Update to allow unauthenticated access
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # Allow any access by default
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -209,6 +209,9 @@ BACKEND_URL = 'http://localhost:8000'
 
 # MIKROSERVIS - InfluxDB Financial Events Analysis Service
 MIKROSERVIS_URL = env('MIKROSERVIS_URL', default='http://localhost:8001')
+
+# MIKROSERVIS - Supplier Analysis Microservice Settings
+SUPPLIER_ANALYSIS_MS_URL = os.environ.get('SUPPLIER_ANALYSIS_MS_URL', 'http://localhost:8001/')
 
 # Logging konfiguracija za automatsku proveru artikala
 LOGGING = {
