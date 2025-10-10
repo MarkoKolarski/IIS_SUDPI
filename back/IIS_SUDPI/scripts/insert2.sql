@@ -168,6 +168,39 @@ BEGIN
       TRUNC(DBMS_RANDOM.VALUE(2, 50))
     );
   END LOOP;
+
+  FOR i IN 31..40 LOOP
+    INSERT INTO REKLAMACIJA (
+      REKLAMACIJA_ID,
+      DATUM_PRIJEMA,
+      STATUS,
+      OPIS_PROBLEMA,
+      VREME_TRAJANJA,
+      JACINA_ZALBE,
+      KONTROLOR_ID,
+      DOBAVLJAC_ID
+    ) VALUES (
+      i,
+      TRUNC(SYSDATE - DBMS_RANDOM.VALUE(1, 60)),
+      CASE MOD(i, 4)
+        WHEN 0 THEN 'prijem'
+        WHEN 1 THEN 'analiza'
+        WHEN 2 THEN 'odgovor'
+        ELSE 'zatvaranje'
+      END,
+      CASE MOD(i, 5)
+        WHEN 0 THEN 'Oštećena ambalaža tokom transporta'
+        WHEN 1 THEN 'Neusaglašenost kvaliteta sa dokumentacijom'
+        WHEN 2 THEN 'Kašnjenje isporuke više od dozvoljenog roka'
+        WHEN 3 THEN 'Nekompletna dokumentacija o poreklu sirovine'
+        ELSE 'Pogrešno isporučena količina'
+      END,
+      TRUNC(DBMS_RANDOM.VALUE(1, 14)),
+      TRUNC(DBMS_RANDOM.VALUE(1, 10)),
+      1,
+      42
+    );
+  END LOOP;
   
   COMMIT;
 END;
