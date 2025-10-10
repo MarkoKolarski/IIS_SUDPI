@@ -56,7 +56,6 @@ def sync_suppliers(request):
                 "selected": supplier.izabran
             }
             
-            # We don't need to check if it exists first - our service now handles that
             result = supplier_service.create_supplier(supplier_data)
             
             if result:

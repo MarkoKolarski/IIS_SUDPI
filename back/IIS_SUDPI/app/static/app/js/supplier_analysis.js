@@ -13,9 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Load suppliers list
   loadSuppliers();
 
-  // Load unique material names
-  loadMaterials();
-
   // Setup event listeners
   setupEventListeners();
 });
@@ -70,23 +67,6 @@ function loadSuppliers() {
         supplierCompare.appendChild(option2);
       });
 
-      hideSpinner();
-    })
-    .catch((error) => {
-      console.error("Error loading suppliers:", error);
-      hideSpinner();
-      showAlert(
-        "Greška pri učitavanju dobavljača. Pokušajte ponovo.",
-        "danger"
-      );
-    });
-}
-
-function loadMaterials() {
-  showSpinner();
-  fetch("/api/supplier-analysis/suppliers/") // Changed from "/suppliers/"
-    .then((response) => response.json())
-    .then((suppliers) => {
       // Extract unique material names
       const materialNames = [...new Set(suppliers.map((s) => s.ime_sirovine))];
 
@@ -115,10 +95,10 @@ function loadMaterials() {
       hideSpinner();
     })
     .catch((error) => {
-      console.error("Error loading materials:", error);
+      console.error("Error loading suppliers:", error);
       hideSpinner();
       showAlert(
-        "Greška pri učitavanju materijala. Pokušajte ponovo.",
+        "Greška pri učitavanju dobavljača. Pokušajte ponovo.",
         "danger"
       );
     });

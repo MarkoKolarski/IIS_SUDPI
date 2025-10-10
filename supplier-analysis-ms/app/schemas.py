@@ -57,7 +57,8 @@ class ComplaintBase(BaseModel):
 class ComplaintCreate(ComplaintBase):
     supplier_id: int
     controller_id: int
-    
+    reception_date: Optional[date] = None  # Make reception_date optional
+
 class ComplaintUpdate(BaseModel):
     status: Optional[str] = None
     problem_description: Optional[str] = None

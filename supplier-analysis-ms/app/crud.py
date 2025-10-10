@@ -200,6 +200,14 @@ def create_complaint(complaint_data: Dict[str, Any]) -> Dict[str, Any]:
         max_id = result[0]['max_id'] if result else 0
         complaint_data['complaint_id'] = max_id + 1
     
+    # Ensure reception_date is set and properly formatted
+    if 'reception_date' not in complaint_data or complaint_data['reception_date'] is None:
+        complaint_data['reception_date'] = datetime.now().date().isoformat()
+    elif isinstance(complaint_data.get('reception_date'), date):
+        complaint_data['reception_date'] = complaint_data['reception_date'].isoformat()
+    elif isinstance(complaint_data.get('reception_date'), datetime):
+        complaint_data['reception_date'] = complaint_data['reception_date'].date().isoformat()
+    
     # First create the complaint node
     create_query = """
     CREATE (c:Complaint {
@@ -214,12 +222,6 @@ def create_complaint(complaint_data: Dict[str, Any]) -> Dict[str, Any]:
     })
     RETURN c
     """
-    
-    # Convert date to string
-    if isinstance(complaint_data.get('reception_date'), date):
-        complaint_data['reception_date'] = complaint_data['reception_date'].isoformat()
-    else:
-        complaint_data['reception_date'] = datetime.now().date().isoformat()
     
     # Create the complaint
     result = neo4j_db.execute_write(create_query, complaint_data)
@@ -239,6 +241,71 @@ def create_complaint(complaint_data: Dict[str, Any]) -> Dict[str, Any]:
     
     return result
 
+def get_complaint(complaint_id: int) -> Dict[str, Any]:
+    """
+    Get a complaint by ID
+    """
+    query = """
+    MATCH (c:Complaint {complaint_id: $complaint_id})
+    RETURN c
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query, {"complaint_id": complaint_id})
+    return result[0]['c'] if result else None
+
+def get_all_complaints() -> List[Dict[str, Any]]:
+    """
+    Get all complaints in the system
+    """
+    query = """
+    MATCH (c:Complaint)
+    RETURN c
+    ORDER BY c.reception_date DESC
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query)
+    return [record['c'] for record in result]
+
+def update_complaint(complaint_id: int, complaint_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Update a complaint
+    """
+    neo4j_db = get_db()
+    set_clauses = []
+    
+    for key, value in complaint_data.items():
+        if value is not None and key != 'complaint_id':  # Don't update the ID
+            if isinstance(value, date):
+                value = value.isoformat()
+            set_clauses.append(f"c.{key} = ${key}")
+            
+    if not set_clauses:
+        return get_complaint(complaint_id)
+        
+    query = f"""
+    MATCH (c:Complaint {{complaint_id: $complaint_id}})
+    SET {', '.join(set_clauses)}
+    RETURN c
+    """
+    
+    params = complaint_data.copy()
+    params['complaint_id'] = complaint_id
+    
+    result = neo4j_db.execute_write(query, params)
+    return result
+
+def delete_complaint(complaint_id: int) -> bool:
+    """
+    Delete a complaint
+    """
+    query = """
+    MATCH (c:Complaint {complaint_id: $complaint_id})
+    DETACH DELETE c
+    """
+    neo4j_db = get_db()
+    neo4j_db.execute_write(query, {"complaint_id": complaint_id})
+    return True
+
 # Certificate CRUD Operations
 def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -255,6 +322,12 @@ def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
             # If certificate exists, update it instead of creating a new one
             return update_certificate(certificate_id, certificate_data)
         
+        if isinstance(certificate_data.get('issue_date'), date):
+            certificate_data['issue_date'] = certificate_data['issue_date'].isoformat()
+        
+        if isinstance(certificate_data.get('expiry_date'), date):
+            certificate_data['expiry_date'] = certificate_data['expiry_date'].isoformat()
+            
         create_query = """
         CREATE (cert:Certificate {
             certificate_id: $certificate_id,
@@ -266,13 +339,6 @@ def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
         })
         RETURN cert
         """
-        
-        # Convert dates to string
-        if isinstance(certificate_data.get('issue_date'), date):
-            certificate_data['issue_date'] = certificate_data['issue_date'].isoformat()
-        
-        if isinstance(certificate_data.get('expiry_date'), date):
-            certificate_data['expiry_date'] = certificate_data['expiry_date'].isoformat()
         
         # Create the certificate
         result = neo4j_db.execute_write(create_query, certificate_data)
@@ -319,6 +385,19 @@ def get_certificate(certificate_id: int) -> Dict[str, Any]:
     neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {"certificate_id": certificate_id})
     return result[0]['cert'] if result else None
+
+def get_all_certificates() -> List[Dict[str, Any]]:
+    """
+    Get all certificates in the system
+    """
+    query = """
+    MATCH (cert:Certificate)
+    RETURN cert
+    ORDER BY cert.issue_date DESC
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query)
+    return [record['cert'] for record in result]
 
 def update_certificate(certificate_id: int, certificate_data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -526,6 +605,19 @@ def get_supplier_complaints(supplier_id: int) -> List[Dict[str, Any]]:
     result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
     return [record['c'] for record in result]
 
+def get_all_complaints() -> List[Dict[str, Any]]:
+    """
+    Get all complaints in the system
+    """
+    query = """
+    MATCH (c:Complaint)
+    RETURN c
+    ORDER BY c.reception_date DESC
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query)
+    return [record['c'] for record in result]
+
 def get_supplier_certificates(supplier_id: int) -> List[Dict[str, Any]]:
     """
     Get all certificates for a supplier
@@ -536,6 +628,19 @@ def get_supplier_certificates(supplier_id: int) -> List[Dict[str, Any]]:
     """
     neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
+    return [record['cert'] for record in result]
+
+def get_all_certificates() -> List[Dict[str, Any]]:
+    """
+    Get all certificates in the system
+    """
+    query = """
+    MATCH (cert:Certificate)
+    RETURN cert
+    ORDER BY cert.issue_date DESC
+    """
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query)
     return [record['cert'] for record in result]
 
 # Complex Query 6: Advanced supplier performance analysis with multiple WITH clauses

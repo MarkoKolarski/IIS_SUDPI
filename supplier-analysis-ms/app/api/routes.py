@@ -158,6 +158,12 @@ def create_complaint(complaint: ComplaintCreate):
     try:
         complaint_dict = complaint.dict()
         complaint_dict["status"] = "prijem"
+        
+        # Ensure reception_date is set
+        if "reception_date" not in complaint_dict or complaint_dict["reception_date"] is None:
+            complaint_dict["reception_date"] = date.today().isoformat()
+        elif isinstance(complaint_dict.get('reception_date'), date):
+            complaint_dict["reception_date"] = complaint_dict["reception_date"].isoformat()
             
         result = crud.create_complaint(complaint_dict)
         
@@ -206,23 +212,22 @@ def get_supplier_complaints(supplier_id: int = Path(..., description="The ID of 
         logging.error(f"Error fetching complaints: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching complaints: {str(e)}")
 
+@router.get("/complaints/", response_model=List[Dict[str, Any]])
+def get_all_complaints():
+    """Get all complaints"""
+    try:
+        complaints = crud.get_all_complaints()
+        return safe_serialize(complaints)
+    except Exception as e:
+        logging.error(f"Error fetching all complaints: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching all complaints: {str(e)}")
+
 # Certificate endpoints
 @router.post("/certificates/", response_model=Dict[str, Any])
 def create_certificate(certificate: CertificateCreate):
     """Create a new certificate"""
     try:
         certificate_dict = certificate.dict()
-        
-        # Generate certificate ID if not provided
-        if not certificate_dict.get("certificate_id"):
-            # Get max certificate ID from existing certificates
-            existing_certificates = crud.get_supplier_certificates(certificate_dict["supplier_id"])
-            max_id = 0
-            for c in existing_certificates:
-                if "certificate_id" in c and isinstance(c["certificate_id"], int) and c["certificate_id"] > max_id:
-                    max_id = c["certificate_id"]
-            certificate_dict["certificate_id"] = max_id + 1
-            
         result = crud.create_certificate(certificate_dict)
         
         # Check if it was an update operation
@@ -235,6 +240,16 @@ def create_certificate(certificate: CertificateCreate):
     except Exception as e:
         logging.error(f"Error creating certificate: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating certificate: {str(e)}")
+
+@router.get("/certificates/", response_model=List[Dict[str, Any]])
+def get_all_certificates():
+    """Get all certificates"""
+    try:
+        certificates = crud.get_all_certificates()
+        return safe_serialize(certificates)
+    except Exception as e:
+        logging.error(f"Error fetching all certificates: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching all certificates: {str(e)}")
 
 @router.get("/certificates/{certificate_id}", response_model=Dict[str, Any])
 def get_certificate(certificate_id: int = Path(..., description="The ID of the certificate to get")):
