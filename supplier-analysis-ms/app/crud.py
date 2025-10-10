@@ -253,7 +253,6 @@ def create_certificate(certificate_data: Dict[str, Any]) -> Dict[str, Any]:
         
         if existing:
             # If certificate exists, update it instead of creating a new one
-            logging.info(f"Certificate with ID {certificate_id} already exists. Updating instead.")
             return update_certificate(certificate_id, certificate_data)
         
         create_query = """
