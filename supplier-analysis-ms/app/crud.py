@@ -3,7 +3,7 @@ from datetime import date, datetime
 import logging
 
 from app.database import neo4j_db
-from neo4j.exceptions import ClientError
+from neo4j.exceptions import ClientError, ConstraintError
 
 # Supplier CRUD Operations
 def create_supplier(supplier_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -42,14 +42,20 @@ def create_supplier(supplier_data: Dict[str, Any]) -> Dict[str, Any]:
         
         result = neo4j_db.execute_write(query, supplier_data)
         return result
-    except Exception as e:
-        logging.error(f"Error creating supplier: {e}")
-        # If this is a constraint violation, try updating instead
-        if "already exists" in str(e):
+    except ClientError as e:
+        # More specific handling for Neo4j constraint violations
+        if "ConstraintValidation" in str(e) and "already exists" in str(e):
+            logging.warning(f"Constraint violation detected: {e}. Attempting to update instead.")
             try:
                 return update_supplier(supplier_data['supplier_id'], supplier_data)
             except Exception as update_error:
-                logging.error(f"Error updating supplier: {update_error}")
+                logging.error(f"Error updating supplier after constraint violation: {update_error}")
+                raise ValueError(f"Failed to create or update supplier: {update_error}")
+        else:
+            logging.error(f"Neo4j client error: {e}")
+            raise ValueError(f"Database error: {e}")
+    except Exception as e:
+        logging.error(f"Unexpected error creating supplier: {e}")
         raise ValueError(f"Error creating supplier: {e}")
 
 def get_supplier(supplier_id: int) -> Dict[str, Any]:
