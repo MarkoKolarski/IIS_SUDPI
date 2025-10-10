@@ -314,16 +314,20 @@ class ReportGenerator:
             ratings = [float(s.get('rating', 0)) for s in suppliers]
             
             plt.figure(figsize=(8, 4))
-            bars = plt.bar(labels, ratings, color='steelblue')
+            x_pos = np.arange(len(labels))  # Create x positions for bars
+            bars = plt.bar(x_pos, ratings, color='steelblue')
             plt.xlabel('Supplier')
             plt.ylabel('Rating (0-10)')
             plt.title('Supplier Rating Comparison')
+            plt.xticks(x_pos, labels)  # Set x-tick positions and labels
             plt.ylim(0, 10)
             
             # Add rating values on top of bars
             for bar, rating in zip(bars, ratings):
                 plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
                          f"{rating:.1f}", ha='center')
+            
+            plt.tight_layout()  # Add tight_layout for better spacing
             
             # Save chart to buffer
             img_buffer = io.BytesIO()
