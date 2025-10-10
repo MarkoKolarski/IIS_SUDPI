@@ -342,15 +342,19 @@ class ReportGenerator:
             prices = [float(s.get('price', 0)) for s in suppliers]
             
             plt.figure(figsize=(8, 4))
-            bars = plt.bar(labels, prices, color='coral')
+            x_pos = np.arange(len(labels))  # Create x positions for bars
+            bars = plt.bar(x_pos, prices, color='coral')
             plt.xlabel('Supplier')
             plt.ylabel('Price (RSD)')
             plt.title('Price Comparison for ' + suppliers[0].get('material_name', 'Material'))
+            plt.xticks(x_pos, labels)  # Set x-tick positions and labels
             
             # Add price values on top of bars
             for bar, price in zip(bars, prices):
-                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
+                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + max(prices)*0.01, 
                          f"{price:.2f}", ha='center')
+            
+            plt.tight_layout()  # Add tight_layout for better spacing
             
             # Save chart to buffer
             img_buffer = io.BytesIO()
