@@ -6,7 +6,7 @@ echo "Waiting for Neo4j to be ready..."
 sleep 15
 
 echo "Checking and fixing duplicate supplier IDs..."
-python -m scripts.fix_supplier_ids
+python -m scripts.seed_data
 
 echo "Starting supplier analysis microservice..."
 exec "$@"
