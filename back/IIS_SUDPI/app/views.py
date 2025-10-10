@@ -16,7 +16,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import UserProfileUpdateForm
-from .models import Faktura, User, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+from .models import Faktura, User, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija, Temperatura
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -40,6 +40,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 import logging
 import uuid
+from django.utils.dateparse import parse_datetime
 
 # Postavi logging
 logger = logging.getLogger(__name__)
@@ -2025,3 +2026,90 @@ def artikli_grafikon_po_nedeljama(request):
 #         'is_own_profile': user == request.user,
 #     }
 #     return render(request, 'user_profile_update.html', context)
+
+#NAIS TRANSAKCIJA ILIJA
+"""@api_view(['POST'])
+@permission_classes([AllowAny]) 
+def kreiraj_merenje(request):
+    try:
+        skladiste_id = request.data.get("skladiste_id")
+        vrednost = request.data.get("vrednost")
+        vreme_merenja = request.data.get("vreme_merenja")
+
+        if not all([skladiste_id, vrednost, vreme_merenja]):
+            return Response({"error": "Nedostaju parametri"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Parsiranje ISO stringa iz Flask-a u Python datetime
+        vreme_dt = parse_datetime(vreme_merenja)
+        if vreme_dt is None:
+            return Response({"error": "Neispravan format vremena"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Konverzija vrednosti u Decimal
+        try:
+            vrednost = Decimal(str(vrednost))
+        except Exception:
+            return Response({"error": "Neispravna vrednost temperature"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            skladiste = Skladiste.objects.get(pk=skladiste_id)
+            merenje = Temperatura.objects.create(
+                skladiste=skladiste,
+                vrednost=vrednost,
+                vreme_merenja=vreme_dt
+            )
+
+        return Response({
+            "id_merenja": merenje.id_merenja,
+            "skladiste_id": merenje.skladiste.id,
+            "vrednost": str(merenje.vrednost),
+            "vreme_merenja": merenje.vreme_merenja.isoformat()
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)"""
+
+logger = logging.getLogger(__name__)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def kreiraj_merenje(request):
+    try:
+        skladiste_id = request.data.get("skladiste_id")
+        vrednost = request.data.get("vrednost")
+        vreme_merenja = request.data.get("vreme_merenja")
+
+        if not all([skladiste_id, vrednost, vreme_merenja]):
+            return Response({"error": "Nedostaju parametri"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Parsiranje ISO stringa iz Flask-a u Python datetime
+        vreme_dt = parse_datetime(vreme_merenja)
+        if vreme_dt is None:
+            return Response({"error": "Neispravan format vremena"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Konverzija vrednosti u Decimal
+        try:
+            vrednost = Decimal(str(vrednost))
+        except Exception:
+            return Response({"error": "Neispravna vrednost temperature"}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            skladiste = Skladiste.objects.get(pk=skladiste_id)
+            merenje = Temperatura.objects.create(
+                skladiste=skladiste,
+                vrednost=vrednost,
+                vreme_merenja=vreme_dt
+            )
+
+        return Response({
+            "id_merenja": merenje.id_merenja,
+            "skladiste_id": merenje.skladiste.sifra_s,
+            "vrednost": str(merenje.vrednost),
+            "vreme_merenja": merenje.vreme_merenja.isoformat()
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        # Ovde će logger ispisati ceo stack trace u konzolu
+        logger.exception("Greška u kreiraj_merenje")
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

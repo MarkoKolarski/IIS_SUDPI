@@ -451,7 +451,7 @@ class Popust(models.Model):
 class Temperatura(models.Model):
     id_merenja = models.AutoField(primary_key=True)
     vrednost = models.DecimalField(max_digits=5, decimal_places=2, help_text="Temperatura u Celzijusima")
-    vreme_merenja = models.DateTimeField(auto_now_add=True)
+    vreme_merenja = models.DateTimeField()
     
     # Veza sa skladištem (beleži se u - 1,N : 1,N)
     skladiste = models.ForeignKey(Skladiste, on_delete=models.CASCADE, related_name='temperature')

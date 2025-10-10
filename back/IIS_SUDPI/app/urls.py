@@ -1,6 +1,6 @@
 from django.urls import path
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment
+from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment, kreiraj_merenje
 from .views_mv import suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, busy_visit_slots, expiring_certificates
 
 urlpatterns = [
@@ -58,4 +58,7 @@ urlpatterns = [
     
     # Grafikon artikala po nedeljama endpoint
     path('artikli/grafikon-po-nedeljama/', artikli_grafikon_po_nedeljama, name='artikli-grafikon-po-nedeljama'),
+
+    # NAIS TRANSAKCIJA ILIJA
+    path('api/temperatura/', kreiraj_merenje, name='kreiraj_merenje'),
 ]
