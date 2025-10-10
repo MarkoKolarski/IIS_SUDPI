@@ -1,16 +1,13 @@
 import logging
+import tempfile
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse, FileResponse
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-import json
-import tempfile
-import io
 from datetime import datetime
 
 from .models import Dobavljac, Reklamacija, Sertifikat, User
@@ -21,6 +18,7 @@ logger = logging.getLogger(__name__)
 supplier_service = SupplierAnalysisService()
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def check_service_health(request):
     """
     Check if the supplier analysis microservice is available
@@ -29,6 +27,7 @@ def check_service_health(request):
     return Response({"status": "online" if health_status else "offline"})
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def sync_suppliers(request):
     """
     Synchronize suppliers between Django and the microservice
@@ -85,6 +84,7 @@ def sync_suppliers(request):
         )
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def sync_complaints(request):
     """
     Synchronize complaints between Django and the microservice
@@ -132,6 +132,7 @@ def sync_complaints(request):
         )
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def sync_certificates(request):
     """
     Synchronize certificates between Django and the microservice
@@ -177,6 +178,7 @@ def sync_certificates(request):
         )
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_supplier_report(request, supplier_id):
     """
     Get a PDF report for a specific supplier
@@ -220,6 +222,8 @@ def get_supplier_report(request, supplier_id):
         )
 
 @api_view(['POST'])
+@csrf_exempt
+@permission_classes([AllowAny])
 def get_supplier_comparison_report(request):
     """
     Get a PDF report comparing multiple suppliers
@@ -272,6 +276,7 @@ def get_supplier_comparison_report(request):
         )
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_material_suppliers_report(request, material_name):
     """
     Get a PDF report of all suppliers for a specific material
@@ -307,6 +312,8 @@ def get_material_suppliers_report(request, material_name):
         )
 
 @api_view(['POST'])
+@csrf_exempt
+@permission_classes([AllowAny])
 def create_complaint_with_rating(request):
     """
     Create a complaint and update supplier rating in both systems (transactional)
@@ -333,8 +340,19 @@ def create_complaint_with_rating(request):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # Get the controller
-        kontrolor = request.user.kontrolor_kvaliteta
+        # Get the controller - use a default if not authenticated
+        if hasattr(request, 'user') and hasattr(request.user, 'kontrolor_kvaliteta'):
+            kontrolor = request.user.kontrolor_kvaliteta
+        else:
+            # Use the first controller available or create a dummy one
+            kontrolors = User.objects.filter(tip_k='kontrolor_kvaliteta')
+            if kontrolors.exists():
+                kontrolor = kontrolors.first().kontrolor_kvaliteta
+            else:
+                return Response(
+                    {"error": "No controllers found in the system"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         
         # 1. Create the complaint in Django
         django_complaint = Reklamacija.objects.create(
@@ -389,6 +407,7 @@ def create_complaint_with_rating(request):
         )
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_supplier_risk_analysis(request):
     """
     Get supplier risk analysis from the microservice
@@ -412,6 +431,7 @@ def get_supplier_risk_analysis(request):
         )
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_alternative_suppliers(request, material_name):
     """
     Get alternative suppliers for a material
