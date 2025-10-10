@@ -163,9 +163,47 @@ class SupplierAnalysisService:
 
     def get_material_suppliers_report(self, material_name: str) -> Optional[bytes]:
         """
-        Get a PDF report of all suppliers for a specific material
+        Get a PDF report of all suppliers for a specific material (POST method)
         """
-        response = self._make_request('get', f'reports/material/{material_name}', stream=True)
+        response = self._make_request('post', 'reports/material', data={'material_name': material_name}, 
+                                    stream=True)
         if response:
             return response.content
         return None
+
+    def get_performance_trends_report(self) -> Optional[bytes]:
+        """
+        Get a comprehensive performance trends report
+        """
+        response = self._make_request('get', 'reports/performance-trends', stream=True)
+        if response:
+            return response.content
+        return None
+
+    def get_risk_analysis_report(self) -> Optional[bytes]:
+        """
+        Get a comprehensive risk analysis report
+        """
+        response = self._make_request('get', 'reports/risk-analysis', stream=True)
+        if response:
+            return response.content
+        return None
+
+    def get_supplier_performance_trends(self) -> Dict[str, Any]:
+        """
+        Get advanced supplier performance analysis with trends
+        """
+        return self._make_request('get', 'analysis/supplier-performance-trends')
+
+    def get_material_market_dynamics(self) -> Dict[str, Any]:
+        """
+        Get material market dynamics analysis
+        """
+        return self._make_request('get', 'analysis/material-market-dynamics')
+
+    def get_alternative_suppliers_post(self, material_name: str, min_rating: float = 0.0) -> Dict[str, Any]:
+        """
+        Get alternative suppliers for a material (POST method for UTF-8 support)
+        """
+        return self._make_request('post', 'analysis/alternative-suppliers', 
+                                data={'material_name': material_name, 'min_rating': min_rating})

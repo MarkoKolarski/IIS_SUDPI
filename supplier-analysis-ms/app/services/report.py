@@ -6,7 +6,7 @@ import os
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
+from reportlab.lib import colors  # This line should be here
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.linecharts import LineChart
@@ -294,7 +294,7 @@ class ReportGenerator:
             
             # Style the table
             comparison_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.white),  # Changed from colors.grey
                 ('BACKGROUND', (0, 1), (0, -1), colors.lightgrey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
@@ -585,9 +585,283 @@ class ReportGenerator:
                 f"Price: {highest_rated.get('price', 'N/A')} RSD",
                 self.styles["Normal"]
             ))
-            
         else:
             story.append(Paragraph(f"No suppliers found for {material_name}.", self.styles["Normal"]))
+        
+        # Build the PDF
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
+    
+    def generate_performance_trends_report(self) -> bytes:
+        """
+        Generate a comprehensive performance trends report for all suppliers
+        """
+        # Get performance trends data
+        trends_data = crud.analyze_supplier_performance_trends()
+        market_data = crud.analyze_material_market_dynamics()
+        
+        # Create PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        
+        # Collect the story
+        story = []
+        
+        # Title
+        title_style = self.styles["Heading1"]
+        story.append(Paragraph("Supplier Performance Trends Analysis Report", title_style))
+        story.append(Spacer(1, 0.25 * inch))
+        
+        # Executive Summary
+        story.append(Paragraph("Executive Summary", self.styles["Heading2"]))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        if trends_data:
+            premium_count = len([s for s in trends_data if s.get('performance_category') == 'premium'])
+            problematic_count = len([s for s in trends_data if s.get('performance_category') == 'problematic'])
+            
+            summary_text = f"""
+            This report analyzes {len(trends_data)} suppliers across various materials. 
+            Key findings: {premium_count} suppliers are rated as premium quality, while {problematic_count} 
+            suppliers require immediate attention due to performance issues. 
+            The analysis incorporates complaint patterns, certificate status, and composite performance scores 
+            to provide actionable insights for procurement decisions.
+            """
+            
+            story.append(Paragraph(summary_text, self.styles["Normal"]))
+        else:
+            story.append(Paragraph("No supplier data available for analysis.", self.styles["Normal"]))
+        
+        story.append(Spacer(1, 0.25 * inch))
+        
+        # Performance Categories Distribution
+        if trends_data:
+            story.append(Paragraph("Performance Distribution Analysis", self.styles["Heading2"]))
+            story.append(Spacer(1, 0.1 * inch))
+            
+            # Count suppliers by category
+            categories = {}
+            for supplier in trends_data:
+                cat = supplier.get('performance_category', 'unknown')
+                categories[cat] = categories.get(cat, 0) + 1
+            
+            # Create pie chart
+            plt.figure(figsize=(8, 6))
+            labels = list(categories.keys())
+            sizes = list(categories.values())
+            colors = ['#2E8B57', '#4682B4', '#DAA520', '#DC143C']  # Green, Blue, Gold, Red
+            
+            plt.pie(sizes, labels=labels, colors=colors[:len(labels)], autopct='%1.1f%%', startangle=90)
+            plt.title('Supplier Performance Categories Distribution')
+            plt.axis('equal')
+            
+            # Save chart to buffer
+            img_buffer = io.BytesIO()
+            plt.savefig(img_buffer, format='png', bbox_inches='tight')
+            img_buffer.seek(0)
+            
+            # Add the chart to PDF
+            img = Image(img_buffer, width=6*inch, height=4.5*inch)
+            story.append(img)
+            story.append(Spacer(1, 0.2 * inch))
+            plt.close()
+            
+            # Performance table
+            story.append(Paragraph("Detailed Performance Analysis", self.styles["Heading3"]))
+            
+            # Sort by composite score
+            sorted_suppliers = sorted(trends_data, key=lambda x: float(x.get('final_composite_score', 0)), reverse=True)
+            
+            perf_table_data = [["Supplier", "Material", "Category", "Score", "Complaints", "Certificates", "Recommendation"]]
+            
+            for supplier in sorted_suppliers[:20]:  # Top 20 suppliers
+                perf_table_data.append([
+                    supplier.get('supplier_name', 'N/A')[:15] + ('...' if len(supplier.get('supplier_name', '')) > 15 else ''),
+                    supplier.get('material', 'N/A')[:12] + ('...' if len(supplier.get('material', '')) > 12 else ''),
+                    supplier.get('performance_category', 'N/A').replace('_', ' ').title(),
+                    f"{float(supplier.get('final_composite_score', 0)):.2f}",
+                    str(supplier.get('complaint_count', 0)),
+                    str(supplier.get('certificate_count', 0)),
+                    supplier.get('recommendation', 'N/A')[:20] + ('...' if len(supplier.get('recommendation', '')) > 20 else '')
+                ])
+            
+            perf_table = Table(perf_table_data, colWidths=[1.2*inch, 0.8*inch, 0.8*inch, 0.6*inch, 0.6*inch, 0.6*inch, 1.4*inch])
+            perf_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('PADDING', (0, 0), (-1, -1), 3),
+            ]))
+            
+            story.append(perf_table)
+            story.append(Spacer(1, 0.25 * inch))
+        
+        # Market Analysis Section
+        if market_data:
+            story.append(Paragraph("Market Dynamics Analysis", self.styles["Heading2"]))
+            story.append(Spacer(1, 0.1 * inch))
+            
+            # Market competitiveness chart
+            competitiveness_data = {}
+            for market in market_data:
+                comp = market.get('market_competitiveness', 'unknown')
+                competitiveness_data[comp] = competitiveness_data.get(comp, 0) + 1
+            
+            if competitiveness_data:
+                plt.figure(figsize=(10, 6))
+                materials = [m.get('material', 'Unknown') for m in market_data]
+                supplier_counts = [int(m.get('supplier_count', 0)) for m in market_data]
+                
+                plt.bar(materials[:10], supplier_counts[:10], color='steelblue', alpha=0.7)
+                plt.xlabel('Material')
+                plt.ylabel('Number of Suppliers')
+                plt.title('Market Competition by Material (Top 10)')
+                plt.xticks(rotation=45)
+                plt.tight_layout()
+                
+                # Save chart to buffer
+                img_buffer = io.BytesIO()
+                plt.savefig(img_buffer, format='png', bbox_inches='tight')
+                img_buffer.seek(0)
+                
+                # Add the chart to PDF
+                img = Image(img_buffer, width=7*inch, height=4*inch)
+                story.append(img)
+                story.append(Spacer(1, 0.2 * inch))
+                plt.close()
+            
+            # Market analysis table
+            market_table_data = [["Material", "Suppliers", "Avg Price", "Price Volatility", "Market Risk", "Strategy"]]
+            
+            for market in market_data[:15]:  # Top 15 materials
+                market_table_data.append([
+                    market.get('material', 'N/A')[:12] + ('...' if len(market.get('material', '')) > 12 else ''),
+                    str(market.get('supplier_count', 0)),
+                    f"{float(market.get('average_price', 0)):.0f}",
+                    f"{float(market.get('price_volatility_percent', 0)):.1f}%",
+                    market.get('market_risk', 'N/A').replace('_', ' ').title(),
+                    market.get('procurement_strategy', 'N/A')[:25] + ('...' if len(market.get('procurement_strategy', '')) > 25 else '')
+                ])
+            
+            market_table = Table(market_table_data, colWidths=[1*inch, 0.7*inch, 0.8*inch, 0.8*inch, 0.8*inch, 1.9*inch])
+            market_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.white),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('PADDING', (0, 0), (-1, -1), 3),
+            ]))
+            
+            story.append(market_table)
+        
+        # Recommendations section
+        story.append(Spacer(1, 0.25 * inch))
+        story.append(Paragraph("Strategic Recommendations", self.styles["Heading2"]))
+        story.append(Spacer(1, 0.1 * inch))
+        
+        recommendations = [
+            "1. Focus on building stronger relationships with premium-category suppliers",
+            "2. Implement performance monitoring for problematic suppliers",
+            "3. Diversify supplier base for materials with limited competition",
+            "4. Negotiate volume discounts with reliable suppliers",
+            "5. Establish backup suppliers for critical materials"
+        ]
+        
+        for rec in recommendations:
+            story.append(Paragraph(rec, self.styles["Normal"]))
+            story.append(Spacer(1, 0.05 * inch))
+        
+        # Build the PDF
+        doc.build(story)
+        buffer.seek(0)
+        return buffer.getvalue()
+
+    def generate_risk_analysis_report(self) -> bytes:
+        """
+        Generate a risk analysis report focusing on supplier risks
+        """
+        # Get risk patterns
+        risk_data = crud.identify_supplier_risk_patterns()
+        
+        # Create PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        
+        # Collect the story
+        story = []
+        
+        # Title
+        title_style = self.styles["Heading1"]
+        story.append(Paragraph("Supplier Risk Analysis Report", title_style))
+        story.append(Spacer(1, 0.25 * inch))
+        
+        # Risk Summary
+        if risk_data:
+            high_risk = [s for s in risk_data if s.get('risk_level') == 'high_risk']
+            medium_risk = [s for s in risk_data if s.get('risk_level') == 'medium_risk']
+            low_risk = [s for s in risk_data if s.get('risk_level') == 'low_risk']
+            
+            story.append(Paragraph("Risk Assessment Summary", self.styles["Heading2"]))
+            story.append(Spacer(1, 0.1 * inch))
+            
+            summary_data = [
+                ["Risk Level", "Count", "Percentage"],
+                ["High Risk", str(len(high_risk)), f"{len(high_risk)/len(risk_data)*100:.1f}%"],
+                ["Medium Risk", str(len(medium_risk)), f"{len(medium_risk)/len(risk_data)*100:.1f}%"],
+                ["Low Risk", str(len(low_risk)), f"{len(low_risk)/len(risk_data)*100:.1f}%"],
+                ["Total", str(len(risk_data)), "100.0%"]
+            ]
+            
+            summary_table = Table(summary_data, colWidths=[2*inch, 1*inch, 1.5*inch])
+            summary_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('BACKGROUND', (0, 1), (-1, 1), colors.lightcoral),  # High risk
+                ('BACKGROUND', (0, 2), (-1, 2), colors.lightyellow),  # Medium risk
+                ('BACKGROUND', (0, 3), (-1, 3), colors.lightgreen),  # Low risk
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('PADDING', (0, 0), (-1, -1), 6),
+            ]))
+            
+            story.append(summary_table)
+            story.append(Spacer(1, 0.25 * inch))
+            
+            # High Risk Suppliers Details
+            if high_risk:
+                story.append(Paragraph("High Risk Suppliers - Immediate Action Required", self.styles["Heading2"]))
+                story.append(Spacer(1, 0.1 * inch))
+                
+                high_risk_data = [["Supplier", "Material", "Complaints", "Avg Severity", "Action Required"]]
+                
+                for supplier in high_risk:
+                    high_risk_data.append([
+                        supplier.get('supplier_name', 'N/A'),
+                        supplier.get('material', 'N/A'),
+                        str(supplier.get('complaint_count', 0)),
+                        f"{float(supplier.get('avg_severity', 0)):.1f}",
+                        "Review contract / Find alternatives"
+                    ])
+                
+                high_risk_table = Table(high_risk_data, colWidths=[1.5*inch, 1.2*inch, 0.8*inch, 0.8*inch, 1.7*inch])
+                high_risk_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.darkred),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('PADDING', (0, 0), (-1, -1), 4),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ]))
+                
+                story.append(high_risk_table)
+                story.append(Spacer(1, 0.25 * inch))
+        
+        else:
+            story.append(Paragraph("No risk data available for analysis.", self.styles["Normal"]))
         
         # Build the PDF
         doc.build(story)

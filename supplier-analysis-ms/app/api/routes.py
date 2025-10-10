@@ -398,6 +398,26 @@ def get_supplier_recommendations(
         logging.error(f"Error getting supplier recommendations: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting supplier recommendations: {str(e)}")
 
+@router.get("/analysis/supplier-performance-trends")
+def get_supplier_performance_trends():
+    """Get advanced supplier performance analysis with trends"""
+    try:
+        result = crud.analyze_supplier_performance_trends()
+        return {"trends": safe_serialize(result), "count": len(result)}
+    except Exception as e:
+        logging.error(f"Error analyzing supplier performance trends: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error analyzing supplier performance trends: {str(e)}")
+
+@router.get("/analysis/material-market-dynamics")
+def get_material_market_dynamics():
+    """Get material market dynamics analysis"""
+    try:
+        result = crud.analyze_material_market_dynamics()
+        return {"market_analysis": safe_serialize(result), "count": len(result)}
+    except Exception as e:
+        logging.error(f"Error analyzing material market dynamics: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error analyzing material market dynamics: {str(e)}")
+
 # Report endpoints
 @router.get("/reports/supplier/{supplier_id}", response_class=Response)
 def generate_supplier_report(supplier_id: int = Path(..., description="The ID of the supplier")):
@@ -490,19 +510,89 @@ def generate_supplier_comparison_report_test(
         logging.error(f"Error generating supplier comparison report: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating supplier comparison report: {str(e)}")
 
-@router.get("/reports/material/{material_name}", response_class=Response)
-def generate_material_suppliers_report(material_name: str = Path(..., description="The name of the material")):
-    """Generate a PDF report of all suppliers for a specific material"""
+@router.post("/reports/material", response_class=Response)
+def generate_material_suppliers_report_post(request: MaterialSuppliersReportRequest):
+    """Generate a PDF report of all suppliers for a specific material (POST method for UTF-8 support)"""
     try:
+        material_name = request.material_name
+        min_rating = request.min_rating or 0.0
+        
+        # Get suppliers for this material with minimum rating filter
+        suppliers = crud.find_alternative_suppliers(material_name, min_rating)
+        
         # Generate the report
         pdf_data = report_generator.generate_material_suppliers_report(material_name)
+        
+        # Create a safe filename
+        safe_filename = material_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+        safe_filename = ''.join(c for c in safe_filename if c.isalnum() or c in '_-.')
         
         # Return the PDF
         return Response(
             content=pdf_data,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=material_suppliers_{material_name}.pdf"}
+            headers={"Content-Disposition": f"attachment; filename=material_suppliers_{safe_filename}.pdf"}
         )
     except Exception as e:
         logging.error(f"Error generating material suppliers report: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating material suppliers report: {str(e)}")
+
+@router.get("/reports/material/{material_name}", response_class=Response)
+def generate_material_suppliers_report(material_name: str = Path(..., description="The name of the material")):
+    """Generate a PDF report of all suppliers for a specific material"""
+    try:
+        # URL decode the material name to handle UTF-8 characters
+        import urllib.parse
+        decoded_material_name = urllib.parse.unquote(material_name, encoding='utf-8')
+        
+        # Generate the report with the decoded name
+        pdf_data = report_generator.generate_material_suppliers_report(decoded_material_name)
+        
+        # Create a safe filename by replacing problematic characters
+        safe_filename = decoded_material_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+        # Remove or replace other problematic characters
+        safe_filename = ''.join(c for c in safe_filename if c.isalnum() or c in '_-.')
+        
+        # Return the PDF
+        return Response(
+            content=pdf_data,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=material_suppliers_{safe_filename}.pdf"}
+        )
+    except Exception as e:
+        logging.error(f"Error generating material suppliers report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating material suppliers report: {str(e)}")
+
+@router.get("/reports/performance-trends", response_class=Response)
+def generate_performance_trends_report():
+    """Generate a comprehensive performance trends report"""
+    try:
+        # Generate the report
+        pdf_data = report_generator.generate_performance_trends_report()
+        
+        # Return the PDF
+        return Response(
+            content=pdf_data,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=performance_trends_report.pdf"}
+        )
+    except Exception as e:
+        logging.error(f"Error generating performance trends report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating performance trends report: {str(e)}")
+
+@router.get("/reports/risk-analysis", response_class=Response)
+def generate_risk_analysis_report():
+    """Generate a comprehensive risk analysis report"""
+    try:
+        # Generate the report
+        pdf_data = report_generator.generate_risk_analysis_report()
+        
+        # Return the PDF
+        return Response(
+            content=pdf_data,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=risk_analysis_report.pdf"}
+        )
+    except Exception as e:
+        logging.error(f"Error generating risk analysis report: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating risk analysis report: {str(e)}")

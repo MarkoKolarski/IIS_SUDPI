@@ -8,7 +8,9 @@ from .views_mv2 import (
     check_service_health, sync_suppliers, sync_complaints, sync_certificates, 
     get_supplier_report, get_supplier_comparison_report, get_material_suppliers_report, 
     create_complaint_with_rating, get_supplier_risk_analysis, get_alternative_suppliers,
-    get_suppliers  # Add this import
+    get_suppliers, get_material_suppliers_report_post, get_performance_trends_report,
+    get_risk_analysis_report, get_alternative_suppliers_post, get_supplier_performance_trends,
+    get_material_market_dynamics
 )
 from .views_mv3 import supplier_analysis_dashboard, supplier_complaint_transaction
 from django.contrib.auth.views import LogoutView
@@ -81,9 +83,15 @@ urlpatterns = [
     path('api/supplier-analysis/reports/supplier/<int:supplier_id>/', get_supplier_report, name='supplier_report'),
     path('api/supplier-analysis/reports/supplier-comparison/', get_supplier_comparison_report, name='supplier_comparison_report'),
     path('api/supplier-analysis/reports/material/<str:material_name>/', get_material_suppliers_report, name='material_suppliers_report'),
+    path('api/supplier-analysis/reports/material/', get_material_suppliers_report_post, name='material_suppliers_report_post'),
+    path('api/supplier-analysis/reports/performance-trends/', get_performance_trends_report, name='performance_trends_report'),
+    path('api/supplier-analysis/reports/risk-analysis/', get_risk_analysis_report, name='risk_analysis_report'),
     path('api/supplier-analysis/complaints/create/', create_complaint_with_rating, name='create_complaint_with_rating'),
     path('api/supplier-analysis/risk-analysis/', get_supplier_risk_analysis, name='supplier_risk_analysis'),
     path('api/supplier-analysis/alternative-suppliers/<str:material_name>/', get_alternative_suppliers, name='alternative_suppliers'),
+    path('api/supplier-analysis/analysis/alternative-suppliers/', get_alternative_suppliers_post, name='alternative_suppliers_post'),
+    path('api/supplier-analysis/analysis/supplier-performance-trends/', get_supplier_performance_trends, name='supplier_performance_trends'),
+    path('api/supplier-analysis/analysis/material-market-dynamics/', get_material_market_dynamics, name='material_market_dynamics'),
     path('api/supplier-analysis/suppliers/', get_suppliers, name='get_suppliers'),  # Add the new suppliers endpoint
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 ]

@@ -46,7 +46,7 @@ function checkServiceHealth() {
 
 function loadSuppliers() {
   showSpinner();
-  fetch("/api/supplier-analysis/suppliers/")  // Changed from "/suppliers/"
+  fetch("/api/supplier-analysis/suppliers/") // Changed from "/suppliers/"
     .then((response) => response.json())
     .then((suppliers) => {
       const supplierSelect = document.getElementById("supplierId");
@@ -84,7 +84,7 @@ function loadSuppliers() {
 
 function loadMaterials() {
   showSpinner();
-  fetch("/api/supplier-analysis/suppliers/")  // Changed from "/suppliers/"
+  fetch("/api/supplier-analysis/suppliers/") // Changed from "/suppliers/"
     .then((response) => response.json())
     .then((suppliers) => {
       // Extract unique material names
@@ -308,13 +308,177 @@ function generateMaterialReport() {
     return;
   }
 
-  // Open report in new window
+  // Use POST method to avoid URL encoding issues with UTF-8 characters
+  showSpinner();
+
+  fetch("/api/supplier-analysis/reports/material/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      material_name: materialName,
+      min_rating: 0.0,
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.blob();
+    })
+    .then((blob) => {
+      hideSpinner();
+      // Create URL for the blob and open in new window
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+
+      // Clean up the URL after a delay
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 10000);
+    })
+    .catch((error) => {
+      console.error("Error generating material report:", error);
+      hideSpinner();
+      showAlert("Greška pri generisanju izveštaja za materijal.", "danger");
+    });
+}
+
+function generatePerformanceTrendsReport() {
+  window.open(`/api/supplier-analysis/reports/performance-trends/`, "_blank");
+}
+
+function generateRiskAnalysisReport() {
+  window.open(`/api/supplier-analysis/reports/risk-analysis/`, "_blank");
+}
+
+function findAlternativeSuppliers() {
+  const materialName = document.getElementById("altMaterialName").value;
+  const minRating = document.getElementById("minRating").value;
+
+  if (!materialName) {
+    showAlert("Molimo izaberite materijal.", "warning");
+    return;
+  }
+
+  showSpinner();
+
+  // Use POST method for better UTF-8 support
+  fetch("/api/supplier-analysis/analysis/alternative-suppliers/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({
+      material_name: materialName,
+      min_rating: parseFloat(minRating) || 0.0,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      hideSpinner();
+
+      if (data && data.suppliers) {
+        const alternativeTable = document.getElementById("alternativeTable");
+        alternativeTable.innerHTML = "";
+
+        if (data.suppliers.length === 0) {
+          document.getElementById("alternativeResults").style.display = "block";
+          alternativeTable.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center">Nema alternativnih dobavljača za ovaj materijal</td>
+                        </tr>
+                    `;
+          return;
+        }
+
+        data.suppliers.forEach((supplier) => {
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+                        <td>${supplier.name}</td>
+                        <td>${supplier.rating}/10</td>
+                        <td>${supplier.price} RSD</td>
+                        <td>${supplier.delivery_time} dana</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="generateSupplierReportDirect(${supplier.supplier_id})">
+                                <i class="far fa-file-pdf"></i> Izveštaj
+                            </button>
+                        </td>
+                    `;
+
+          alternativeTable.appendChild(row);
+        });
+
+        document.getElementById("alternativeResults").style.display = "block";
+      }
+    })
+    .catch((error) => {
+      console.error("Error finding alternative suppliers:", error);
+      hideSpinner();
+      showAlert("Greška pri pretraživanju alternativnih dobavljača.", "danger");
+    });
+}
+
+// Helper function to generate supplier report directly
+function generateSupplierReportDirect(supplierId) {
   window.open(
-    `/api/supplier-analysis/reports/material/${encodeURIComponent(
-      materialName
-    )}/`,
+    `/api/supplier-analysis/reports/supplier/${supplierId}/`,
     "_blank"
   );
+}
+
+function showSpinner() {
+  document.getElementById("spinner").classList.add("show");
+}
+
+function hideSpinner() {
+  document.getElementById("spinner").classList.remove("show");
+}
+
+function showAlert(message, type = "info") {
+  // Create alert element
+  const alertDiv = document.createElement("div");
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+  alertDiv.role = "alert";
+
+  alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    `;
+
+  // Insert at the top of the container
+  const container = document.querySelector(".container");
+  container.insertBefore(alertDiv, container.firstChild);
+
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    alertDiv.classList.remove("show");
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 150);
+  }, 5000);
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
 }
 
 function getRiskAnalysis() {
@@ -383,117 +547,4 @@ function getRiskAnalysis() {
       hideSpinner();
       showAlert("Greška pri dobavljanju analize rizika.", "danger");
     });
-}
-
-function findAlternativeSuppliers() {
-  const materialName = document.getElementById("altMaterialName").value;
-  const minRating = document.getElementById("minRating").value;
-
-  if (!materialName) {
-    showAlert("Molimo izaberite materijal.", "warning");
-    return;
-  }
-
-  showSpinner();
-
-  fetch(
-    `/api/supplier-analysis/alternative-suppliers/${encodeURIComponent(
-      materialName
-    )}/?min_rating=${minRating}`
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      hideSpinner();
-
-      if (data && data.suppliers) {
-        const alternativeTable = document.getElementById("alternativeTable");
-        alternativeTable.innerHTML = "";
-
-        if (data.suppliers.length === 0) {
-          document.getElementById("alternativeResults").style.display = "block";
-          alternativeTable.innerHTML = `
-                        <tr>
-                            <td colspan="5" class="text-center">Nema alternativnih dobavljača za ovaj materijal</td>
-                        </tr>
-                    `;
-          return;
-        }
-
-        data.suppliers.forEach((supplier) => {
-          const row = document.createElement("tr");
-
-          row.innerHTML = `
-                        <td>${supplier.name}</td>
-                        <td>${supplier.rating}/10</td>
-                        <td>${supplier.price} RSD</td>
-                        <td>${supplier.delivery_time} dana</td>
-                        <td>
-                            <a href="/api/supplier-analysis/reports/supplier/${supplier.supplier_id}/" 
-                               class="btn btn-sm btn-info" target="_blank">
-                                <i class="far fa-file-pdf"></i> Izveštaj
-                            </a>
-                        </td>
-                    `;
-
-          alternativeTable.appendChild(row);
-        });
-
-        document.getElementById("alternativeResults").style.display = "block";
-      }
-    })
-    .catch((error) => {
-      console.error("Error finding alternative suppliers:", error);
-      hideSpinner();
-      showAlert("Greška pri pretraživanju alternativnih dobavljača.", "danger");
-    });
-}
-
-function showSpinner() {
-  document.getElementById("spinner").classList.add("show");
-}
-
-function hideSpinner() {
-  document.getElementById("spinner").classList.remove("show");
-}
-
-function showAlert(message, type = "info") {
-  // Create alert element
-  const alertDiv = document.createElement("div");
-  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-  alertDiv.role = "alert";
-
-  alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    `;
-
-  // Insert at the top of the container
-  const container = document.querySelector(".container");
-  container.insertBefore(alertDiv, container.firstChild);
-
-  // Auto-dismiss after 5 seconds
-  setTimeout(() => {
-    alertDiv.classList.remove("show");
-    setTimeout(() => {
-      alertDiv.remove();
-    }, 150);
-  }, 5000);
-}
-
-// Helper function to get CSRF token
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
 }

@@ -19,9 +19,6 @@ from .services.supplier_analysis_service import SupplierAnalysisService
 logger = logging.getLogger(__name__)
 supplier_service = SupplierAnalysisService()
 
-
-
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def check_service_health(request):
@@ -468,5 +465,208 @@ def get_suppliers(request):
         logger.error(f"Error fetching suppliers: {str(e)}")
         return Response(
             {"error": f"Error fetching suppliers: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@csrf_exempt
+@permission_classes([AllowAny])
+def get_material_suppliers_report_post(request):
+    """
+    Get a PDF report of all suppliers for a specific material (POST method for UTF-8 support)
+    """
+    try:
+        material_name = request.data.get('material_name')
+        
+        if not material_name:
+            return Response(
+                {"error": "material_name is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get the report from the microservice
+        report_content = supplier_service.get_material_suppliers_report(material_name)
+        
+        if not report_content:
+            return Response(
+                {"error": "Failed to generate material suppliers report"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(report_content)
+            temp_path = temp_file.name
+        
+        # Create safe filename
+        safe_filename = material_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+        safe_filename = ''.join(c for c in safe_filename if c.isalnum() or c in '_-.')
+        
+        # Return the file as an attachment
+        response = FileResponse(
+            open(temp_path, 'rb'),
+            content_type='application/pdf'
+        )
+        response['Content-Disposition'] = f'attachment; filename="material_suppliers_{safe_filename}.pdf"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating material suppliers report: {str(e)}")
+        return Response(
+            {"error": f"Error generating material suppliers report: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_performance_trends_report(request):
+    """
+    Get a comprehensive performance trends report
+    """
+    try:
+        # Get the report from the microservice
+        report_content = supplier_service.get_performance_trends_report()
+        
+        if not report_content:
+            return Response(
+                {"error": "Failed to generate performance trends report"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(report_content)
+            temp_path = temp_file.name
+        
+        # Return the file as an attachment
+        response = FileResponse(
+            open(temp_path, 'rb'),
+            content_type='application/pdf'
+        )
+        response['Content-Disposition'] = f'attachment; filename="performance_trends_report.pdf"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating performance trends report: {str(e)}")
+        return Response(
+            {"error": f"Error generating performance trends report: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_risk_analysis_report(request):
+    """
+    Get a comprehensive risk analysis report
+    """
+    try:
+        # Get the report from the microservice
+        report_content = supplier_service.get_risk_analysis_report()
+        
+        if not report_content:
+            return Response(
+                {"error": "Failed to generate risk analysis report"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(report_content)
+            temp_path = temp_file.name
+        
+        # Return the file as an attachment
+        response = FileResponse(
+            open(temp_path, 'rb'),
+            content_type='application/pdf'
+        )
+        response['Content-Disposition'] = f'attachment; filename="risk_analysis_report.pdf"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating risk analysis report: {str(e)}")
+        return Response(
+            {"error": f"Error generating risk analysis report: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+@csrf_exempt
+@permission_classes([AllowAny])
+def get_alternative_suppliers_post(request):
+    """
+    Get alternative suppliers for a material (POST method for UTF-8 support)
+    """
+    try:
+        material_name = request.data.get('material_name')
+        min_rating = request.data.get('min_rating', 0.0)
+        
+        if not material_name:
+            return Response(
+                {"error": "material_name is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        alternatives = supplier_service.get_alternative_suppliers(material_name, min_rating)
+        
+        if not alternatives:
+            return Response(
+                {"error": "Failed to retrieve alternative suppliers from microservice"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        return Response(alternatives)
+        
+    except Exception as e:
+        logger.error(f"Error getting alternative suppliers: {str(e)}")
+        return Response(
+            {"error": f"Error getting alternative suppliers: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_supplier_performance_trends(request):
+    """
+    Get advanced supplier performance analysis with trends
+    """
+    try:
+        result = supplier_service.get_supplier_performance_trends()
+        
+        if not result:
+            return Response(
+                {"error": "Failed to retrieve performance trends from microservice"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        return Response(result)
+        
+    except Exception as e:
+        logger.error(f"Error getting supplier performance trends: {str(e)}")
+        return Response(
+            {"error": f"Error getting supplier performance trends: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_material_market_dynamics(request):
+    """
+    Get material market dynamics analysis
+    """
+    try:
+        result = supplier_service.get_material_market_dynamics()
+        
+        if not result:
+            return Response(
+                {"error": "Failed to retrieve market dynamics from microservice"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        return Response(result)
+        
+    except Exception as e:
+        logger.error(f"Error getting material market dynamics: {str(e)}")
+        return Response(
+            {"error": f"Error getting material market dynamics: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

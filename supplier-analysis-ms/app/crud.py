@@ -537,3 +537,192 @@ def get_supplier_certificates(supplier_id: int) -> List[Dict[str, Any]]:
     neo4j_db = get_db()
     result = neo4j_db.execute_read(query, {"supplier_id": supplier_id})
     return [record['cert'] for record in result]
+
+# Complex Query 6: Advanced supplier performance analysis with multiple WITH clauses
+def analyze_supplier_performance_trends() -> List[Dict[str, Any]]:
+    """
+    Analyze supplier performance trends using multiple WITH clauses for complex aggregations
+    """
+    query = """
+    MATCH (s:Supplier)
+    OPTIONAL MATCH (s)-[:HAS_COMPLAINT]->(c:Complaint)
+    OPTIONAL MATCH (s)-[:HAS_CERTIFICATE]->(cert:Certificate)
+    
+    WITH s, 
+         count(c) AS complaint_count,
+         avg(c.severity) AS avg_complaint_severity,
+         count(cert) AS certificate_count,
+         collect(DISTINCT c.reception_date) AS complaint_dates,
+         collect(DISTINCT cert.expiry_date) AS cert_expiry_dates
+    
+    WITH s, complaint_count, avg_complaint_severity, certificate_count,
+         CASE 
+           WHEN complaint_count = 0 THEN 10.0
+           ELSE s.rating - (complaint_count * 0.5) - (avg_complaint_severity * 0.3)
+         END AS calculated_performance_score,
+         
+         // Calculate certificate status
+         CASE
+           WHEN certificate_count = 0 THEN 'no_certificates'
+           WHEN any(expiry IN cert_expiry_dates WHERE date(expiry) < date() + duration({days: 30})) THEN 'certificates_expiring'
+           ELSE 'certificates_valid'
+         END AS certificate_status,
+         
+         // Calculate complaint trend
+         CASE
+           WHEN complaint_count = 0 THEN 'excellent'
+           WHEN complaint_count <= 2 AND avg_complaint_severity <= 5 THEN 'good'
+           WHEN complaint_count <= 4 OR avg_complaint_severity <= 7 THEN 'concerning'
+           ELSE 'critical'
+         END AS complaint_trend
+    
+    WITH s, complaint_count, certificate_count, calculated_performance_score,
+         certificate_status, complaint_trend,
+         
+         // Final composite score calculation
+         calculated_performance_score * 0.6 +
+         CASE certificate_status
+           WHEN 'certificates_valid' THEN 3.0
+           WHEN 'certificates_expiring' THEN 1.0
+           ELSE 0.0
+         END +
+         CASE complaint_trend
+           WHEN 'excellent' THEN 1.0
+           WHEN 'good' THEN 0.5
+           WHEN 'concerning' THEN -0.5
+           ELSE -1.0
+         END AS final_composite_score,
+         
+         // Performance category
+         CASE 
+           WHEN calculated_performance_score >= 8.5 AND certificate_status = 'certificates_valid' THEN 'premium'
+           WHEN calculated_performance_score >= 7.0 THEN 'reliable'
+           WHEN calculated_performance_score >= 5.0 THEN 'acceptable'
+           ELSE 'problematic'
+         END AS performance_category
+    
+    RETURN s.supplier_id AS supplier_id,
+           s.name AS supplier_name,
+           s.material_name AS material,
+           s.rating AS original_rating,
+           calculated_performance_score,
+           final_composite_score,
+           performance_category,
+           complaint_count,
+           certificate_count,
+           certificate_status,
+           complaint_trend,
+           
+           // Recommendation based on composite analysis
+           CASE performance_category
+             WHEN 'premium' THEN 'Highly recommended - excellent track record'
+             WHEN 'reliable' THEN 'Recommended - good performance'
+             WHEN 'acceptable' THEN 'Consider with caution - average performance'
+             ELSE 'Not recommended - performance issues detected'
+           END AS recommendation
+           
+    ORDER BY final_composite_score DESC, s.material_name ASC
+    """
+    
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query)
+    return result
+
+# Complex Query 7: Material market analysis with advanced WITH operations
+def analyze_material_market_dynamics() -> List[Dict[str, Any]]:
+    """
+    Analyze market dynamics for each material using complex WITH operations
+    """
+    query = """
+    MATCH (s:Supplier)
+    WITH s.material_name AS material,
+         collect(s) AS suppliers,
+         count(s) AS supplier_count,
+         avg(s.price) AS avg_price,
+         min(s.price) AS min_price,
+         max(s.price) AS max_price,
+         avg(s.rating) AS avg_rating,
+         max(s.rating) AS max_rating,
+         avg(s.delivery_time) AS avg_delivery_time
+    
+    WITH material, suppliers, supplier_count, avg_price, min_price, max_price, 
+         avg_rating, max_rating, avg_delivery_time,
+         
+         // Calculate price volatility
+         CASE 
+           WHEN max_price = min_price THEN 0.0
+           ELSE (max_price - min_price) / avg_price * 100
+         END AS price_volatility_percent,
+         
+         // Market competitiveness score
+         CASE
+           WHEN supplier_count >= 5 THEN 'highly_competitive'
+           WHEN supplier_count >= 3 THEN 'competitive'
+           WHEN supplier_count = 2 THEN 'limited_competition'
+           ELSE 'monopolistic'
+         END AS market_competitiveness
+    
+    WITH material, supplier_count, avg_price, min_price, max_price,
+         avg_rating, max_rating, avg_delivery_time, price_volatility_percent, market_competitiveness,
+         suppliers,
+         
+         // Quality vs Price analysis - split into separate operations
+         [s IN suppliers WHERE s.rating >= 8.0 AND s.price <= avg_price * 1.1 | s] AS premium_value_suppliers,
+         [s IN suppliers WHERE s.price = min_price | s] AS cheapest_suppliers
+    
+    WITH material, supplier_count, avg_price, min_price, max_price,
+         avg_rating, max_rating, avg_delivery_time, price_volatility_percent, market_competitiveness,
+         suppliers, premium_value_suppliers, cheapest_suppliers,
+         
+         // Get highest rated suppliers separately
+         [s IN suppliers WHERE s.rating = max_rating | s] AS highest_rated_suppliers
+    
+    UNWIND suppliers AS supplier
+    OPTIONAL MATCH (supplier)-[:HAS_COMPLAINT]->(c:Complaint)
+    
+    WITH material, supplier_count, avg_price, min_price, max_price,
+         avg_rating, avg_delivery_time, price_volatility_percent, market_competitiveness,
+         premium_value_suppliers, cheapest_suppliers, highest_rated_suppliers,
+         supplier, count(c) AS supplier_complaints
+    
+    WITH material, supplier_count, avg_price, min_price, max_price,
+         avg_rating, avg_delivery_time, price_volatility_percent, market_competitiveness,
+         premium_value_suppliers, cheapest_suppliers, highest_rated_suppliers,
+         avg(supplier_complaints) AS avg_complaints_per_supplier,
+         
+         // Market risk assessment
+         CASE
+           WHEN avg_rating >= 8.0 AND price_volatility_percent <= 20 THEN 'low_risk'
+           WHEN avg_rating >= 6.0 AND price_volatility_percent <= 40 THEN 'medium_risk'
+           ELSE 'high_risk'
+         END AS market_risk
+    
+    RETURN material,
+           supplier_count,
+           round(avg_price, 2) AS average_price,
+           round(min_price, 2) AS minimum_price,
+           round(max_price, 2) AS maximum_price,
+           round(avg_rating, 2) AS average_rating,
+           round(avg_delivery_time, 1) AS average_delivery_days,
+           round(price_volatility_percent, 2) AS price_volatility_percent,
+           market_competitiveness,
+           market_risk,
+           round(avg_complaints_per_supplier, 2) AS avg_complaints_per_supplier,
+           size(premium_value_suppliers) AS premium_value_supplier_count,
+           size(cheapest_suppliers) AS cheapest_supplier_count,
+           size(highest_rated_suppliers) AS highest_rated_supplier_count,
+           
+           // Strategic recommendations
+           CASE market_competitiveness
+             WHEN 'highly_competitive' THEN 'Excellent supplier options - negotiate aggressively'
+             WHEN 'competitive' THEN 'Good supplier options - standard procurement approach'
+             WHEN 'limited_competition' THEN 'Limited options - build relationships with existing suppliers'
+             ELSE 'Single/few suppliers - consider supply chain diversification'
+           END AS procurement_strategy
+           
+    ORDER BY supplier_count DESC, average_rating DESC
+    """
+    
+    neo4j_db = get_db()
+    result = neo4j_db.execute_read(query)
+    return result
