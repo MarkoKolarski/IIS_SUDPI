@@ -10,6 +10,8 @@ from fastapi.responses import JSONResponse
 from neo4j.time import Date as Neo4jDate, DateTime as Neo4jDateTime
 from fastapi.encoders import jsonable_encoder
 from pydantic.json import ENCODERS_BY_TYPE
+from contextlib import asynccontextmanager
+
 
 # Add custom encoders for Neo4j types
 ENCODERS_BY_TYPE[Neo4jDate] = lambda v: date(v.year, v.month, v.day).isoformat()
@@ -84,7 +86,6 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api")
 
 # Startup event
-@app.on_event("startup")
 def startup_db_client():
     """
     Create necessary constraints in Neo4j when the application starts.
@@ -102,7 +103,6 @@ def startup_db_client():
         logger.error(f"Error during startup: {e}")
 
 # Shutdown event
-@app.on_event("shutdown")
 def shutdown_db_client():
     """
     Close the Neo4j connection when the application shuts down.
@@ -113,6 +113,18 @@ def shutdown_db_client():
     except Exception as e:
         logger.error(f"Error closing Neo4j connection: {e}")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    print("Starting up...")
+    startup_db_client
+    
+    yield  # ← app runs while paused here
+    
+    # Shutdown logic
+    print("Shutting down...")
+    shutdown_db_client
+    
 # Root endpoint
 @app.get("/")
 def root():
