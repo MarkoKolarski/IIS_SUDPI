@@ -314,20 +314,16 @@ class ReportGenerator:
             ratings = [float(s.get('rating', 0)) for s in suppliers]
             
             plt.figure(figsize=(8, 4))
-            x_pos = np.arange(len(labels))  # Create x positions for bars
-            bars = plt.bar(x_pos, ratings, color='steelblue')
+            bars = plt.bar(labels, ratings, color='steelblue')
             plt.xlabel('Supplier')
             plt.ylabel('Rating (0-10)')
             plt.title('Supplier Rating Comparison')
-            plt.xticks(x_pos, labels)  # Set x-tick positions and labels
             plt.ylim(0, 10)
             
             # Add rating values on top of bars
             for bar, rating in zip(bars, ratings):
                 plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
                          f"{rating:.1f}", ha='center')
-            
-            plt.tight_layout()  # Add tight_layout for better spacing
             
             # Save chart to buffer
             img_buffer = io.BytesIO()
@@ -658,9 +654,9 @@ class ReportGenerator:
             plt.figure(figsize=(8, 6))
             labels = list(categories.keys())
             sizes = list(categories.values())
-            colors = ['#2E8B57', '#4682B4', '#DAA520', '#DC143C']  # Green, Blue, Gold, Red
+            pie_colors = ['#2E8B57', '#4682B4', '#DAA520', '#DC143C']  # Green, Blue, Gold, Red
             
-            plt.pie(sizes, labels=labels, colors=colors[:len(labels)], autopct='%1.1f%%', startangle=90)
+            plt.pie(sizes, labels=labels, colors=pie_colors[:len(labels)], autopct='%1.1f%%', startangle=90)
             plt.title('Supplier Performance Categories Distribution')
             plt.axis('equal')
             
