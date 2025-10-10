@@ -166,37 +166,6 @@ def create_complaint(complaint: ComplaintCreate):
             complaint_dict["reception_date"] = complaint_dict["reception_date"].isoformat()
             
         result = crud.create_complaint(complaint_dict)
-        
-        # Also update supplier rating based on complaint severity
-        supplier_id = complaint_dict["supplier_id"]
-        severity = complaint_dict["severity"]
-        supplier = crud.get_supplier(supplier_id)
-        
-        if supplier:
-            current_rating = float(supplier.get("rating", 10.0))
-            
-            # Calculate penalty based on severity
-            if severity <= 3:
-                penalty = severity * 0.3
-            elif severity <= 7:
-                penalty = severity * 0.3
-            else:
-                penalty = severity * 0.3
-                
-            # Update rating
-            new_rating = max(0, min(10, current_rating - penalty))
-            crud.update_supplier(supplier_id, {
-                "rating": new_rating,
-                "rating_date": date.today().isoformat()
-            })
-            
-            return {
-                "message": "Complaint created successfully, supplier rating updated",
-                "data": safe_serialize(result),
-                "previous_rating": current_rating,
-                "new_rating": new_rating
-            }
-            
         return {"message": "Complaint created successfully", "data": safe_serialize(result)}
     except Exception as e:
         logging.error(f"Error creating complaint: {str(e)}")

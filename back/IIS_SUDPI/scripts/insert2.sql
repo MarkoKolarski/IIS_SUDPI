@@ -179,7 +179,7 @@ COMMIT;
 -- Generate certificates with fixed values instead of arrays
 BEGIN
   -- Critical certificates (expiring in 1-7 days)
-  FOR i IN 20..23 LOOP
+  FOR i IN 1..23 LOOP
     INSERT INTO SERTIFIKAT (
       SERTIFIKAT_ID,
       NAZIV,
@@ -205,7 +205,7 @@ BEGIN
       END,
       TRUNC(SYSDATE - 330),
       TRUNC(SYSDATE + DBMS_RANDOM.VALUE(1, 7)),
-      TRUNC(DBMS_RANDOM.VALUE(10, 50))
+      TRUNC(DBMS_RANDOM.VALUE(1, 50))
     );
   END LOOP;
   
@@ -236,7 +236,7 @@ BEGIN
       END,
       TRUNC(SYSDATE - 300),
       TRUNC(SYSDATE + DBMS_RANDOM.VALUE(8, 14)),
-      TRUNC(DBMS_RANDOM.VALUE(10, 50))
+      TRUNC(DBMS_RANDOM.VALUE(1, 50))
     );
   END LOOP;
   
@@ -267,7 +267,7 @@ BEGIN
       END,
       TRUNC(SYSDATE - 270),
       TRUNC(SYSDATE + DBMS_RANDOM.VALUE(15, 30)),
-      TRUNC(DBMS_RANDOM.VALUE(10, 50))
+      TRUNC(DBMS_RANDOM.VALUE(1, 50))
     );
   END LOOP;
   

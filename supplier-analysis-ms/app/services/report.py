@@ -150,7 +150,7 @@ class ReportGenerator:
             complaint_table = Table(complaint_table_data, colWidths=[1*inch, 0.8*inch, 0.8*inch, 1*inch, 2.4*inch])
             complaint_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('PADDING', (0, 0), (-1, -1), 6),
@@ -187,7 +187,7 @@ class ReportGenerator:
             cert_table = Table(cert_table_data, colWidths=[2*inch, 1*inch, 1.5*inch, 1.5*inch])
             cert_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('PADDING', (0, 0), (-1, -1), 6),
@@ -216,7 +216,7 @@ class ReportGenerator:
             alt_table = Table(alt_table_data, colWidths=[2*inch, 1*inch, 1.5*inch, 1.5*inch])
             alt_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('PADDING', (0, 0), (-1, -1), 6),
@@ -294,9 +294,9 @@ class ReportGenerator:
             
             # Style the table
             comparison_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.white),  # Changed from colors.grey
+                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
                 ('BACKGROUND', (0, 1), (0, -1), colors.lightgrey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
@@ -455,7 +455,7 @@ class ReportGenerator:
             summary_table = Table(summary_data, colWidths=[2*inch, 3*inch])
             summary_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('BACKGROUND', (0, 1), (0, -1), colors.lightgrey),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -483,7 +483,7 @@ class ReportGenerator:
             supplier_table = Table(supplier_data, colWidths=[2*inch, 1*inch, 1.5*inch, 1.5*inch])
             supplier_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('PADDING', (0, 0), (-1, -1), 6),
@@ -689,7 +689,7 @@ class ReportGenerator:
             perf_table = Table(perf_table_data, colWidths=[1.2*inch, 0.8*inch, 0.8*inch, 0.6*inch, 0.6*inch, 0.6*inch, 1.4*inch])
             perf_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.white),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
@@ -749,7 +749,7 @@ class ReportGenerator:
             market_table = Table(market_table_data, colWidths=[1*inch, 0.7*inch, 0.8*inch, 0.8*inch, 0.8*inch, 1.9*inch])
             market_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.white),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('FONTSIZE', (0, 0), (-1, -1), 8),
@@ -819,7 +819,7 @@ class ReportGenerator:
             summary_table = Table(summary_data, colWidths=[2*inch, 1*inch, 1.5*inch])
             summary_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('BACKGROUND', (0, 1), (-1, 1), colors.lightcoral),  # High risk
                 ('BACKGROUND', (0, 2), (-1, 2), colors.lightyellow),  # Medium risk
                 ('BACKGROUND', (0, 3), (-1, 3), colors.lightgreen),  # Low risk
@@ -850,7 +850,7 @@ class ReportGenerator:
                 high_risk_table = Table(high_risk_data, colWidths=[1.5*inch, 1.2*inch, 0.8*inch, 0.8*inch, 1.7*inch])
                 high_risk_table.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.darkred),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
                     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                     ('PADDING', (0, 0), (-1, -1), 4),
