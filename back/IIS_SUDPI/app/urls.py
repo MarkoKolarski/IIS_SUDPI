@@ -2,6 +2,11 @@ from django.urls import path, include
 from . import views
 from . import views_mv
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
+from .views_saga_mv import (
+    demo_successful_saga, demo_failed_saga_with_rollback, demo_complaint_saga_success,
+    demo_complaint_saga_rollback, demo_visit_scheduling_saga, get_saga_status,
+    list_active_sagas, demo_all_saga_patterns
+)
 from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment
 from .views_mv import suppliers, expiring_certificates, visits_list, visit_detail, create_visit, busy_visit_slots, complaints_list, create_complaint
 from .views_mv2 import (
@@ -99,6 +104,14 @@ urlpatterns = [
 
     path('api/izvestaji/upload/', upload_izvestaj, name='izvestaj-upload'),
 
-
+    # SAGA ORCHESTRATOR - Multi-step transactions with rollback
+    path('saga/demo/successful/', demo_successful_saga, name='saga-demo-successful'),
+    path('saga/demo/failed-rollback/', demo_failed_saga_with_rollback, name='saga-demo-failed-rollback'),
+    path('saga/demo/complaint-success/', demo_complaint_saga_success, name='saga-demo-complaint-success'),
+    path('saga/demo/complaint-rollback/', demo_complaint_saga_rollback, name='saga-demo-complaint-rollback'),
+    path('saga/demo/visit-scheduling/', demo_visit_scheduling_saga, name='saga-demo-visit-scheduling'),
+    path('saga/demo/all-patterns/', demo_all_saga_patterns, name='saga-demo-all-patterns'),
+    path('saga/<str:saga_id>/status/', get_saga_status, name='saga-get-status'),
+    path('saga/active/', list_active_sagas, name='saga-list-active'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
