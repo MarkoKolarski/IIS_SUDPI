@@ -16,6 +16,10 @@ from .models import Dobavljac, Reklamacija, Sertifikat, User
 from .decorators import allowed_users
 from .services.supplier_analysis_service import SupplierAnalysisService
 
+from rest_framework.views import APIView
+from .models import Izvestaj
+from .serializers import IzvestajSerializer
+
 logger = logging.getLogger(__name__)
 supplier_service = SupplierAnalysisService()
 
@@ -725,3 +729,27 @@ def supplier_complaint_transaction(request):
         
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def upload_izvestaj(request):
+    """
+    Prima JSON + PDF fajl i kreira zapis u tabeli Izvestaj.
+    """
+    try:
+        # request.data sadrži i polja i fajl
+        serializer = IzvestajSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    except Exception as e:
+        logging.error(f"Greška prilikom čuvanja izveštaja: {str(e)}")
+        return Response(
+            {"detail": f"Greška prilikom čuvanja izveštaja: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

@@ -1,0 +1,2 @@
+#!/bin/bash
+./run-manage.sh runserver 0.0.0.0
