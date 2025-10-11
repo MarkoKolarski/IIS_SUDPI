@@ -465,9 +465,9 @@ class IsporukaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class UpozorenjeSerializer(serializers.ModelSerializer):
-    isporuka_info = serializers.CharField(source='isporuka.sifra_i', read_only=True)
-    tip_display = serializers.CharField(source='get_tip_display', read_only=True)
-    
+    #isporuka_info = serializers.CharField(source='isporuka.sifra_i', read_only=True)
+    #tip_display = serializers.CharField(source='get_tip_display', read_only=True)
+    isporuka = IsporukaSerializer(read_only=True)
     class Meta:
         model = Upozorenje
         fields = '__all__'

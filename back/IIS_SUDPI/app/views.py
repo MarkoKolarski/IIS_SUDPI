@@ -2095,11 +2095,15 @@ def debug_sve_isporuke(request):
         return Response({'detail': f'Greška: {str(e)}'}, status=500)
 # upozorenje
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_upozorenja(request):
     #upozorenja = Upozorenje.objects.select_related('isporuka').all()
-    upozorenja = Upozorenje.objects.all()
-    serializer = UpozorenjeSerializer(upozorenja, many=True)
-    return Response(serializer.data)
+    try:
+        upozorenja = Upozorenje.objects.all()
+        serializer = UpozorenjeSerializer(upozorenja, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
 
 
 # temperatura
@@ -2610,9 +2614,7 @@ def ruta_directions(request, pk):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ruta_map_preview(request, pk):
-    """
-    Vraća URL za prikaz rute na OpenStreetMap
-    """
+
     try:
         ruta = Ruta.objects.get(sifra_r=pk)
         
