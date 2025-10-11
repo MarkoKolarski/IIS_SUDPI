@@ -425,6 +425,8 @@ class Izvestaj(models.Model):
     # Veza sa korisnikom koji je kreirao izveštaj
     kreirao = models.ForeignKey(User, on_delete=models.CASCADE, related_name='izvestaji')
     
+    pdf_file = models.FileField(upload_to='izvestaji_pdfs/', null=True, blank=True)
+    
     class Meta:
         db_table = 'izvestaj'
     

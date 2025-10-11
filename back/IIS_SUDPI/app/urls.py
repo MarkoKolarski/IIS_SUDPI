@@ -10,9 +10,12 @@ from .views_mv2 import (
     create_complaint_with_rating, get_supplier_risk_analysis, get_alternative_suppliers,
     get_suppliers, get_material_suppliers_report_post, get_performance_trends_report,
     get_risk_analysis_report, get_alternative_suppliers_post, get_supplier_performance_trends,
-    get_material_market_dynamics, supplier_analysis_dashboard, supplier_complaint_transaction
+    get_material_market_dynamics, supplier_analysis_dashboard, supplier_complaint_transaction,
+    upload_izvestaj
 )
 from django.contrib.auth.views import LogoutView
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path('', index, name='index'),
@@ -93,4 +96,9 @@ urlpatterns = [
     path('api/supplier-analysis/analysis/material-market-dynamics/', get_material_market_dynamics, name='material_market_dynamics'),
     path('api/supplier-analysis/suppliers/', get_suppliers, name='get_suppliers'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
-]
+
+    path('api/izvestaji/upload/', upload_izvestaj, name='izvestaj-upload'),
+
+
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

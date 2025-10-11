@@ -465,3 +465,11 @@ class SertifikatSerializer(serializers.ModelSerializer):
     def get_days_left(self, obj):
         today = timezone.now().date()
         return (obj.datum_isteka - today).days if obj.datum_isteka > today else 0
+
+
+
+class IzvestajSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Izvestaj
+        fields = ['sifra_i', 'datum_i', 'tip_i', 'sadrzaj_i', 'kreirao', 'pdf_file']
+        read_only_fields = ['sifra_i', 'datum_i']
