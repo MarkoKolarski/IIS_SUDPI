@@ -1,2 +1,2 @@
 #!/bin/bash
-./run-manage.sh runserver 0.0.0.0
+./run-manage.sh runserver 0.0.0.0:8000
