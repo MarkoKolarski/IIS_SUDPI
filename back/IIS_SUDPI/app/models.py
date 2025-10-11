@@ -578,7 +578,8 @@ class Vozac(models.Model):
     def get_all_vozaci(request):
         vozaci = Vozac.objects.all()
         return vozaci
-    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
 class Isporuka(models.Model):
     sifra_i = models.AutoField(primary_key=True)
@@ -603,7 +604,8 @@ class Isporuka(models.Model):
     
     class Meta:
         db_table = 'isporuka'
-
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 class Upozorenje(models.Model):
     sifra_u = models.AutoField(primary_key=True)
     isporuka = models.ForeignKey(Isporuka, on_delete=models.CASCADE)

@@ -3,10 +3,12 @@ import axiosInstance from '../axiosInstance';
 import MainSideBar from '../components/MainSideBar';
 import '../styles/PlanIsporuke.css';
 import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 const PlanIsporuke = () => {
   const navigate = useNavigate();
-  
+  const { isporukaId } = useParams();
+  console.log("Isporuka ID iz URL-a:", isporukaId);
   const [formData, setFormData] = useState({
     naziv: '',
     vozac_id: '',
@@ -26,7 +28,13 @@ const PlanIsporuke = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-
+//   useEffect(() => {
+//   if (isporukaId) {
+//     axiosInstance.get(`api/isporuka/${isporukaId}/`)
+//       .then(res => setFormData(res.data))
+//       .catch(err => console.error('Greška pri učitavanju isporuke:', err));
+//   }
+// }, [isporukaId]);
   useEffect(() => {
     fetchPredlozeniVozac();
     fetchSviVozaci();
@@ -118,46 +126,50 @@ const PlanIsporuke = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!predlozenaRuta) {
-      alert('Molimo prvo predložite rutu');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!predlozenaRuta) {
+    alert('Molimo prvo predložite rutu');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    if (!isporukaId) {
+      alert("Nije prosleđen ID isporuke. Proveri navigaciju!");
       return;
     }
 
-    setLoading(true);
-    try {
-      await axiosInstance.put('api/kreiraj-isporuku/', formData);
-      alert('Isporuka je uspešno planirana!');
-      
-      // Reset forme
-      setFormData({
-        naziv: '',
-        vozac_id: predlozeniVozac?.id || '',
-        datum_isporuke: '',
-        rok_isporuke: '',
-        datum_dolaska: '',
-        polazna_tacka: '',
-        odrediste: '',
-        ruta_id: ''
-      });
-      setPredlozenaRuta(null);
-      
-      // Ponovo učitaj predloženog vozača
-      fetchPredlozeniVozac();
-      
-    } catch (error) {
-      console.error('Greška pri kreiranju isporuke:', error);
-      if (error.response?.data?.error) {
-        alert(error.response.data.error);
-      } else {
-        alert('Došlo je do greške pri kreiranju isporuke.');
-      }
-    } finally {
-      setLoading(false);
+    const response = await axiosInstance.put(`/api/kreiraj-isporuku/${isporukaId}`, formData);
+
+    alert('Isporuka je uspešno ažurirana!');
+    
+    setFormData({
+      naziv: '',
+      vozac_id: predlozeniVozac?.id || '',
+      datum_isporuke: '',
+      rok_isporuke: '',
+      datum_dolaska: '',
+      polazna_tacka: '',
+      odrediste: '',
+      ruta_id: ''
+    });
+    setPredlozenaRuta(null);
+    
+    fetchPredlozeniVozac();
+
+  } catch (error) {
+    console.error('Greška pri ažuriranju isporuke:', error);
+    if (error.response?.data?.error) {
+      alert(error.response.data.error);
+    } else {
+      alert('Došlo je do greške pri ažuriranju isporuke.');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleOdustani = () => {
     // Vrati se na dashboard

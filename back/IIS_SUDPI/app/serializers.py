@@ -448,8 +448,9 @@ class IsporukaSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     #ruta_info = RutaSerializer(source='ruta', read_only=True)
     #vozac_info = VozacSerializer(source='vozac', read_only=True)
-    ruta = RutaSerializer(read_only=True)
-    vozilo = VoziloSerializer(read_only=True)
+    ruta = RutaSerializer(read_only=False)
+    vozilo = VoziloSerializer(read_only=False)
+    vozac = VozacSerializer(read_only=False)
     
     # vozac = serializers.StringRelatedField()
 
