@@ -2045,6 +2045,31 @@ def list_aktivne_isporuke(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def list_u_toku_isporuke(request):
+    try:
+            aktivne_isporuke = Isporuka.objects.filter(
+                status ='u_toku' 
+                #status__in=['aktivna', 'aktivna_nova']
+            ).select_related('ruta', 'vozilo', 'vozac')
+            isporuke_data = []
+            for isporuka in aktivne_isporuke:
+                isporuke_data.append({
+                    'sifra_i': isporuka.sifra_i,
+                    'naziv': f"Isporuka {isporuka.sifra_i}",
+                    'datum_kreiranja': isporuka.datum_kreiranja,
+                    'kolicina_kg': getattr(isporuka, 'kolicina_kg', None),
+                    'rok_isporuke': getattr(isporuka, 'rok_is', 'N/A'),
+                    'status': isporuka.status,
+                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+                })
+            
+            return Response(isporuke_data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju aktivnih isporuka: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def debug_sve_isporuke(request):
     """
     Privremeni endpoint za debug - prikazuje sve isporuke i njihove statuse
@@ -2071,7 +2096,8 @@ def debug_sve_isporuke(request):
 # upozorenje
 @api_view(['GET'])
 def list_upozorenja(request):
-    upozorenja = Upozorenje.objects.select_related('isporuka').all()
+    #upozorenja = Upozorenje.objects.select_related('isporuka').all()
+    upozorenja = Upozorenje.objects.all()
     serializer = UpozorenjeSerializer(upozorenja, many=True)
     return Response(serializer.data)
 
@@ -2484,5 +2510,130 @@ def zavrsi_isporuku(request, isporuka_id):
         
     except Isporuka.DoesNotExist:
         return Response({'error': 'Isporuka ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+# rute
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_rute(request):
+    try:
+        rute = Ruta.objects.all().order_by('-sifra_r')
+        serializer = RutaSerializer(rute, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_aktivne_rute(request):
+    try:
+        aktivne_rute = Ruta.objects.filter(
+             Q(status='u_toku')   #Q(status='planirana')
+        ).order_by('-sifra_r')
+        serializer = RutaSerializer(aktivne_rute, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ruta_detail(request, pk):
+    try:
+        ruta = Ruta.objects.get(sifra_r=pk)
+        serializer = RutaSerializer(ruta)
+        
+        # Dobavi koordinate za prikaz na mapi
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(ruta.polazna_tacka)
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(ruta.odrediste)
+        
+        response_data = serializer.data
+        response_data['polaziste_koordinate'] = {
+            'lat': polaziste_lat,
+            'lon': polaziste_lon
+        }
+        response_data['odrediste_koordinate'] = {
+            'lat': odrediste_lat,
+            'lon': odrediste_lon
+        }
+        
+        return Response(response_data)
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ruta_directions(request, pk):
+    try:
+        ruta = Ruta.objects.get(sifra_r=pk)
+        
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(ruta.polazna_tacka)
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(ruta.odrediste)
+        
+        if not polaziste_lat or not odrediste_lat:
+            return Response({'error': 'Nije moguće geokodirati adrese'}, status=400)
+        
+        # Poziv OSRM API-ja za dobijanje kompletne rute sa geometrijom
+        url = f"http://router.project-osrm.org/route/v1/driving/{polaziste_lon},{polaziste_lat};{odrediste_lon},{odrediste_lat}?overview=full&geometries=geojson"
+        
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data['code'] == 'Ok' and data['routes']:
+                ruta_data = data['routes'][0]
+                
+                return Response({
+                    'ruta_id': ruta.sifra_r,
+                    'polazna_tacka': ruta.polazna_tacka,
+                    'odrediste': ruta.odrediste,
+                    'duzina_km': ruta.duzina_km,
+                    'vreme_dolaska': str(ruta.vreme_dolaska),
+                    'status': ruta.status,
+                    'polaziste_koordinate': [polaziste_lon, polaziste_lat],
+                    'odrediste_koordinate': [odrediste_lon, odrediste_lat],
+                    'geometry': ruta_data['geometry'],  # GeoJSON geometija rute
+                    'distance': ruta_data['distance'],  # dužina u metrima
+                    'duration': ruta_data['duration']   # vreme u sekundama
+                })
+        
+        return Response({'error': 'Nije moguće dobiti podatke o ruti'}, status=400)
+        
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
+    except Exception as e:
+        print(f"Greška pri dobavljanju rute: {e}")
+        return Response({'error': str(e)}, status=500)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ruta_map_preview(request, pk):
+    """
+    Vraća URL za prikaz rute na OpenStreetMap
+    """
+    try:
+        ruta = Ruta.objects.get(sifra_r=pk)
+        
+        # Dobavi koordinate
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(ruta.polazna_tacka)
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(ruta.odrediste)
+        
+        if not polaziste_lat or not odrediste_lat:
+            return Response({'error': 'Nije moguće geokodirati adrese'}, status=400)
+        
+        # Generiši URL za OpenStreetMap sa rutom
+        map_url = f"https://www.openstreetmap.org/directions?engine=osrm_car&route={polaziste_lat}%2C{polaziste_lon}%3B{odrediste_lat}%2C{odrediste_lon}"
+        
+        return Response({
+            'map_url': map_url,
+            'ruta_id': ruta.sifra_r,
+            'polazna_tacka': ruta.polazna_tacka,
+            'odrediste': ruta.odrediste
+        })
+        
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)

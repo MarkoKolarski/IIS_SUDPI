@@ -89,6 +89,7 @@ urlpatterns = [
     path('isporuke/', views.list_isporuke, name='list_isporuke'),
     path('isporuke/aktivne/', views.list_aktivne_isporuke, name='list_aktivne_isporuke'),
     path('isporuke/debug/', views.debug_sve_isporuke, name='debug_sve_isporuke'),
+    path('isporuke/u_toku/', views.list_u_toku_isporuke, name='list_utoku_isporuke'),
     # notifikacije
     path('notifikacije/', views.list_notifikacije, name='list_notifikacije'),
     path('notifikacije/<int:pk>/mark-as-read/', views.mark_notifikacija_as_read, name='mark_notifikacija_as_read'),
@@ -103,4 +104,12 @@ urlpatterns = [
     #path('api/isporuke/<int:pk>/', views.isporuka_detail, name='isporuka_detail'),
     #path('api/isporuke/<int:isporuka_id>/zavrsi/', views.zavrsi_isporuku, name='zavrsi_isporuku'),
 
+    # endpoints za rute
+    path('api/rute/', views.list_rute, name='list_rute'),
+    path('api/rute/aktivne/', views.list_aktivne_rute, name='list_aktivne_rute'),
+    path('api/rute/<int:pk>/', views.ruta_detail, name='ruta_detail'),
+    path('api/rute/<int:pk>/directions/', views.ruta_directions, name='ruta_directions'),
+    path('api/rute/<int:pk>/map-preview/', views.ruta_map_preview, name='ruta_map_preview'),
+    #upozorenja
+    path('api/upozorenja/', views.list_upozorenja, name='list_upozorenja'),
 ]
