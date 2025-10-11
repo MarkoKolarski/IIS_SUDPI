@@ -416,6 +416,23 @@ class RutaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ruta
         fields = '__all__'
+    def get_vreme_putovanja_sati(self, obj):
+        """Vraća vreme putovanja u satima kao decimalni broj"""
+        return round(obj.vreme_dolaska.total_seconds() / 3600, 2)
+
+    def get_vreme_putovanja_formatirano(self, obj):
+        """Vraća formatirano vreme putovanja (npr. '2h 30min')"""
+        total_seconds = obj.vreme_dolaska.total_seconds()
+        hours = int(total_seconds // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+        
+        if hours > 0 and minutes > 0:
+            return f"{hours}h {minutes}min"
+        elif hours > 0:
+            return f"{hours}h"
+        else:
+            return f"{minutes}min"
+        
 class VozacSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
@@ -429,6 +446,8 @@ class IsporukaSerializer(serializers.ModelSerializer):
     vozilo_info = serializers.CharField(source='vozilo.registracija', read_only=True)
     vozac_info = serializers.CharField(source='vozac.ime_vo', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    #ruta_info = RutaSerializer(source='ruta', read_only=True)
+    #vozac_info = VozacSerializer(source='vozac', read_only=True)
     ruta = RutaSerializer(read_only=True)
     vozilo = VoziloSerializer(read_only=True)
     

@@ -2,6 +2,8 @@ import React, { useState, useEffect} from 'react';
 import axiosInstance from '../axiosInstance';
 import MainSideBar from '../components/MainSideBar';
 import '../styles/DashboardLK.css';
+import { useNavigate } from 'react-router-dom';
+
 const DashboardLK = () => {
   const [notifications, setNotifications] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
@@ -10,6 +12,7 @@ const DashboardLK = () => {
   //const { isCollapsed } = useContext(MainSideBar);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  const navigate = useNavigate();
 
   const fetchUserProfile = async () => {
     try {
@@ -69,7 +72,7 @@ const DashboardLK = () => {
   };
 
   const handleSelectDelivery = (deliveryId) => {
-
+    navigate(`/plan-isporuke/${deliveryId}`);
     //window.location.href = `/isporuke/${deliveryId}`;
   };
 

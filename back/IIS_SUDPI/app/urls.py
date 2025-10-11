@@ -84,7 +84,7 @@ urlpatterns = [
 
     # Vozac update_status_vozaca
     path('vozaci/update-status/<int:pk>/', views.update_status_vozaca, name='update_status_vozaca'),
-    path('vozaci/predlozi-vozaca/', views.predlozi_vozaca, name='predlozi_vozaca'),
+    #path('vozaci/predlozi-vozaca/', views.predlozi_vozaca, name='predlozi_vozaca'),
     # Isporuke
     path('isporuke/', views.list_isporuke, name='list_isporuke'),
     path('isporuke/aktivne/', views.list_aktivne_isporuke, name='list_aktivne_isporuke'),
@@ -94,5 +94,13 @@ urlpatterns = [
     path('notifikacije/<int:pk>/mark-as-read/', views.mark_notifikacija_as_read, name='mark_notifikacija_as_read'),
     path('notifikacije/user/<int:user_id>/', views.list_user_notifikacije, name='list_user_notifikacije'),
 
+     # Plan isporuke endpoints
+    path('api/predlozi-vozaca/', views.predlozi_vozaca, name='predlozi_vozaca'),
+    path('api/predlozi-vozilo/', views.predlozi_vozilo, name='predlozi_vozilo'),
+    path('api/predlozi-rutu/', views.predlozi_rutu, name='predlozi_rutu'),
+    path('api/kreiraj-isporuku/', views.kreiraj_isporuku, name='kreiraj_isporuku'),
+    path('api/izracunaj-datum-dolaska/', views.izracunaj_datum_dolaska, name='izracunaj_datum_dolaska'),
+    #path('api/isporuke/<int:pk>/', views.isporuka_detail, name='isporuka_detail'),
+    #path('api/isporuke/<int:isporuka_id>/zavrsi/', views.zavrsi_isporuku, name='zavrsi_isporuku'),
 
 ]

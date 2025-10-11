@@ -15,6 +15,9 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+import requests
+from datetime import timedelta
+from django.utils import timezone
 from .models import Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust
 from .serializers import (
     RegistrationSerializer, 
@@ -2142,5 +2145,334 @@ def predlozi_vozaca(request):
 
         serializer = VozacSerializer(vozac)
         return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+def pronadji_optimalno_vozilo(kolicina_kg):
+    slobodna_vozila = Vozilo.objects.filter(
+        status='slobodan',
+        kapacitet__gte=kolicina_kg
+    ).order_by('-br_voznji')
+
+    if slobodna_vozila.exists():
+        return slobodna_vozila.first()
+    
+    vozilo = Vozilo.objects.filter(
+        kapacitet__gte=kolicina_kg
+    ).order_by('-br_voznji').first()
+    
+    return vozilo
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def predlozi_vozilo(request):
+    try:
+        kolicina_kg = request.data.get('kolicina_kg', 0)
+
+        vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+
+        if vozilo:
+            serializer = VoziloSerializer(vozilo)
+            return Response(serializer.data)
+        else:
+            return Response({'detail': 'Nema dostupnih vozila za datu količinu.'}, status=404)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+def geokodiraj_adresu(adresa):
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {
+            'q': adresa,
+            'format': 'json',
+            'limit': 1,
+            'countrycodes': 'rs'  # Pretraga samo za Srbiju
+        }
+        headers = {
+            'User-Agent': 'IIS_SUDPI/1.0 (begovic.in26.2021@uns.ac.rs)'  # nesto za Nominatim
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                return float(data[0]['lat']), float(data[0]['lon'])
+        return None, None
+    except Exception as e:
+        print(f"Greška pri geokodiranju adrese {adresa}: {e}")
+        return None, None
+
+# dobavljanje podataka o ruti koristeci OSRM API
+def dobavi_podatke_o_ruti(polazna_tacka, odrediste):
+    try:
+        # Geokodiranje polazne tačke
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(polazna_tacka)
+        if not polaziste_lat:
+            return None
+        
+        # Geokodiranje odredišta
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(odrediste)
+        if not odrediste_lat:
+            return None
+        
+        # Poziv OSRM API-ja za dobijanje rute
+        url = f"http://router.project-osrm.org/route/v1/driving/{polaziste_lon},{polaziste_lat};{odrediste_lon},{odrediste_lat}?overview=false"
+        #url = f"https://map.project-osrm.org/?z=7&center=44.331707%2C22.357178&loc={polaziste_lon}%2C{polaziste_lat}&loc={odrediste_lon}%2C{odrediste_lat}&hl=en&alt=0&srv=0"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data['code'] == 'Ok' and data['routes']:
+                ruta = data['routes'][0]
+                duzina_km = round(ruta['distance'] / 1000, 2)
+                vreme_sati = round(ruta['duration'] / 3600, 2)
+                
+                return {
+                    'duzina_km': duzina_km,
+                    'vreme_sati': vreme_sati,
+                    'polazna_tacka_koordinate': f"{polaziste_lat},{polaziste_lon}",
+                    'odrediste_koordinate': f"{odrediste_lat},{odrediste_lon}",
+                    'smer': 'Najkraća ruta'
+                }
+        
+        return None
+    except Exception as e:
+        print(f"Greška pri dobavljanju rute: {e}")
+        return None
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def predlozi_rutu(request):
+    try:
+        polazna_tacka = request.data.get('polazna_tacka', '').strip()
+        odrediste = request.data.get('odrediste', '').strip()
+
+        if not polazna_tacka or not odrediste:
+            return Response({'error': 'Polazna tačka i odredište su obavezni'}, status=400)
+
+        # Proveri da li ruta već postoji u bazi
+        postojeca_ruta = Ruta.objects.filter(
+            polazna_tacka__iexact=polazna_tacka,
+            odrediste__iexact=odrediste
+        ).first()
+
+        if postojeca_ruta:
+            serializer = RutaSerializer(postojeca_ruta)
+            return Response(serializer.data)
+
+        # Dobavi podatke o ruti sa OSM
+        ruta_podaci = dobavi_podatke_o_ruti(polazna_tacka, odrediste)
+
+        if not ruta_podaci:
+            return Response({
+                'error': 'Nije moguće pronaći rutu za unete adrese. Proverite tačnost unosa.'
+            }, status=404)
+
+        # Kreiraj novu rutu
+        nova_ruta = Ruta.objects.create(
+            polazna_tacka=polazna_tacka,
+            odrediste=odrediste,
+            duzina_km=ruta_podaci['duzina_km'],
+            vreme_dolaska=timedelta(hours=ruta_podaci['vreme_sati']),
+            status='planirana'
+        )
+
+        serializer = RutaSerializer(nova_ruta)
+        return Response(serializer.data)
+
+    except Exception as e:
+        print(f"Greška u predlozi_rutu: {e}")
+        return Response({'error': str(e)}, status=500)
+    
+# @api_view(['PUT', 'POST'])
+# @permission_classes([IsAuthenticated])
+# def kreiraj_isporuku(request):
+#     try:
+#         naziv = request.data.get('naziv')
+#         vozac_id = request.data.get('vozac_id')
+#         datum_isporuke = request.data.get('datum_isporuke')
+#         rok_isporuke = request.data.get('rok_isporuke')
+#         ruta_id = request.data.get('ruta_id')
+
+#         if not all([naziv, vozac_id, datum_isporuke, rok_isporuke, ruta_id]):
+#             return Response({'error': 'Sva obavezna polja moraju biti popunjena'}, status=400)
+#         try:
+#             ruta = Ruta.objects.get(sifra_r=ruta_id)
+#         except Ruta.DoesNotExist:
+#             return Response({'error': 'Odabrana ruta ne postoji'}, status=404)
+
+#         # Izračunaj datum dolaska na osnovu vremena putovanja
+#         datum_isporuke_obj = timezone.datetime.strptime(datum_isporuke, '%Y-%m-%d').date()
+#         vreme_putovanja_sati = ruta.vreme_dolaska.total_seconds() / 3600
+        
+#         datum_dolaska = timezone.datetime.combine(
+#             datum_isporuke_obj, 
+#             timezone.datetime.min.time()
+#         ) + timedelta(hours=vreme_putovanja_sati)
+
+        
+#         isporuka = Isporuka.objects.create(
+#             naziv=naziv,
+#             vozac_id=vozac_id,
+#             ruta=ruta,
+#             datum_isporuke=datum_isporuke_obj,
+#             rok_isporuke=timezone.datetime.strptime(rok_isporuke, '%Y-%m-%d').date(),
+#             datum_dolaska=datum_dolaska,
+#             status='aktivna',
+#             datum_kreiranja=timezone.now()
+#         )
+#         vozac = Vozac.objects.get(sifra_vo=vozac_id)
+#         vozac.status = 'zauzet'
+#         vozac.save()
+
+#         serializer = IsporukaSerializer(isporuka)
+#         return Response(serializer.data, status=201)
+
+#     except Exception as e:
+#         print(f"Greška pri kreiranju isporuke: {e}")
+#         return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def izracunaj_datum_dolaska(request):
+    try:
+        datum_isporuke = request.GET.get('datum_isporuke')
+        ruta_id = request.GET.get('ruta_id')
+
+        if not datum_isporuke or not ruta_id:
+            return Response({'error': 'Datum isporuke i ID rute su obavezni'}, status=400)
+
+        try:
+            ruta = Ruta.objects.get(sifra_r=ruta_id)
+        except Ruta.DoesNotExist:
+            return Response({'error': 'Ruta nije pronađena'}, status=404)
+
+        # Izračunaj datum dolaska
+        datum_isporuke_obj = timezone.datetime.strptime(datum_isporuke, '%Y-%m-%d').date()
+        vreme_putovanja_sati = ruta.vreme_dolaska.total_seconds() / 3600
+        
+        datum_dolaska = timezone.datetime.combine(
+            datum_isporuke_obj, 
+            timezone.datetime.min.time()
+        ) + timedelta(hours=vreme_putovanja_sati)
+
+        return Response({
+            'datum_dolaska': datum_dolaska.strftime('%Y-%m-%d'),
+            'vreme_putovanja_sati': round(vreme_putovanja_sati, 2)
+        })
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def isporuka_detail(request, pk):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=pk)
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
+
+    if request.method == 'GET':
+        serializer = IsporukaSerializer(isporuka)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = IsporukaSerializer(isporuka, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def kreiraj_isporuku(request):
+    try:
+        data = request.data
+        print(f"Isporuka: {data}")
+
+        ruta_id = data.get('ruta_id')
+        vozac_id = data.get('vozac_id')
+        naziv = data.get('naziv')
+        datum_isporuke = data.get('datum_isporuke')
+        rok_isporuke = data.get('rok_isporuke')
+        datum_dolaska = data.get('datum_dolaska')
+        kolicina_kg = Decimal(data.get('kolicina_kg', 0))
+
+        if not all([ruta_id, vozac_id, naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
+            return Response({'error': 'Sva polja su obavezna.'}, status=400)
+
+        # Pronadji rutu
+        try:
+            ruta = Ruta.objects.get(sifra_r=ruta_id)
+        except Ruta.DoesNotExist:
+            return Response({'error': 'Ruta nije pronađena.'}, status=404)
+
+        # Pronadji vozaca
+        try:
+            vozac = Vozac.objects.get(sifra_vo=vozac_id)
+        except Vozac.DoesNotExist:
+            return Response({'error': 'Vozač nije pronađen.'}, status=404)
+
+        try:
+            vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+        except Vozac.DoesNotExist:
+            return Response({'error': 'Vozilo nije pronađeno.'}, status=404)
+        #vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+        if not vozilo:
+            vozilo = Vozilo.objects.filter(status='slobodno').order_by('kapacitet').first()
+            return Response({'error': 'Nema slobodnih vozila trenutno.'}, status=400)
+
+        # Kreiraj isporuku unutar transakcije
+        with transaction.atomic():
+            nova_isporuka = Isporuka.objects.create(
+                ruta=ruta,
+                vozilo=vozilo,
+                vozac=vozac,
+                kolicina_kg=kolicina_kg,
+                status='spremna',
+                #datum_polaska=datetime.strptime(datum_isporuke, "%Y-%m-%d"),
+                datum_polaska = datum_isporuke,
+                #rok_is=datetime.strptime(rok_isporuke, "%Y-%m-%d")
+                rok_is = rok_isporuke,
+                datum_dolaska = datum_dolaska
+            )
+
+            # Ažuriraj statuse
+            ruta.status = 'u_toku'
+            ruta.save()
+
+            vozilo.status = 'zauzeto'
+            vozilo.save()
+
+            vozac.status = 'zauzet'
+            vozac.br_voznji =vozac.br_voznji + 1
+            vozac.save()
+
+        serializer = IsporukaSerializer(nova_isporuka)
+        print("Isporuka uspešno kreirana.")
+        return Response(serializer.data, status=201)
+
+    except Exception as e:
+        print(f"Greška u kreiraj_isporuku: {e}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def zavrsi_isporuku(request, isporuka_id):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=isporuka_id)
+        
+        isporuka.status = 'zavrsena'
+        isporuka.save()
+        
+        vozac = isporuka.vozac
+        vozac.status = 'slobodan'
+        vozac.save()
+        
+        serializer = IsporukaSerializer(isporuka)
+        return Response(serializer.data)
+        
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)

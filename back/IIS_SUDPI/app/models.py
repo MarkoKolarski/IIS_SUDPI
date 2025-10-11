@@ -582,9 +582,9 @@ class Vozac(models.Model):
 
 class Isporuka(models.Model):
     sifra_i = models.AutoField(primary_key=True)
-    ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE)
-    vozilo = models.ForeignKey(Vozilo, on_delete=models.CASCADE)
-    vozac = models.ForeignKey(Vozac, on_delete=models.CASCADE, related_name='vozac_isporuke')
+    ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE, null=True)
+    vozilo = models.ForeignKey(Vozilo, on_delete=models.CASCADE , null=True)
+    vozac = models.ForeignKey(Vozac, on_delete=models.CASCADE, null=True)
     status_choices = [
         ('aktivna', 'Nova'),
         ('u_toku', 'U toku'),
@@ -596,6 +596,7 @@ class Isporuka(models.Model):
     datum_kreiranja = models.DateTimeField(auto_now_add=True)
     datum_polaska = models.DateTimeField(null=True, blank=True)
     rok_is = models.DateTimeField(null=True, blank=True)
+    datum_dolaska = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return f"Isporuka {self.sifra_i} - {self.ruta}"
@@ -641,3 +642,4 @@ class voziloOmogucavaTemperatura(models.Model):
             return Upozorenje(isporuka = self.isporuka, tip = 'temperatura', poruka = 'Temperatura je izvan opsega.' )
     class Meta:
         db_table = 'temperaturaVozilo'
+

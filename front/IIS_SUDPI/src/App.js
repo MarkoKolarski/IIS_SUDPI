@@ -37,6 +37,7 @@ import EditOtherProfile from "./pages/EditOtherProfile.js";
 import LogisticTransport from "./pages/LogisticTransport.js";
 import EditVozilo from "./pages/VoziloEdit.js";
 import DashboardLK from "./pages/DashboardLK.js";
+import PlanIsporuke from "./pages/PlanIsporuke.js";
 
 const App = () => {
   return (
@@ -220,6 +221,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
               <DashboardLK />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan-isporuke/:isporukaId"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <PlanIsporuke />
             </ProtectedRoute>
           }
         />
