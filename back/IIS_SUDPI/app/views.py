@@ -96,6 +96,37 @@ class LoginView(DjangoLoginView):
             return Response({'detail': 'Incorrect email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
+def api_login(request):
+    """
+    API endpoint za login koji vraća JWT token (bez CSRF zaštite)
+    """
+    email = request.data.get('mail_k')
+    password = request.data.get('password')
+    
+    if not email or not password:
+        return Response({
+            'detail': 'Email i password su obavezni.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    user = get_user_model().objects.filter(mail_k=email).first()
+    
+    if user is not None and user.is_active and user.check_password(password):
+        user.last_login = timezone.now()
+        user.save(update_fields=['last_login'])
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user_type': user.tip_k,
+            'user_name': f"{user.ime_k} {user.prz_k}",
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            'detail': 'Neispravna email adresa ili lozinka.'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['POST'])
 @permission_classes([AllowAny])  # Make sure this is present
 def register(request):
     print("Registration data received:", request.data)  # Add debug print

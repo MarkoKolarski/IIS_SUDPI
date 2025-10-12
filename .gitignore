@@ -283,3 +283,5 @@ secrets.json
 
 # Database backups
 *.dump
+
+FinancialEventsAnalysisService/

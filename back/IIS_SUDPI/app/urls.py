@@ -2,7 +2,13 @@ from django.urls import path, include
 from . import views
 from . import views_mv
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
-from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, simulate_payment
+from .views import (LoginView, index, register, api_login, dashboard_finansijski_analiticar, invoice_list, 
+                    invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, 
+                    penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, 
+                    preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, 
+                    artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, 
+                    izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, 
+                    simulate_payment)
 from .views_mv import suppliers, expiring_certificates, visits_list, visit_detail, create_visit, busy_visit_slots, complaints_list, create_complaint
 from .views_mv2 import (
     check_service_health, sync_suppliers, sync_complaints, sync_certificates, 
@@ -20,6 +26,7 @@ from django.conf import settings
 urlpatterns = [
     path('', index, name='index'),
     path('login/', LoginView.as_view(), name='login'),
+    path('api/login/', api_login, name='api-login'),  # API endpoint za JWT login
     path('register/', register, name='register'),
     path('dashboard-fa/', dashboard_finansijski_analiticar, name='dashboard_finansijski_analiticar'),
     path('invoices/', invoice_list, name='invoice_list'),
