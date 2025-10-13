@@ -546,6 +546,97 @@ VALUES (23, 'Pšenično brašno T-500', 1500, 90.50, 'Mesečna isporuka - septem
 INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
 VALUES (24, 'Pšenično brašno T-500', 1000, 85.50, 'Mesečna isporuka - oktobar 2025', 22, 1);
 
+
+
+
+
+INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
+VALUES (23, 94050.00, TO_DATE('2025-10-03', 'YYYY-MM-DD'), TO_DATE('2025-11-02', 'YYYY-MM-DD'), 'isplacena', NULL, 1);
+
+-- Faktura 24: Mlekoprodukt (ugovor 2)
+INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
+VALUES (24, 80500.00, TO_DATE('2025-10-05', 'YYYY-MM-DD'), TO_DATE('2025-10-20', 'YYYY-MM-DD'), 'isplacena', NULL, 2);
+
+-- Faktura 25: Voće Srbija (ugovor 8)
+INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
+VALUES (25, 52000.00, TO_DATE('2025-10-08', 'YYYY-MM-DD'), TO_DATE('2025-11-22', 'YYYY-MM-DD'), 'isplacena', NULL, 8);
+
+-- Faktura 26: Šećerana Crvenka (ugovor 9)
+INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
+VALUES (26, 166250.00, TO_DATE('2025-10-10', 'YYYY-MM-DD'), TO_DATE('2025-11-09', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
+
+-- Faktura 27: Agro Invest - integralno brašno (ugovor 6)
+INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
+VALUES (27, 76000.00, TO_DATE('2025-10-12', 'YYYY-MM-DD'), TO_DATE('2025-11-11', 'YYYY-MM-DD'), 'isplacena', NULL, 6);
+
+-- Faktura 28: Mlekoprodukt - pavlaka (ugovor 7)
+INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
+VALUES (28, 36000.00, TO_DATE('2025-10-15', 'YYYY-MM-DD'), TO_DATE('2025-10-30', 'YYYY-MM-DD'), 'isplacena', NULL, 7);
+
+-- ============================================
+-- STAVKE FAKTURE ZA OKTOBAR
+-- ============================================
+
+-- Stavke za fakturu 23 (Agro Invest - pšenično brašno)
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (25, 'Pšenično brašno T-500', 1100, 85.50, 'Oktobarska isporuka 2025 - prva serija', 23, 1);
+
+-- Stavke za fakturu 24 (Mlekoprodukt - UHT mleko)
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (26, 'UHT mleko 3.2%', 600, 125.00, 'Oktobarske nedeljne isporuke mleka', 24, 3);
+
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (27, 'Pavlaka 20%', 25, 180.00, 'Dodatak uz mleko - oktobar', 24, 4);
+
+-- Stavke za fakturu 25 (Voće Srbija - jabuke)
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (28, 'Jabuke Idared I klasa', 800, 65.00, 'Jesenja isporuka jabuka - oktobar 2025', 25, 5);
+
+-- Stavke za fakturu 26 (Šećerana Crvenka - šećer)
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (29, 'Kristal šećer', 1750, 95.00, 'Oktobarska isporuka šećera - povećana količina', 26, 7);
+
+-- Stavke za fakturu 27 (Agro Invest - integralno brašno)
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (30, 'Integralno brašno', 800, 95.00, 'Oktobarska isporuka integralnog brašna', 27, 2);
+
+-- Stavke za fakturu 28 (Mlekoprodukt - pavlaka)
+INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
+VALUES (31, 'Pavlaka 20%', 200, 180.00, 'Specijalna isporuka pavlake - oktobar', 28, 4);
+
+-- ============================================
+-- TRANSAKCIJE ZA OKTOBAR 2025
+-- ============================================
+
+-- Transakcija 20: Faktura 23 (Agro Invest)
+INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
+VALUES (20, TO_TIMESTAMP('2025-10-05 10:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-020', 'uspesna', 23);
+
+-- Transakcija 21: Faktura 24 (Mlekoprodukt)
+INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
+VALUES (21, TO_TIMESTAMP('2025-10-07 14:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-021', 'uspesna', 24);
+
+-- Transakcija 22: Faktura 25 (Voće Srbija)
+INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
+VALUES (22, TO_TIMESTAMP('2025-10-09 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-022', 'uspesna', 25);
+
+-- Transakcija 23: Faktura 26 (Šećerana Crvenka)
+INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
+VALUES (23, TO_TIMESTAMP('2025-10-11 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-023', 'uspesna', 26);
+
+-- Transakcija 24: Faktura 27 (Agro Invest - integralno)
+INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
+VALUES (24, TO_TIMESTAMP('2025-10-13 13:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-024', 'uspesna', 27);
+
+-- Transakcija 25: Faktura 28 (Mlekoprodukt - pavlaka)
+INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
+VALUES (25, TO_TIMESTAMP('2025-10-16 15:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-025', 'uspesna', 28);
+
+
+
+
+
+
 -- ============================================
 -- COMMIT
 -- ============================================

@@ -27,7 +27,7 @@ END;
 
 /*
 ====================================================================================================================================
- ZADATAK 1: TESTIRANJE TRIGERA
+ ZADATAK 1: TESTIRANJE TRIGERA 1 – Automatsko ažuriranje iznosa fakture
 ====================================================================================================================================
 */
 DECLARE
@@ -35,36 +35,11 @@ DECLARE
     v_proizvod_id PROIZVOD.SIFRA_PR%TYPE;
     v_ugovor_id UGOVOR.SIFRA_U%TYPE;
 BEGIN
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- ZADATAK 1: TESTIRANJE TRIGERA ---');
-
-    --================================================================
-    -- Testiranje trigera: AZURIRAJ_STATUS_TRAJANJA_ARTIKLA
-    --================================================================
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '1.1 Testiranje trigera AZURIRAJ_STATUS_TRAJANJA_ARTIKLA...');
-    DBMS_OUTPUT.PUT_LINE('Unosimo tri artikla sa različitim rokovima trajanja...');
-
-    -- Unos artikla kojem je ISTEKAO rok
-    INSERT INTO ARTIKAL (SIFRA_A, NAZIV_A, OSNOVNA_CENA_A, ROK_TRAJANJA_A)
-    VALUES (ARTIKAL_SEQ.NEXTVAL, 'Test Artikal - Istekao', 99.99, SYSDATE - 10);
-
-    -- Unos artikla kojem USKORO ISTIČE rok (unutar 30 dana)
-    INSERT INTO ARTIKAL (SIFRA_A, NAZIV_A, OSNOVNA_CENA_A, ROK_TRAJANJA_A)
-    VALUES (ARTIKAL_SEQ.NEXTVAL, 'Test Artikal - Istice', 149.50, SYSDATE + 20);
-
-    -- Unos artikla koji je AKTIVAN
-    INSERT INTO ARTIKAL (SIFRA_A, NAZIV_A, OSNOVNA_CENA_A, ROK_TRAJANJA_A)
-    VALUES (ARTIKAL_SEQ.NEXTVAL, 'Test Artikal - Aktivan', 250.00, SYSDATE + 100);
-
-    COMMIT;
-    DBMS_OUTPUT.PUT_LINE('Unos artikala završen. Proverite tabelu ARTIKAL za "Test Artikal" unose i njihov STATUS_TRAJANJA.');
-
-    --================================================================
-    -- Testiranje trigera: AZURIRAJ_FAKTURU_NAKON_UNOSA
-    --================================================================
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '1.2 Testiranje trigera AZURIRAJ_FAKTURU_NAKON_UNOSA...');
+    DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- ZADATAK 1: TESTIRANJE TRIGERA 1 ---');
+    DBMS_OUTPUT.PUT_LINE(CHR(10) || 'Testiranje trigera AZURIRAJ_FAKTURU_NAKON_UNOSA...');
 
     -- Potrebni su nam osnovni podaci za kreiranje fakture i stavki
-    -- ISPRAVKA: Korišćenje ROWNUM = 1 umesto FETCH FIRST radi bolje kompatibilnosti
+    -- ISPRAVKA: Korišćenje ROWNUM = 1 radi bolje kompatibilnosti
     SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR WHERE ROWNUM = 1;
     SELECT SIFRA_PR INTO v_proizvod_id FROM PROIZVOD WHERE ROWNUM = 1;
 
@@ -98,8 +73,6 @@ EXCEPTION
 END;
 /
 
--- Prikaz rezultata testa za trigere
-SELECT SIFRA_A, NAZIV_A, ROK_TRAJANJA_A, STATUS_TRAJANJA FROM ARTIKAL WHERE NAZIV_A LIKE 'Test Artikal%';
 SELECT SIFRA_F, IZNOS_F, STATUS_F FROM FAKTURA WHERE SIFRA_F = (SELECT MAX(SIFRA_F) FROM FAKTURA WHERE IZNOS_F > 0);
 
 
@@ -129,23 +102,6 @@ FROM
  ZADATAK 3: TESTIRANJE INDEKSA
 ====================================================================================================================================
 */
-BEGIN
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- ZADATAK 3: TESTIRANJE PERFORMANSI INDEKSA ---');
-    DBMS_OUTPUT.PUT_LINE('UPUTSTVO ZA TESTIRANJE:');
-    DBMS_OUTPUT.PUT_LINE('1. Ako niste, pokrenite PL/SQL blok za generisanje test podataka iz fajla "ispravljeni_plsql.sql".');
-    DBMS_OUTPUT.PUT_LINE('2. U vašem SQL klijentu, pokrenite: SET TIMING ON;');
-    DBMS_OUTPUT.PUT_LINE('3. Pokrenite: DROP INDEX IDX_FAKTURA_STATUS_ROK;');
-    DBMS_OUTPUT.PUT_LINE('4. Izvršite upit ispod i zabeležite vreme izvršavanja (Elapsed time).');
-    DBMS_OUTPUT.PUT_LINE('5. Ponovo kreirajte indeks: CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F);');
-    DBMS_OUTPUT.PUT_LINE('6. Ponovo izvršite isti upit i uporedite vreme izvršavanja.');
-    DBMS_OUTPUT.PUT_LINE('   Vreme bi trebalo da bude značajno manje sa indeksom.');
-END;
-/
-
--- Upit za testiranje performansi
-SELECT SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F
-FROM FAKTURA
-WHERE STATUS_F IN ('primljena', 'verifikovana') AND ROK_PLACANJA_F < SYSDATE;
 
 
 /*
@@ -153,54 +109,17 @@ WHERE STATUS_F IN ('primljena', 'verifikovana') AND ROK_PLACANJA_F < SYSDATE;
  ZADATAK 4: TESTIRANJE PROCEDURE ZA IZVEŠTAJ
 ====================================================================================================================================
 */
-DECLARE
-    v_placena_faktura_id FAKTURA.SIFRA_F%TYPE;
-    v_kreator_id KORISNIK.SIFRA_K%TYPE;
-BEGIN
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- ZADATAK 4: TESTIRANJE PROCEDURE GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI ---');
 
-    -- Potrebno je da imamo bar jednu plaćenu fakturu sa uspešnom transakcijom u tekućem mesecu
-    -- Pronađi jednu plaćenu fakturu (iz test podataka ili regularnih)
-    BEGIN
-        SELECT SIFRA_F INTO v_placena_faktura_id
-        FROM FAKTURA
-        WHERE STATUS_F = 'isplacena' AND ROWNUM = 1;
-    EXCEPTION
-        WHEN NO_DATA_FOUND THEN
-            v_placena_faktura_id := NULL;
-    END;
+SET LONG 50000;
+SET LINESIZE 250;
 
-    -- Ako ne postoji, ili da bismo bili sigurni, dodajemo jednu uspešnu transakciju
-    IF v_placena_faktura_id IS NOT NULL THEN
-        DBMS_OUTPUT.PUT_LINE('Dodavanje test transakcije za fakturu ID: ' || v_placena_faktura_id);
-        INSERT INTO TRANSAKCIJA (SIFRA_T, DATUM_T, POTVRDA_T, STATUS_T, FAKTURA_ID)
-        VALUES (TRANSAKCIJA_SEQ.NEXTVAL, SYSDATE, 'TEST_TRANSAKCIJA_' || TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'), 'uspesna', v_placena_faktura_id);
-        COMMIT;
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('UPOZORENJE: Nije pronađena nijedna "isplacena" faktura. Izveštaj može biti prazan.');
-    END IF;
-
-    -- Uzimamo prvog korisnika kao kreatora izveštaja
-    SELECT SIFRA_K INTO v_kreator_id FROM KORISNIK WHERE ROWNUM = 1;
-
-    -- Poziv procedure za generisanje izveštaja za tekući mesec i godinu
-    DBMS_OUTPUT.PUT_LINE('Pozivanje procedure za generisanje izveštaja za tekući mesec...');
-    GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI(EXTRACT(MONTH FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE), v_kreator_id);
-    DBMS_OUTPUT.PUT_LINE('Procedura je izvršena. Proverite tabelu IZVESTAJ za novi zapis.');
-
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Neočekivana greška u testu za Zadatak 4: ' || SQLERRM);
-        ROLLBACK;
-END;
-/
-
--- Prikaz rezultata testa za proceduru (prikazuje poslednje kreirani izveštaj)
-SELECT SIFRA_I, TIP_I, DATUM_I, KREIRAO_ID, SADRZAJ_I FROM IZVESTAJ WHERE SIFRA_I = (SELECT MAX(SIFRA_I) FROM IZVESTAJ);
-
-BEGIN
-    DBMS_OUTPUT.PUT_LINE(CHR(10) || '===================================================');
-    DBMS_OUTPUT.PUT_LINE(' KRAJ TESTIRANJA ');
-    DBMS_OUTPUT.PUT_LINE('===================================================');
-END;
-/
+SELECT 
+    SIFRA_I,
+    TIP_I,
+    TO_CHAR(DATUM_I, 'DD.MM.YYYY HH24:MI:SS') AS Datum_Kreiranja,
+    LENGTH(SADRZAJ_I) AS JSON_Duzina,
+    SADRZAJ_I
+FROM IZVESTAJ
+WHERE TIP_I = 'finansijski'
+ORDER BY DATUM_I DESC
+FETCH FIRST 1 ROWS ONLY;

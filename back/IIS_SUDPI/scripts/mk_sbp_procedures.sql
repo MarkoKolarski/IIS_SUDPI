@@ -23,30 +23,28 @@
  REŠENJE: Implementirana su dva netrivijalna trigera.
     1. AZURIRAJ_FAKTURU_NAKON_UNOSA: Triger koji se aktivira NAKON unosa nove stavke fakture i automatski
        preračunava i ažurira ukupan iznos na samoj fakturi. Ovo osigurava integritet podataka između povezanih tabela.
-    2. AZURIRAJ_STATUS_TRAJANJA_ARTIKLA: Triger koji se aktivira PRE unosa ili izmene artikla.
-       Automatski postavlja status trajanja ('aktivan', 'istice', 'istekao') na osnovu roka trajanja,
-       što je primer poslovne logike implementirane na nivou baze.
 ====================================================================================================================================
 */
 
--- TRIGER 1: Ažuriranje ukupnog iznosa fakture nakon unosa stavke
+-- TRIGER 1: Automatsko ažuriranje iznosa fakture
+-- Tip: AFTER INSERT triger na tabeli STAVKA_FAKTURE
+-- Funkcionalnost: Kada se unese nova stavka fakture, automatski preračunava i ažurira ukupan iznos na roditeljskoj fakturi
+-- Biznis logika: Održavanje integriteta podataka između povezanih tabela
+
 CREATE OR REPLACE TRIGGER AZURIRAJ_FAKTURU_NAKON_UNOSA
 AFTER INSERT ON STAVKA_FAKTURE
-FOR EACH ROW
 DECLARE
-    v_ukupan_iznos_novi NUMBER;
 BEGIN
-    -- Nakon unosa nove stavke, izračunaj novi ukupan zbir svih stavki za tu fakturu
-    SELECT SUM(CENA_PO_JED * KOLICINA_SF)
-    INTO v_ukupan_iznos_novi
-    FROM STAVKA_FAKTURE
-    WHERE FAKTURA_ID = :NEW.FAKTURA_ID;
-
-    -- Ažuriraj polje za ukupan iznos na originalnoj fakturi
-    UPDATE FAKTURA
-    SET IZNOS_F = v_ukupan_iznos_novi
-    WHERE SIFRA_F = :NEW.FAKTURA_ID;
-
+    -- Ažuriraj iznose svih faktura koje su dobile nove stavke u ovoj SQL izjavi
+    MERGE INTO FAKTURA F
+    USING (
+        SELECT FAKTURA_ID, SUM(CENA_PO_JED * KOLICINA_SF) AS UKUPAN_IZNOS
+        FROM STAVKA_FAKTURE
+        GROUP BY FAKTURA_ID
+    ) SF_SUM
+    ON (F.SIFRA_F = SF_SUM.FAKTURA_ID)
+    WHEN MATCHED THEN
+        UPDATE SET F.IZNOS_F = SF_SUM.UKUPAN_IZNOS;
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Greška u trigeru AZURIRAJ_FAKTURU_NAKON_UNOSA: ' || SQLERRM);
@@ -54,27 +52,6 @@ EXCEPTION
 END;
 /
 
--- TRIGER 2: Automatsko postavljanje statusa trajanja artikla
-CREATE OR REPLACE TRIGGER AZURIRAJ_STATUS_TRAJANJA_ARTIKLA
-BEFORE INSERT OR UPDATE ON ARTIKAL
-FOR EACH ROW
-BEGIN
-    -- Provera da li je rok trajanja već prošao
-    IF :NEW.ROK_TRAJANJA_A < SYSDATE THEN
-        :NEW.STATUS_TRAJANJA := 'istekao';
-    -- Provera da li rok trajanja ističe u narednih 30 dana
-    ELSIF :NEW.ROK_TRAJANJA_A < (SYSDATE + 30) THEN
-        :NEW.STATUS_TRAJANJA := 'istice';
-    -- U suprotnom, artikal je aktivan
-    ELSE
-        :NEW.STATUS_TRAJANJA := 'aktivan';
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Greška u trigeru AZURIRAJ_STATUS_TRAJANJA_ARTIKLA: ' || SQLERRM);
-        RAISE;
-END;
-/
 
 
 /*
@@ -89,27 +66,25 @@ END;
  trenutni dug.
 ====================================================================================================================================
 */
-CREATE OR REPLACE FUNCTION IZRACUNAJ_DUG_DOBAVLJACU(
-    p_dobavljac_id IN NUMBER
-) RETURN NUMBER
-IS
-    v_ukupan_dug NUMBER := 0;
-BEGIN
-    SELECT SUM(F.IZNOS_F)
-    INTO v_ukupan_dug
-    FROM FAKTURA F
-    JOIN UGOVOR U ON F.UGOVOR_ID = U.SIFRA_U
-    WHERE U.DOBAVLJAC_ID = p_dobavljac_id
-      AND F.STATUS_F != 'isplacena';
-
-    RETURN NVL(v_ukupan_dug, 0);
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN 0;
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Greška u funkciji IZRACUNAJ_DUG_DOBAVLJACU: ' || SQLERRM);
-        RETURN -1;
-END;
+CREATE OR REPLACE FUNCTION IZRACUNAJ_DUG_DOBAVLJACU( 
+    p_dobavljac_id IN NUMBER 
+) RETURN NUMBER 
+IS 
+    v_ukupan_dug NUMBER := 0; 
+BEGIN 
+    SELECT NVL(SUM(F.IZNOS_F), 0)
+    INTO v_ukupan_dug 
+    FROM FAKTURA F 
+    JOIN UGOVOR U ON F.UGOVOR_ID = U.SIFRA_U 
+    WHERE U.DOBAVLJAC_ID = p_dobavljac_id 
+      AND F.STATUS_F != 'isplacena'; 
+ 
+    RETURN v_ukupan_dug; 
+EXCEPTION 
+    WHEN OTHERS THEN 
+        DBMS_OUTPUT.PUT_LINE('Greška u funkciji IZRACUNAJ_DUG_DOBAVLJACU: ' || SQLERRM); 
+        RETURN -1; 
+END; 
 /
 
 -- Primer poziva funkcije u SQL upitu
@@ -135,40 +110,92 @@ FROM
     OBJAŠNJENJE: Bez indeksa, baza mora da skenira celu tabelu FAKTURA (Full Table Scan) da bi pronašla
     relevantne redove. Sa indeksom, baza prvo brzo pronalazi sve unose sa traženim statusima, a zatim
     unutar tog znatno manjeg skupa podataka efikasno pretražuje po datumu, drastično smanjujući vreme izvršavanja.
- 3. TEST PODACI: Priložen je PL/SQL blok za generisanje 100,000 test faktura, što je dovoljna količina
-    da se primeti značajna razlika u brzini upita pre i posle kreiranja indeksa.
 ====================================================================================================================================
 */
 
--- Upit koji treba ubrzati
-SELECT SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F
-FROM FAKTURA
-WHERE STATUS_F IN ('primljena', 'verifikovana') AND ROK_PLACANJA_F < SYSDATE;
+--------------------------------------
+PROMPT
+PROMPT ============================================
+PROMPT TESTIRANJE BEZ INDEKSA
+PROMPT ============================================
 
--- Kreiranje indeksa
+SET TIMING ON;
+SELECT COUNT(*), AVG(IZNOS_F)
+FROM FAKTURA 
+WHERE STATUS_F IN ('primljena', 'verifikovana') 
+  AND ROK_PLACANJA_F < SYSDATE;
+SET TIMING OFF;
+
+PROMPT
+PROMPT Execution plan BEZ indeksa:
+EXPLAIN PLAN FOR 
+SELECT SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F 
+FROM FAKTURA 
+WHERE STATUS_F IN ('primljena', 'verifikovana') 
+  AND ROK_PLACANJA_F < SYSDATE;
+
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY(NULL, NULL, 'BASIC +COST'));
+
+PROMPT
+PROMPT ============================================
+PROMPT KREIRANJE INDEKSA
+PROMPT ============================================
+
 CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F);
 
--- OPCIONO: Blok za generisanje test podataka (pokrenuti pre testiranja performansi)
--- Upozorenje: Ovo može potrajati nekoliko minuta.
--- Potrebno je da postoji bar jedan ugovor u tabeli UGOVOR.
+PROMPT
+PROMPT ============================================
+PROMPT TESTIRANJE SA INDEKSOM
+PROMPT ============================================
+
+SET TIMING ON;
+SELECT COUNT(*), AVG(IZNOS_F)
+FROM FAKTURA 
+WHERE STATUS_F IN ('primljena', 'verifikovana') 
+  AND ROK_PLACANJA_F < SYSDATE;
+SET TIMING OFF;
+
+PROMPT
+PROMPT Execution plan SA indeksom:
+EXPLAIN PLAN FOR 
+SELECT SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F 
+FROM FAKTURA 
+WHERE STATUS_F IN ('primljena', 'verifikovana') 
+  AND ROK_PLACANJA_F < SYSDATE;
+
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY(NULL, NULL, 'BASIC +COST'));
+
+--------------------------------------
+
+CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F);
+
+
 DECLARE
     v_ugovor_id UGOVOR.SIFRA_U%TYPE;
 BEGIN
-    -- Uzmi prvi dostupan ugovor kao osnovu za nove fakture
     SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR FETCH FIRST 1 ROWS ONLY;
 
-    DBMS_OUTPUT.PUT_LINE('Pocinje generisanje 100,000 faktura...');
-    FOR i IN 1..100000 LOOP
+    DBMS_OUTPUT.PUT_LINE('Pocinje generisanje 800,000 faktura...');
+    FOR i IN 1..800000 LOOP
         INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
         VALUES (
-            FAKTURA_SEQ.NEXTVAL, -- Pretpostavka da sekvenca FAKTURA_SEQ postoji
-            TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2), -- Nasumičan iznos
-            SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 365)), -- Nasumičan datum prijema u poslednjih godinu dana
-            SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 90)), -- Nasumičan rok plaćanja u poslednjih 90 dana
-            CASE TRUNC(DBMS_RANDOM.VALUE(0, 3)) -- Nasumičan status
-                WHEN 0 THEN 'primljena'
-                WHEN 1 THEN 'verifikovana'
-                ELSE 'isplacena'
+            FAKTURA_SEQ.NEXTVAL,
+            TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2),
+            SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 365)),
+            -- Većina faktura ima ROK U BUDUĆNOSTI
+            CASE 
+                WHEN DBMS_RANDOM.VALUE(0, 100) < 10 THEN 
+                    -- Samo 10% faktura ima prošao rok (starije od danas)
+                    SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 90))
+                ELSE 
+                    -- 90% faktura ima rok u budućnosti (sledeća 2-6 meseci)
+                    SYSDATE + TRUNC(DBMS_RANDOM.VALUE(60, 180))
+            END,
+            -- Većina faktura je PLAĆENA
+            CASE TRUNC(DBMS_RANDOM.VALUE(0, 10))
+                WHEN 0 THEN 'primljena'      -- 10% primljene
+                WHEN 1 THEN 'verifikovana'   -- 10% verifikovane
+                ELSE 'isplacena'              -- 80% isplaćene
             END,
             v_ugovor_id
         );
@@ -184,6 +211,7 @@ EXCEPTION
 END;
 /
 
+COMMIT;
 
 /*
 ====================================================================================================================================
@@ -255,7 +283,7 @@ BEGIN
     ORDER BY SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED) DESC;
 
     -- Generisanje sadržaja izveštaja u JSON formatu
-    v_sadrzaj_izvestaja := '{"izvestaj": "Mesecna profitabilnost po kategorijama", "mesec": ' || p_mesec || ', "godina": ' || p_godina || ', "stavke": [';
+    v_sadrzaj_izvestaja := '{"izvestaj": "2Mesecna profitabilnost po kategorijama", "mesec": ' || p_mesec || ', "godina": ' || p_godina || ', "stavke": [';
 
     FOR i IN 1..l_profitabilnost.COUNT LOOP
         v_sadrzaj_izvestaja := v_sadrzaj_izvestaja ||
@@ -289,3 +317,4 @@ BEGIN
 END;
 /
 
+COMMIT;
