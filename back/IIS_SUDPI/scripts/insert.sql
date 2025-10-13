@@ -635,8 +635,6 @@ VALUES (25, TO_TIMESTAMP('2025-10-16 15:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2
 
 
 
-
-
 -- ============================================
 -- COMMIT
 -- ============================================
@@ -645,6 +643,49 @@ COMMIT;
 -- ============================================
 -- RESETOVANJE SEKVENCI NA MAX(ID)+1
 -- ============================================
+
+DECLARE
+    CURSOR c_tables IS
+        SELECT table_name
+        FROM (
+            SELECT 'KORISNIK' AS table_name FROM dual UNION ALL
+            SELECT 'FINANSIJSKI_ANALITICAR' FROM dual UNION ALL
+            SELECT 'DOBAVLJAC' FROM dual UNION ALL
+            SELECT 'UGOVOR' FROM dual UNION ALL
+            SELECT 'PENAL' FROM dual UNION ALL
+            SELECT 'KATEGORIJA_PROIZVODA' FROM dual UNION ALL
+            SELECT 'PROIZVOD' FROM dual UNION ALL
+            SELECT 'FAKTURA' FROM dual UNION ALL
+            SELECT 'STAVKA_FAKTURE' FROM dual UNION ALL
+            SELECT 'TRANSAKCIJA' FROM dual UNION ALL
+            SELECT 'DASHBOARD' FROM dual UNION ALL
+            SELECT 'IZVESTAJ' FROM dual UNION ALL
+            SELECT 'NOTIFIKACIJA' FROM dual
+        );
+        
+    v_seq_name VARCHAR2(100);
+    v_count NUMBER;
+BEGIN
+    FOR t IN c_tables LOOP
+        v_seq_name := LOWER(t.table_name) || '_seq';
+        
+        SELECT COUNT(*) INTO v_count
+        FROM all_sequences
+        WHERE sequence_name = UPPER(v_seq_name)
+              AND sequence_owner = USER;
+              
+        IF v_count = 0 THEN
+            EXECUTE IMMEDIATE 'CREATE SEQUENCE ' || v_seq_name || ' START WITH 1 INCREMENT BY 1';
+            DBMS_OUTPUT.PUT_LINE('Kreirana sekvenca: ' || v_seq_name);
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('Sekvenca već postoji: ' || v_seq_name);
+        END IF;
+    END LOOP;
+END;
+/
+
+
+-------------------------------------------
 
 -- Korisnik
 DECLARE

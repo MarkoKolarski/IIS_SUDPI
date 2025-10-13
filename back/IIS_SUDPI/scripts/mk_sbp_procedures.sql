@@ -1,21 +1,5 @@
 /*
 ====================================================================================================================================
-                            PREDISPITNE OBAVEZE: SISTEMI BAZA PODATAKA
-                                    IMPLEMENTACIJA PL/SQL KOMPONENTI
-
- Ovaj fajl sadrži rešenja za sve zadatke iz specifikacije, prilagođena za Oracle bazu podataka
- koja koristi šemu generisanu iz Django modela.
-
- LEGENDA IZMENA:
- 1. Svi nazivi tabela i kolona su u VELIKIM SLOVIMA, u skladu sa Oracle standardom za Django migracije.
- 2. Reference na kolone su usklađene sa nazivima atributa u Django modelima.
- 3. Svaki zadatak je jasno odvojen i komentarisan kako bi se objasnilo kako ispunjava zahteve specifikacije.
-====================================================================================================================================
-*/
-
-
-/*
-====================================================================================================================================
  ZADATAK 1: PL/SQL TRIGER
 ------------------------------------------------------------------------------------------------------------------------------------
  ZAHTEV: Kreiranje jednog ili više netrivijalnih trigera (INSERT, UPDATE, DELETE).
