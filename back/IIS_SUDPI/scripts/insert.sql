@@ -645,6 +645,7 @@ COMMIT;
 -- ============================================
 
 DECLARE
+    -- Kursor sa listom tabela, isti kao u vašem originalnom kodu
     CURSOR c_tables IS
         SELECT table_name
         FROM (
@@ -662,249 +663,57 @@ DECLARE
             SELECT 'IZVESTAJ' FROM dual UNION ALL
             SELECT 'NOTIFIKACIJA' FROM dual
         );
-        
-    v_seq_name VARCHAR2(100);
-    v_count NUMBER;
+
+    v_seq_name          VARCHAR2(100);
+    v_pk_column_name    VARCHAR2(100);
+    v_max_id            NUMBER;
+    v_start_with        NUMBER;
+    v_sql               VARCHAR2(500);
+
 BEGIN
     FOR t IN c_tables LOOP
         v_seq_name := LOWER(t.table_name) || '_seq';
+
+        BEGIN
+            -- 1. Dinamički pronalazimo ime kolone koja je primarni ključ (PK)
+            SELECT cols.column_name
+            INTO v_pk_column_name
+            FROM all_constraints cons
+            JOIN all_cons_columns cols ON cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner
+            WHERE cons.constraint_type = 'P' -- 'P' za Primary Key
+              AND cons.table_name = t.table_name
+              AND cons.owner = USER; -- Gledamo samo objekte trenutnog korisnika
+
+            -- 2. Pronalazimo maksimalnu vrednost primarnog ključa u tabeli
+            v_sql := 'SELECT MAX(' || v_pk_column_name || ') FROM ' || t.table_name;
+            EXECUTE IMMEDIATE v_sql INTO v_max_id;
+
+            -- Ako je tabela prazna, v_max_id će biti NULL. U tom slučaju, počinjemo od 1.
+            v_start_with := NVL(v_max_id, 0) + 1;
+
+            -- 3. Brišemo postojeću sekvencu (ako postoji)
+            BEGIN
+                EXECUTE IMMEDIATE 'DROP SEQUENCE ' || v_seq_name;
+                DBMS_OUTPUT.PUT_LINE('Obrisana postojeća sekvenca: ' || v_seq_name);
+            EXCEPTION
+                WHEN OTHERS THEN -- Greška ako sekvenca ne postoji, ignorišemo je
+                    NULL;
+            END;
+
+            -- 4. Kreiramo novu sekvencu sa ispravnom početnom vrednošću
+            v_sql := 'CREATE SEQUENCE ' || v_seq_name || ' START WITH ' || v_start_with || ' INCREMENT BY 1 NOCACHE';
+            EXECUTE IMMEDIATE v_sql;
+            
+            DBMS_OUTPUT.PUT_LINE('Kreirana/ažurirana sekvenca: ' || v_seq_name || ' sa početnom vrednošću ' || v_start_with);
+
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                DBMS_OUTPUT.PUT_LINE('UPOZORENJE: Nije pronađen primarni ključ za tabelu: ' || t.table_name || '. Sekvenca nije ažurirana.');
+            WHEN OTHERS THEN
+                DBMS_OUTPUT.PUT_LINE('GREŠKA pri obradi tabele ' || t.table_name || ': ' || SQLERRM);
+        END;
         
-        SELECT COUNT(*) INTO v_count
-        FROM all_sequences
-        WHERE sequence_name = UPPER(v_seq_name)
-              AND sequence_owner = USER;
-              
-        IF v_count = 0 THEN
-            EXECUTE IMMEDIATE 'CREATE SEQUENCE ' || v_seq_name || ' START WITH 1 INCREMENT BY 1';
-            DBMS_OUTPUT.PUT_LINE('Kreirana sekvenca: ' || v_seq_name);
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('Sekvenca već postoji: ' || v_seq_name);
-        END IF;
     END LOOP;
-END;
-/
-
-
--------------------------------------------
-
--- Korisnik
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_k), 0) INTO v_max_id FROM korisnik;
-    SELECT korisnik_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE korisnik_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT korisnik_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE korisnik_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Finansijski analitičar
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(id), 0) INTO v_max_id FROM finansijski_analiticar;
-    SELECT finansijski_analiticar_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE finansijski_analiticar_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT finansijski_analiticar_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE finansijski_analiticar_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Dobavljač
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_d), 0) INTO v_max_id FROM dobavljac;
-    SELECT dobavljac_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE dobavljac_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT dobavljac_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE dobavljac_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Ugovor
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_u), 0) INTO v_max_id FROM ugovor;
-    SELECT ugovor_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE ugovor_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT ugovor_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE ugovor_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Penal
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_p), 0) INTO v_max_id FROM penal;
-    SELECT penal_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE penal_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT penal_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE penal_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Kategorija proizvoda
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_kp), 0) INTO v_max_id FROM kategorija_proizvoda;
-    SELECT kategorija_proizvoda_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE kategorija_proizvoda_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT kategorija_proizvoda_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE kategorija_proizvoda_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Proizvod
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_pr), 0) INTO v_max_id FROM proizvod;
-    SELECT proizvod_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE proizvod_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT proizvod_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE proizvod_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Faktura
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_f), 0) INTO v_max_id FROM faktura;
-    SELECT faktura_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE faktura_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT faktura_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE faktura_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Stavka fakture
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_sf), 0) INTO v_max_id FROM stavka_fakture;
-    SELECT stavka_fakture_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE stavka_fakture_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT stavka_fakture_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE stavka_fakture_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Transakcija
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_t), 0) INTO v_max_id FROM transakcija;
-    SELECT transakcija_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE transakcija_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT transakcija_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE transakcija_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Dashboard
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_d), 0) INTO v_max_id FROM dashboard;
-    SELECT dashboard_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE dashboard_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT dashboard_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE dashboard_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Izvestaj
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_i), 0) INTO v_max_id FROM izvestaj;
-    SELECT izvestaj_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE izvestaj_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT izvestaj_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE izvestaj_seq INCREMENT BY 1';
-    END IF;
-END;
-/
-
--- Notifikacija
-DECLARE
-    v_max_id NUMBER;
-    v_nextval NUMBER;
-    v_diff NUMBER;
-BEGIN
-    SELECT NVL(MAX(sifra_n), 0) INTO v_max_id FROM notifikacija;
-    SELECT notifikacija_seq.NEXTVAL INTO v_nextval FROM dual;
-    v_diff := (v_max_id + 1) - v_nextval;
-    IF v_diff != 0 THEN
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE notifikacija_seq INCREMENT BY ' || v_diff;
-        EXECUTE IMMEDIATE 'SELECT notifikacija_seq.NEXTVAL FROM dual';
-        EXECUTE IMMEDIATE 'ALTER SEQUENCE notifikacija_seq INCREMENT BY 1';
-    END IF;
 END;
 /
 
