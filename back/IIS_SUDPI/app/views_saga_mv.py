@@ -141,7 +141,7 @@ def demo_complaint_saga_success(request):
                 ime_sirovine='Test Material',
                 cena=100.00,
                 rok_isporuke=7,
-                ocena=8.0,
+                ocena=9.0,
                 datum_ocenjivanja=timezone.now().date(),
                 izabran=False
             )
