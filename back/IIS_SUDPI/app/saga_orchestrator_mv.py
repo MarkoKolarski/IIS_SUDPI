@@ -441,7 +441,9 @@ class SagaOrchestrator:
             return {"action": "validation_compensation_not_needed"}
 
         def create_visit():
-            validation_result = saga.steps[0].result
+            # Get saga instance through the created saga_id
+            current_saga = self.active_sagas[saga_id]
+            validation_result = current_saga.steps[0].result
             
             kontrolor = KontrolorKvaliteta.objects.first()
             supplier = Dobavljac.objects.get(sifra_d=visit_data['dobavljac_id'])
@@ -466,8 +468,9 @@ class SagaOrchestrator:
             return {"visit_id": visit.poseta_id, "supplier_id": supplier.sifra_d}
 
         def compensate_visit():
-            if saga.steps[1].result:
-                visit_id = saga.steps[1].result["visit_id"]
+            current_saga = self.active_sagas[saga_id]
+            if len(current_saga.steps) > 1 and current_saga.steps[1].result:
+                visit_id = current_saga.steps[1].result["visit_id"]
                 visit = Poseta.objects.filter(poseta_id=visit_id).first()
                 if visit:
                     visit.delete()
@@ -475,7 +478,8 @@ class SagaOrchestrator:
             return {"action": "visit_not_found"}
 
         def send_notification():
-            visit_result = saga.steps[1].result
+            current_saga = self.active_sagas[saga_id]
+            visit_result = current_saga.steps[1].result
             
             # Simulate notification sending
             logger.info(f"Sending notification for visit {visit_result['visit_id']}")
@@ -483,8 +487,9 @@ class SagaOrchestrator:
             return {"notification_sent": True, "visit_id": visit_result["visit_id"]}
 
         def compensate_notification():
-            if saga.steps[2].result:
-                visit_id = saga.steps[2].result["visit_id"]
+            current_saga = self.active_sagas[saga_id]
+            if len(current_saga.steps) > 2 and current_saga.steps[2].result:
+                visit_id = current_saga.steps[2].result["visit_id"]
                 logger.info(f"Would cancel notification for visit {visit_id}")
                 return {"action": "notification_cancelled", "visit_id": visit_id}
             return {"action": "notification_not_sent"}
