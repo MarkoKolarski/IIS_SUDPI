@@ -204,7 +204,7 @@ class SagaOrchestrator:
                 raise ValueError(f"Supplier with PIB {supplier_data['PIB_d']} already exists")
             
             supplier = Dobavljac.objects.create(**supplier_data)
-            return {"supplier_id": supplier.sifra_d, "supplier": supplier}
+            return {"supplier_id": supplier.sifra_d, "supplier_name": supplier.naziv}
 
         def compensate_supplier():
             supplier = Dobavljac.objects.filter(PIB_d=supplier_data['PIB_d']).first()
@@ -215,13 +215,13 @@ class SagaOrchestrator:
 
         def create_contract():
             supplier_result = saga.steps[0].result
-            supplier = supplier_result["supplier"]
+            supplier = Dobavljac.objects.get(sifra_d=supplier_result["supplier_id"])
             
             contract = Ugovor.objects.create(
                 dobavljac=supplier,
                 **contract_data
             )
-            return {"contract_id": contract.sifra_u, "contract": contract}
+            return {"contract_id": contract.sifra_u, "supplier_id": supplier.sifra_d}
 
         def compensate_contract():
             if len(saga.steps) > 1 and saga.steps[1].result:
@@ -237,7 +237,7 @@ class SagaOrchestrator:
                 raise Exception("Forced failure in microservice sync for demonstration")
                 
             supplier_result = saga.steps[0].result
-            supplier = supplier_result["supplier"]
+            supplier = Dobavljac.objects.get(sifra_d=supplier_result["supplier_id"])
             
             # Sync to microservice
             ms_data = {
@@ -431,7 +431,11 @@ class SagaOrchestrator:
             if overlapping.exists():
                 raise Exception("Visit time slot is already occupied")
             
-            return {"validation": "passed", "datum_od": datum_od, "datum_do": datum_do}
+            return {
+                "validation": "passed", 
+                "datum_od": datum_od.isoformat(), 
+                "datum_do": datum_do.isoformat()
+            }
 
         def compensate_validation():
             return {"action": "validation_compensation_not_needed"}
@@ -442,15 +446,24 @@ class SagaOrchestrator:
             kontrolor = KontrolorKvaliteta.objects.first()
             supplier = Dobavljac.objects.get(sifra_d=visit_data['dobavljac_id'])
             
+            # Parse datetime strings back to datetime objects
+            datum_od = datetime.fromisoformat(validation_result["datum_od"].replace('Z', ''))
+            datum_do = datetime.fromisoformat(validation_result["datum_do"].replace('Z', ''))
+            
+            if datum_od.tzinfo is None:
+                datum_od = timezone.make_aware(datum_od)
+            if datum_do.tzinfo is None:
+                datum_do = timezone.make_aware(datum_do)
+            
             visit = Poseta.objects.create(
                 kontrolor=kontrolor,
                 dobavljac=supplier,
-                datum_od=validation_result["datum_od"],
-                datum_do=validation_result["datum_do"],
+                datum_od=datum_od,
+                datum_do=datum_do,
                 status='zakazana'
             )
             
-            return {"visit_id": visit.poseta_id, "visit": visit}
+            return {"visit_id": visit.poseta_id, "supplier_id": supplier.sifra_d}
 
         def compensate_visit():
             if saga.steps[1].result:
