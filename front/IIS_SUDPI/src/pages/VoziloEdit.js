@@ -119,7 +119,7 @@ const EditVozilo = () => {
           <div className="edit-vozilo-buttons">
             <button
               type="button"
-              onClick={() => navigate("/logistika-transport")}
+              onClick={() => navigate("/logistics-transport")}
               className="cancel-btn"
             >
               Odustani

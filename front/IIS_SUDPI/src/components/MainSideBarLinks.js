@@ -1,10 +1,25 @@
 export const sidebarLinks = {
   logisticki_koordinator: [
     {
-      title: "Dashboard",
+      title: "Kontrolna tabla",
       href: "/dashboard-lk",
       description: "Pregled logističkih operacija",
     },
+    // {
+    //   title: "Pregled aktivnih ruta",
+    //   href: "/dashboard-lk",
+    //   description: "Pregled osnovnih informacija",
+    // },
+    // {
+    //   title: "Pregled svih isporuka",
+    //   href: "/dashboard-lk",
+    //   description: "Pregled stanja isporuka",
+    // },
+    // {
+    //   title: "Kontrola i izveštaji",
+    //   href: "/dashboard-lk",
+    //   //description: "Pregled logističkih operacija",
+    // },
     // Add more LK specific links
   ],
   skladisni_operater: [

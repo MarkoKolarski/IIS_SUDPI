@@ -2003,13 +2003,6 @@ def servisi_po_vozilu(request, vozilo_id):
     serializer = ServisSerializer(servisi, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-# rute
-@api_view(['GET'])
-def list_rute(request):
-    rute = Ruta.objects.all()
-    serializer = RutaSerializer(rute, many=True)
-    return Response(serializer.data)
-
 # isporuka
 @api_view(['GET'])
 def list_isporuke(request):
@@ -2516,7 +2509,7 @@ def zavrsi_isporuku(request, isporuka_id):
         return Response({'error': 'Isporuka ne postoji'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-    
+
 # rute
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
