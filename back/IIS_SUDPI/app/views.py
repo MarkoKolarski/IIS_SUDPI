@@ -15,8 +15,11 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import UserProfileUpdateForm
-from .models import Faktura, User, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+#from .models import Faktura, User, Dobavljac, Penal, Ugovor, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+import requests
+from datetime import timedelta
+from django.utils import timezone
+from .models import Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -32,6 +35,16 @@ from .serializers import (
     DodajSkladisteSerializer,
     DodajArtikalSerializer,
     RizicniArtikalSerializer,
+    UserProfileSerializer, 
+    UserProfileUpdateSerializer,
+    VozacSerializer,
+    VoziloSerializer,
+    ServisSerializer,
+    IsporukaSerializer,
+    RutaSerializer,
+    UpozorenjeSerializer,
+    TemperaturaSerializer,
+    NotifikacijaSerializer
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -2044,37 +2057,830 @@ def artikli_grafikon_po_nedeljama(request):
             {'error': 'Greška pri generisanju grafikona', 'details': str(e)}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )    
-#@login_required
-# @api_view(['POST'])
-# @permission_classes([AllowAny]) 
-# def user_profile_update(request, user_id=None):
-#     # Ako nije prosleđen user_id, koristi trenutnog korisnika
-#     if user_id:
-#         user = get_object_or_404(User, sifra_k=user_id)
-#         # Provera permisija - samo administrator može da menja druge korisnike
-#         if not request.user.tip_k == 'administrator' and request.user != user:
-#             messages.error(request, "Nemate dozvolu za izmenu ovog profila")
-#             return redirect('dashboard')
-#     else:
-#         user = request.user
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def user_profile_update_api(request, user_id=None):
+    """
+    API endpoint za ažuriranje korisničkog profila
+    """
+    # Određivanje korisnika koji se menja
+    if user_id:
+        user = get_object_or_404(User, sifra_k=user_id)
+        # Provera permisija
+        if not request.user.tip_k == 'administrator' and request.user != user:
+            return Response(
+                {"error": "Nemate dozvolu za izmenu ovog profila"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    else:
+        user = request.user
 
-#     if request.method == 'POST':
-#         if 'odustani' in request.POST:
-#             return redirect('user_list')  # ili neka druga stranica
+    if request.method == 'GET':
+        # Vraćanje trenutnih podataka korisnika
+        serializer = UserProfileUpdateSerializer(user)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        # Ažuriranje podataka
+        serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "Profil je uspešno ažuriran",
+                "user": UserProfileSerializer(user).data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_profile(request):
+    """Dobijanje podataka trenutnog korisnika"""
+    serializer = UserProfileSerializer(request.user)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_profile_by_id(request, user_id):
+    """Dobijanje podataka određenog korisnika (samo za administratore)"""
+    if not request.user.tip_k == 'administrator':
+        return Response(
+            {"error": "Nemate dozvolu za pristup ovim podacima"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    user = get_object_or_404(User, sifra_k=user_id)
+    serializer = UserProfileSerializer(user)
+    return Response(serializer.data)
+
+@api_view(['PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def update_user_profile(request, user_id=None):
+    # Određivanje korisnika koji se menja
+    if user_id:
+        user = get_object_or_404(User, sifra_k=user_id)
+        # Provera permisija - samo administrator može da menja druge korisnike
+        if not request.user.tip_k == 'administrator':
+            return Response(
+                {"error": "Nemate dozvolu za izmenu ovog profila"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    else:
+        user = request.user
+
+    serializer = UserProfileUpdateSerializer(user, data=request.data, partial=True)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response({
+            "message": "Profil je uspešno ažuriran",
+            "user": UserProfileSerializer(user).data
+        }, status=status.HTTP_200_OK)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_users_list(request):
+    """Lista svih korisnika (samo za administratore)"""
+    if not request.user.tip_k == 'administrator':
+        return Response(
+            {"error": "Nemate dozvolu za pristup ovoj listi"},
+            status=status.HTTP_403_FORBIDDEN)
+    users = User.objects.all()
+    serializer = UserProfileSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+#@allowed_users(['administrator'])
+def vozaci_list(request):
+
+    try:
+        vozaci = Vozac.objects.all().order_by('sifra_vo')
+        #vozaci = Vozac.get_all_vozila().order_by('sifra_v')
+        serializer = VozacSerializer(vozaci, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju vozača', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['administrator'])
+def vozila_list(request):
+    try:
+        vozila = Vozilo.objects.all().order_by('sifra_v')
+        serializer = VoziloSerializer(vozila, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': 'Greška pri dohvatanju vozila', 'details': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+@api_view(['GET'])
+def get_vozilo(request, pk):
+    vozilo = get_object_or_404(Vozilo, pk=pk)
+    serializer = VoziloSerializer(vozilo)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['administrator'])
+def update_vozilo(request, pk):
+    vozilo = get_object_or_404(Vozilo, pk=pk)
+    serializer = VoziloSerializer(vozilo, data=request.data, partial = True)
+    allowed_fields = ['status', 'registracija', 'kapacitet']
+    for field in request.data.keys():
+        if field not in allowed_fields:
+            return Response(
+                {"error": f"Polje '{field}' ne može da se menja."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_vozilo(request, pk):
+    vozilo = get_object_or_404(Vozilo, pk=pk)
+    vozilo.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+# servis
+@api_view(['POST'])
+def create_servis(request):
+    serializer = ServisSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def list_servisi(request):
+    servisi = Servis.objects.select_related('vozilo').all()
+    serializer = ServisSerializer(servisi, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_servis(request, pk):
+    servis = get_object_or_404(Servis, pk=pk)
+    serializer = ServisSerializer(servis)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+def update_servis(request, pk):
+    servis = get_object_or_404(Servis, pk=pk)
+    serializer = ServisSerializer(servis, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_servis(request, pk):
+    servis = get_object_or_404(Servis, pk=pk)
+    servis.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+def servisi_po_vozilu(request, vozilo_id):
+    servisi = Servis.objects.filter(vozilo_id=vozilo_id).order_by('-datum_servisa')
+    serializer = ServisSerializer(servisi, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+# isporuka
+@api_view(['GET'])
+def list_isporuke(request):
+    #isporuke = Isporuka.objects.select_related('vozilo', 'ruta').all()
+    isporuke = Isporuka.objects.all()
+    serializer = IsporukaSerializer(isporuke, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_aktivne_isporuke(request):
+    try:
+            aktivne_isporuke = Isporuka.objects.filter(
+                status ='aktivna' 
+                #status__in=['aktivna', 'aktivna_nova']
+            ).select_related('ruta', 'vozilo', 'vozac')
+            isporuke_data = []
+            for isporuka in aktivne_isporuke:
+                isporuke_data.append({
+                    'sifra_i': isporuka.sifra_i,
+                    'naziv': f"Isporuka {isporuka.sifra_i}",
+                    'datum_kreiranja': isporuka.datum_kreiranja,
+                    'kolicina_kg': getattr(isporuka, 'kolicina_kg', None),
+                    'rok_isporuke': getattr(isporuka, 'rok_is', 'N/A'),
+                    'status': isporuka.status,
+                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+                })
             
-#         form = UserProfileUpdateForm(request.POST, instance=user)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, "Profil je uspešno ažuriran")
-#             return redirect('user_list')  # ili 'profile_view'
-#     else:
-#         form = UserProfileUpdateForm(instance=user)
-#         # Ukloni password polje iz forme pri prikazu
-#         form.fields['password'].widget.attrs['placeholder'] = 'Ostavite prazno ako ne želite da promenite lozinku'
+            return Response(isporuke_data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju aktivnih isporuka: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
 
-#     context = {
-#         'form': form,
-#         'user_to_edit': user,
-#         'is_own_profile': user == request.user,
-#     }
-#     return render(request, 'user_profile_update.html', context)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_u_toku_isporuke(request):
+    try:
+            aktivne_isporuke = Isporuka.objects.filter(
+                status ='u_toku' 
+                #status__in=['aktivna', 'aktivna_nova']
+            ).select_related('ruta', 'vozilo', 'vozac')
+            isporuke_data = []
+            for isporuka in aktivne_isporuke:
+                isporuke_data.append({
+                    'sifra_i': isporuka.sifra_i,
+                    'naziv': f"Isporuka {isporuka.sifra_i}",
+                    'datum_kreiranja': isporuka.datum_kreiranja,
+                    'kolicina_kg': getattr(isporuka, 'kolicina_kg', None),
+                    'rok_isporuke': getattr(isporuka, 'rok_is', 'N/A'),
+                    'status': isporuka.status,
+                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+                })
+            
+            return Response(isporuke_data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju aktivnih isporuka: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def debug_sve_isporuke(request):
+    """
+    Privremeni endpoint za debug - prikazuje sve isporuke i njihove statuse
+    """
+    try:
+        sve_isporuke = Isporuka.objects.all().select_related('ruta')
+        
+        isporuke_data = []
+        for isporuka in sve_isporuke:
+            isporuke_data.append({
+                'sifra_i': isporuka.sifra_i,
+                'naziv': f"Isporuka {isporuka.sifra_i}",
+                'status': isporuka.status,  # OVO ĆE NAM POKAZATI STVARNE STATUS U BAZI
+                'datum_kreiranja': isporuka.datum_kreiranja,
+                'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+            })
+        
+        return Response({
+            'ukupno_isporuka': sve_isporuke.count(),
+            'isporuke': isporuke_data
+        })
+    except Exception as e:
+        return Response({'detail': f'Greška: {str(e)}'}, status=500)
+# upozorenje
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_upozorenja(request):
+    #upozorenja = Upozorenje.objects.select_related('isporuka').all()
+    try:
+        upozorenja = Upozorenje.objects.all()
+        serializer = UpozorenjeSerializer(upozorenja, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
+# temperatura
+@api_view(['GET'])
+def list_temperature(request):
+    temperature = Temperatura.objects.all()
+    serializer = TemperaturaSerializer(temperature, many=True)
+    return Response(serializer.data)
+
+# @api_view(['GET'])
+# def list_vozilo_temperatura(request):
+#     veze = voziloOmogucavaTemperatura.objects.select_related('sifra_temp', 'sifra_vozila', 'isporuka').all()
+#     serializer = VoziloTemperaturaSerializer(veze, many=True)
+#     return Response(serializer.data)
+
+# notifikacija
+@api_view(['GET'])
+def list_notifikacije(request):
+    notifikacije = Notifikacija.objects.select_related('korisnik').all()
+    serializer = NotifikacijaSerializer(notifikacije, many=True)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def mark_notifikacija_as_read(request, pk):
+    notifikacija = get_object_or_404(Notifikacija, pk=pk)
+    notifikacija.procitana_n = True
+    notifikacija.save()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_user_notifikacije(request, user_id):
+    try:
+        notifikacije = Notifikacija.objects.select_related('korisnik').filter(
+            korisnik_id=user_id
+        ).order_by('-datum_n') 
+        
+        serializer = NotifikacijaSerializer(notifikacije, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju notifikacija za korisnika {user_id}: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['administrator'])
+def update_status_vozaca(request, pk):
+    vozac = get_object_or_404(Vozac, pk=pk)
+    serializer = VozacSerializer(vozac, data=request.data, partial = True)
+        
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def predlozi_vozaca(request):
+    try:
+        slobodni_vozaci = Vozac.objects.filter(
+            status='slobodan'
+        ).order_by('-br_voznji')
+
+        if slobodni_vozaci.exists():
+            vozac = slobodni_vozaci.first()
+        else:
+            vozac = Vozac.objects.order_by('-br_voznji').first()
+
+        serializer = VozacSerializer(vozac)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+def pronadji_optimalno_vozilo(kolicina_kg):
+    slobodna_vozila = Vozilo.objects.filter(
+        status='slobodan',
+        kapacitet__gte=kolicina_kg
+    ).order_by('kapacitet')
+
+    if slobodna_vozila.exists():
+        return slobodna_vozila.first()
+    
+    vozilo = Vozilo.objects.filter(
+        kapacitet__gte=kolicina_kg
+    ).order_by('kapacitet').first()
+    
+    return vozilo
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def predlozi_vozilo(request):
+    try:
+        kolicina_kg = request.data.get('kolicina_kg', 0)
+
+        vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+
+        if vozilo:
+            serializer = VoziloSerializer(vozilo)
+            return Response(serializer.data)
+        else:
+            return Response({'detail': 'Nema dostupnih vozila za datu količinu.'}, status=404)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+def geokodiraj_adresu(adresa):
+    try:
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {
+            'q': adresa,
+            'format': 'json',
+            'limit': 1,
+            'countrycodes': 'rs'  # Pretraga samo za Srbiju
+        }
+        headers = {
+            'User-Agent': 'IIS_SUDPI/1.0 (begovic.in26.2021@uns.ac.rs)'  # nesto za Nominatim
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                return float(data[0]['lat']), float(data[0]['lon'])
+        return None, None
+    except Exception as e:
+        print(f"Greška pri geokodiranju adrese {adresa}: {e}")
+        return None, None
+
+# dobavljanje podataka o ruti koristeci OSRM API
+def dobavi_podatke_o_ruti(polazna_tacka, odrediste):
+    try:
+        # Geokodiranje polazne tačke
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(polazna_tacka)
+        if not polaziste_lat:
+            return None
+        
+        # Geokodiranje odredišta
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(odrediste)
+        if not odrediste_lat:
+            return None
+        
+        # Poziv OSRM API-ja za dobijanje rute
+        url = f"http://router.project-osrm.org/route/v1/driving/{polaziste_lon},{polaziste_lat};{odrediste_lon},{odrediste_lat}?overview=false"
+        #url = f"https://map.project-osrm.org/?z=7&center=44.331707%2C22.357178&loc={polaziste_lon}%2C{polaziste_lat}&loc={odrediste_lon}%2C{odrediste_lat}&hl=en&alt=0&srv=0"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data['code'] == 'Ok' and data['routes']:
+                ruta = data['routes'][0]
+                duzina_km = round(ruta['distance'] / 1000, 2)
+                vreme_sati = round(ruta['duration'] / 3600, 2)
+                
+                return {
+                    'duzina_km': duzina_km,
+                    'vreme_sati': vreme_sati,
+                    'polazna_tacka_koordinate': f"{polaziste_lat},{polaziste_lon}",
+                    'odrediste_koordinate': f"{odrediste_lat},{odrediste_lon}",
+                    'smer': 'Najkraća ruta'
+                }
+        
+        return None
+    except Exception as e:
+        print(f"Greška pri dobavljanju rute: {e}")
+        return None
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def predlozi_rutu(request):
+    try:
+        polazna_tacka = request.data.get('polazna_tacka', '').strip()
+        odrediste = request.data.get('odrediste', '').strip()
+
+        if not polazna_tacka or not odrediste:
+            return Response({'error': 'Polazna tačka i odredište su obavezni'}, status=400)
+
+        # Proveri da li ruta već postoji u bazi
+        postojeca_ruta = Ruta.objects.filter(
+            polazna_tacka__iexact=polazna_tacka,
+            odrediste__iexact=odrediste
+        ).first()
+
+        if postojeca_ruta:
+            serializer = RutaSerializer(postojeca_ruta)
+            return Response(serializer.data)
+
+        # Dobavi podatke o ruti sa OSM
+        ruta_podaci = dobavi_podatke_o_ruti(polazna_tacka, odrediste)
+
+        if not ruta_podaci:
+            return Response({
+                'error': 'Nije moguće pronaći rutu za unete adrese. Proverite tačnost unosa.'
+            }, status=404)
+
+        # Kreiraj novu rutu
+        nova_ruta = Ruta.objects.create(
+            polazna_tacka=polazna_tacka,
+            odrediste=odrediste,
+            duzina_km=ruta_podaci['duzina_km'],
+            vreme_dolaska=timedelta(hours=ruta_podaci['vreme_sati']),
+            status='planirana'
+        )
+
+        serializer = RutaSerializer(nova_ruta)
+        return Response(serializer.data)
+
+    except Exception as e:
+        print(f"Greška u predlozi_rutu: {e}")
+        return Response({'error': str(e)}, status=500)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def izracunaj_datum_dolaska(request):
+    try:
+        datum_isporuke = request.GET.get('datum_isporuke')
+        ruta_id = request.GET.get('ruta_id')
+
+        if not datum_isporuke or not ruta_id:
+            return Response({'error': 'Datum isporuke i ID rute su obavezni'}, status=400)
+
+        try:
+            ruta = Ruta.objects.get(sifra_r=ruta_id)
+        except Ruta.DoesNotExist:
+            return Response({'error': 'Ruta nije pronađena'}, status=404)
+
+        # Izračunaj datum dolaska
+        datum_isporuke_obj = timezone.datetime.strptime(datum_isporuke, '%Y-%m-%d').date()
+        vreme_putovanja_sati = ruta.vreme_dolaska.total_seconds() / 3600
+        
+        datum_dolaska = timezone.datetime.combine(
+            datum_isporuke_obj, 
+            timezone.datetime.min.time()
+        ) + timedelta(hours=vreme_putovanja_sati)
+
+        return Response({
+            'datum_dolaska': datum_dolaska.strftime('%Y-%m-%d'),
+            'vreme_putovanja_sati': round(vreme_putovanja_sati, 2)
+        })
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def isporuka_detail(request, pk):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=pk)
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
+
+    if request.method == 'GET':
+        serializer = IsporukaSerializer(isporuka)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = IsporukaSerializer(isporuka, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def kreiraj_isporuku(request, pk):
+    try:
+        data = request.data
+        print(f"Isporuka: {data}")
+        try:
+            isporuka = Isporuka.objects.get(sifra_i=pk)
+        except Isporuka.DoesNotExist:
+            return Response({'error': 'Isporuka ne postoji.'}, status=404)
+
+        ruta_id = data.get('ruta_id')
+        vozac_id = data.get('vozac_id')
+        naziv = data.get('naziv')
+        datum_isporuke = data.get('datum_isporuke')
+        rok_isporuke = data.get('rok_isporuke')
+        datum_dolaska = data.get('datum_dolaska')
+        kolicina_kg = Decimal(data.get('kolicina_kg', 0))
+
+        if not all([ruta_id, vozac_id, naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
+            return Response({'error': 'Sva polja su obavezna.'}, status=400)
+
+        # Pronađi povezana polja
+        ruta = Ruta.objects.get(sifra_r=ruta_id)
+        vozac = Vozac.objects.get(sifra_vo=vozac_id)
+        vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+
+        # Ažuriranje postojećeg zapisa
+        with transaction.atomic():
+            isporuka.ruta = ruta
+            isporuka.vozilo = vozilo
+            isporuka.vozac = vozac
+            isporuka.kolicina_kg = kolicina_kg
+            isporuka.status = 'spremna'
+            isporuka.datum_polaska = datum_isporuke
+            isporuka.rok_is = rok_isporuke
+            isporuka.datum_dolaska = datum_dolaska
+            isporuka.save()
+
+            # Osveži statuse povezanih entiteta
+            ruta.status = 'u_toku'
+            ruta.save()
+            vozilo.status = 'zauzeto'
+            vozilo.save()
+            vozac.status = 'zauzet'
+            vozac.br_voznji += 1
+            vozac.save()
+
+        serializer = IsporukaSerializer(isporuka)
+        print("Isporuka uspešno ažurirana.")
+        return Response(serializer.data, status=200)
+
+    except Exception as e:
+        print(f"Greška u kreiraj_isporuku: {e}")
+        return Response({'error': str(e)}, status=500)
+
+# @api_view(['PUT'])
+# @permission_classes([IsAuthenticated])
+# def kreiraj_isporuku(request, pk):
+#     try:
+#         data = request.data
+#         print(f"Isporuka: {data}")
+
+#         ruta_id = data.get('ruta_id')
+#         vozac_id = data.get('vozac_id')
+#         naziv = data.get('naziv')
+#         datum_isporuke = data.get('datum_isporuke')
+#         rok_isporuke = data.get('rok_isporuke')
+#         datum_dolaska = data.get('datum_dolaska')
+#         kolicina_kg = Decimal(data.get('kolicina_kg', 0))
+
+#         if not all([ruta_id, vozac_id, naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
+#             return Response({'error': 'Sva polja su obavezna.'}, status=400)
+
+#         # Pronadji rutu
+#         try:
+#             ruta = Ruta.objects.get(sifra_r=ruta_id)
+#         except Ruta.DoesNotExist:
+#             return Response({'error': 'Ruta nije pronađena.'}, status=404)
+
+#         # Pronadji vozaca
+#         try:
+#             vozac = Vozac.objects.get(sifra_vo=vozac_id)
+#         except Vozac.DoesNotExist:
+#             return Response({'error': 'Vozač nije pronađen.'}, status=404)
+
+#         try:
+#             vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+#         except Vozilo.DoesNotExist:
+#             return Response({'error': 'Vozilo nije pronađeno.'}, status=404)
+#         #vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+#         if not vozilo:
+#             vozilo = Vozilo.objects.filter(status='slobodno').order_by('kapacitet').first()
+#             return Response({'error': 'Nema slobodnih vozila trenutno.'}, status=400)
+
+#         # Kreiraj isporuku unutar transakcije
+#         with transaction.atomic():
+#             nova_isporuka = Isporuka.objects.create(
+#                 ruta=ruta,
+#                 vozilo=vozilo,
+#                 vozac=vozac,
+#                 kolicina_kg=kolicina_kg,
+#                 status='spremna',
+#                 #datum_polaska=datetime.strptime(datum_isporuke, "%Y-%m-%d"),
+#                 datum_polaska = datum_isporuke,
+#                 #rok_is=datetime.strptime(rok_isporuke, "%Y-%m-%d")
+#                 rok_is = rok_isporuke,
+#                 datum_dolaska = datum_dolaska
+#             )
+#             print(f"Ruta: {ruta}")
+#             print(f"Vozac: {vozac} ({type(vozac)})")
+#             print(f"Vozilo: {vozilo} ({type(vozilo)})")
+#             # Ažuriraj statuse
+#             ruta.status = 'u_toku'
+#             ruta.save()
+
+#             vozilo.status = 'zauzeto'
+#             vozilo.save()
+
+#             vozac.status = 'zauzet'
+#             vozac.br_voznji =vozac.br_voznji + 1
+#             vozac.save()
+
+#         serializer = IsporukaSerializer(nova_isporuka)
+#         print("Isporuka uspešno kreirana.")
+#         return Response(serializer.data, status=201)
+
+#     except Exception as e:
+#         print(f"Greška u kreiraj_isporuku: {e}")
+#         return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def zavrsi_isporuku(request, isporuka_id):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=isporuka_id)
+        
+        isporuka.status = 'zavrsena'
+        isporuka.save()
+        
+        vozac = isporuka.vozac
+        vozac.status = 'slobodan'
+        vozac.save()
+        
+        serializer = IsporukaSerializer(isporuka)
+        return Response(serializer.data)
+        
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+# rute
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_rute(request):
+    try:
+        rute = Ruta.objects.all().order_by('-sifra_r')
+        serializer = RutaSerializer(rute, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_aktivne_rute(request):
+    try:
+        aktivne_rute = Ruta.objects.filter(
+             Q(status='u_toku')   #Q(status='planirana')
+        ).order_by('-sifra_r')
+        serializer = RutaSerializer(aktivne_rute, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ruta_detail(request, pk):
+    try:
+        ruta = Ruta.objects.get(sifra_r=pk)
+        serializer = RutaSerializer(ruta)
+        
+        # Dobavi koordinate za prikaz na mapi
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(ruta.polazna_tacka)
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(ruta.odrediste)
+        
+        response_data = serializer.data
+        response_data['polaziste_koordinate'] = {
+            'lat': polaziste_lat,
+            'lon': polaziste_lon
+        }
+        response_data['odrediste_koordinate'] = {
+            'lat': odrediste_lat,
+            'lon': odrediste_lon
+        }
+        
+        return Response(response_data)
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ruta_directions(request, pk):
+    try:
+        ruta = Ruta.objects.get(sifra_r=pk)
+        
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(ruta.polazna_tacka)
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(ruta.odrediste)
+        
+        if not polaziste_lat or not odrediste_lat:
+            return Response({'error': 'Nije moguće geokodirati adrese'}, status=400)
+        
+        # Poziv OSRM API-ja za dobijanje kompletne rute sa geometrijom
+        url = f"http://router.project-osrm.org/route/v1/driving/{polaziste_lon},{polaziste_lat};{odrediste_lon},{odrediste_lat}?overview=full&geometries=geojson"
+        
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            
+            if data['code'] == 'Ok' and data['routes']:
+                ruta_data = data['routes'][0]
+                
+                return Response({
+                    'ruta_id': ruta.sifra_r,
+                    'polazna_tacka': ruta.polazna_tacka,
+                    'odrediste': ruta.odrediste,
+                    'duzina_km': ruta.duzina_km,
+                    'vreme_dolaska': str(ruta.vreme_dolaska),
+                    'status': ruta.status,
+                    'polaziste_koordinate': [polaziste_lon, polaziste_lat],
+                    'odrediste_koordinate': [odrediste_lon, odrediste_lat],
+                    'geometry': ruta_data['geometry'],  # GeoJSON geometija rute
+                    'distance': ruta_data['distance'],  # dužina u metrima
+                    'duration': ruta_data['duration']   # vreme u sekundama
+                })
+        
+        return Response({'error': 'Nije moguće dobiti podatke o ruti'}, status=400)
+        
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
+    except Exception as e:
+        print(f"Greška pri dobavljanju rute: {e}")
+        return Response({'error': str(e)}, status=500)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ruta_map_preview(request, pk):
+
+    try:
+        ruta = Ruta.objects.get(sifra_r=pk)
+        
+        # Dobavi koordinate
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(ruta.polazna_tacka)
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(ruta.odrediste)
+        
+        if not polaziste_lat or not odrediste_lat:
+            return Response({'error': 'Nije moguće geokodirati adrese'}, status=400)
+        
+        # Generiši URL za OpenStreetMap sa rutom
+        map_url = f"https://www.openstreetmap.org/directions?engine=osrm_car&route={polaziste_lat}%2C{polaziste_lon}%3B{odrediste_lat}%2C{odrediste_lon}"
+        
+        return Response({
+            'map_url': map_url,
+            'ruta_id': ruta.sifra_r,
+            'polazna_tacka': ruta.polazna_tacka,
+            'odrediste': ruta.odrediste
+        })
+        
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

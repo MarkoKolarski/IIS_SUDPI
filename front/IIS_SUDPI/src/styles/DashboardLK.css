@@ -1,0 +1,222 @@
+.dashboard-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+  transition: all 0.3s ease;
+}
+
+.sidebar-expanded {
+  margin-left: 250px;
+}
+
+.sidebar-collapsed {
+  margin-left: 80px;
+}
+
+.dashboard-header {
+  background: #2e7d32;
+  color: white;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(46, 125, 50, 0.3);
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.dashboard-content {
+  padding: 2rem;
+}
+
+.notifications-section,
+.deliveries-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.notifications-section h2,
+.deliveries-section h2 {
+  color: #2e7d32;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  border-bottom: 2px solid #4caf50;
+  padding-bottom: 0.5rem;
+}
+
+.section-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4caf50, transparent);
+  margin: 2rem 0;
+}
+
+/* Notifications Table */
+.notifications-table-container {
+  overflow-x: auto;
+}
+
+.notifications-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.notifications-table th {
+  background: #4caf50;
+  color: white;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+}
+
+.notifications-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.notification-row {
+  transition: all 0.3s ease;
+}
+
+.notification-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notification-row.unread {
+  background-color: #fff9c4;
+  border-left: 4px solid #ffd600;
+}
+
+.notification-row.read {
+  background-color: white;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-unread {
+  background: #ffd600;
+  color: #333;
+}
+
+.status-read {
+  background: #e0e0e0;
+  color: #666;
+}
+
+/* Deliveries Table */
+.deliveries-table-container {
+  overflow-x: auto;
+}
+
+.deliveries-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.deliveries-table th {
+  background: #4caf50;
+  color: white;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+}
+
+.deliveries-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.delivery-row {
+  transition: all 0.3s ease;
+}
+
+.delivery-row:hover {
+  background: #f1f8e9;
+  transform: translateY(-1px);
+}
+
+.select-button {
+  background: linear-gradient(135deg, #4caf50, #2e7d32);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+.select-button:hover {
+  background: linear-gradient(135deg, #43a047, #1b5e20);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+}
+
+.select-button:active {
+  transform: translateY(0);
+}
+
+.no-data {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  padding: 2rem !important;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #4caf50;
+  font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sidebar-expanded,
+  .sidebar-collapsed {
+    margin-left: 0;
+  }
+  
+  .dashboard-content {
+    padding: 1rem;
+  }
+  
+  .notifications-section,
+  .deliveries-section {
+    padding: 1rem;
+  }
+  
+  .dashboard-header {
+    padding: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+}

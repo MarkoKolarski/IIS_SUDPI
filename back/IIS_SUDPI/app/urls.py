@@ -22,6 +22,8 @@ from .views_mv2 import (
 from django.contrib.auth.views import LogoutView
 from django.conf.urls.static import static
 from django.conf import settings
+#from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama
+from . import views
 
 urlpatterns = [
     path('', index, name='index'),
@@ -80,6 +82,7 @@ urlpatterns = [
     # Grafikon artikala po nedeljama endpoint
     path('artikli/grafikon-po-nedeljama/', artikli_grafikon_po_nedeljama, name='artikli-grafikon-po-nedeljama'),
 
+
     # Supplier Analysis Dashboard
     path('supplier-analysis/', supplier_analysis_dashboard, name='supplier_analysis_dashboard'),
     path('supplier-complaint-transaction/', supplier_complaint_transaction, name='supplier_complaint_transaction'),
@@ -106,6 +109,62 @@ urlpatterns = [
 
     path('api/izvestaji/upload/', upload_izvestaj, name='izvestaj-upload'),
 
+    # Profil trenutnog korisnika
+    path('api/user/profile/', views.get_user_profile, name='get_user_profile'),
+    path('api/user/profile/update/', views.update_user_profile, name='update_user_profile'),
+    
+    # Profil određenog korisnika (samo admin)
+    path('api/user/profile/<int:user_id>/', views.get_user_profile_by_id, name='get_user_profile_by_id'),
+    path('api/user/profile/update/<int:user_id>/', views.update_user_profile, name='update_user_profile_by_id'),
+    
+    # Lista svih korisnika (samo admin)
+    path('api/users/', views.get_users_list, name='get_users_list'),
 
+    # Lista svih vozaca i vozila (samo admin)
+    path('api/vozila/', views.vozila_list, name='vozila_list'),
+    path('api/vozaci/', views.vozaci_list, name='vozaci_list'),
 
+    # Vozila
+    path('vozila/<int:pk>/', views.get_vozilo, name='get_vozilo'),
+    path('vozila/update/<int:pk>/', views.update_vozilo, name='update_vozilo'),
+    path('vozila/delete/<int:pk>/', views.delete_vozilo, name='delete_vozilo'),
+    path('vozila/<int:vozilo_id>/servisi/', views.servisi_po_vozilu, name='servisi_po_vozilu'),
+
+    # Servisi
+    path('servisi/', views.list_servisi, name='list_servisi'),
+    path('servisi/<int:pk>/', views.get_servis, name='get_servis'),
+    path('servisi/create/', views.create_servis, name='create_servis'),
+    path('servisi/update/<int:pk>/', views.update_servis, name='update_servis'),
+    path('servisi/delete/<int:pk>/', views.delete_servis, name='delete_servis'),
+
+    # Vozac update_status_vozaca
+    path('vozaci/update-status/<int:pk>/', views.update_status_vozaca, name='update_status_vozaca'),
+    #path('vozaci/predlozi-vozaca/', views.predlozi_vozaca, name='predlozi_vozaca'),
+    # Isporuke
+    path('isporuke/', views.list_isporuke, name='list_isporuke'),
+    path('isporuke/aktivne/', views.list_aktivne_isporuke, name='list_aktivne_isporuke'),
+    path('isporuke/debug/', views.debug_sve_isporuke, name='debug_sve_isporuke'),
+    path('isporuke/u_toku/', views.list_u_toku_isporuke, name='list_utoku_isporuke'),
+    # notifikacije
+    path('notifikacije/', views.list_notifikacije, name='list_notifikacije'),
+    path('notifikacije/<int:pk>/mark-as-read/', views.mark_notifikacija_as_read, name='mark_notifikacija_as_read'),
+    path('notifikacije/user/<int:user_id>/', views.list_user_notifikacije, name='list_user_notifikacije'),
+
+     # Plan isporuke endpoints
+    path('api/predlozi-vozaca/', views.predlozi_vozaca, name='predlozi_vozaca'),
+    path('api/predlozi-vozilo/', views.predlozi_vozilo, name='predlozi_vozilo'),
+    path('api/predlozi-rutu/', views.predlozi_rutu, name='predlozi_rutu'),
+    path('api/kreiraj-isporuku/<int:pk>', views.kreiraj_isporuku, name='kreiraj_isporuku'),
+    path('api/izracunaj-datum-dolaska/', views.izracunaj_datum_dolaska, name='izracunaj_datum_dolaska'),
+    #path('api/isporuke/<int:pk>/', views.isporuka_detail, name='isporuka_detail'),
+    #path('api/isporuke/<int:isporuka_id>/zavrsi/', views.zavrsi_isporuku, name='zavrsi_isporuku'),
+
+    # endpoints za rute
+    path('api/rute/', views.list_rute, name='list_rute'),
+    path('api/rute/aktivne/', views.list_aktivne_rute, name='list_aktivne_rute'),
+    path('api/rute/<int:pk>/', views.ruta_detail, name='ruta_detail'),
+    path('api/rute/<int:pk>/directions/', views.ruta_directions, name='ruta_directions'),
+    path('api/rute/<int:pk>/map-preview/', views.ruta_map_preview, name='ruta_map_preview'),
+    #upozorenja
+    path('api/upozorenja/', views.list_upozorenja, name='list_upozorenja'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

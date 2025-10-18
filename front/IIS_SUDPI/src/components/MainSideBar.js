@@ -18,7 +18,7 @@ const MainSideBar = ({ isCollapsed, toggleSidebar }) => {
 
   const handleProfile = () => {
     console.log("Profile action");
-    // navigate('/profile');
+     navigate('/profile');
   };
 
   return (

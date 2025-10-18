@@ -1,0 +1,219 @@
+.edit-vozilo-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f5f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.edit-vozilo-main {
+  flex: 1;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+  background: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-vozilo-wrapper.sidebar-collapsed .edit-vozilo-main {
+  margin-left: 70px;
+}
+
+/* HEADER */
+.edit-vozilo-header {
+  background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+  padding: 25px 40px;
+  color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.edit-vozilo-header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 300;
+}
+
+/* CONTENT */
+.edit-vozilo-content {
+  padding: 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 1024px) {
+  .edit-vozilo-content {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+}
+
+/* --- Forma (levo) --- */
+.edit-vozilo-form {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(67, 160, 71, 0.1);
+  border: 1px solid #e1e5e9;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.edit-vozilo-form h2 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: #2d3748;
+  border-bottom: 2px solid #e1e5e9;
+  padding-bottom: 10px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #f7fafc;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #43a047;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(67, 160, 71, 0.1);
+}
+
+/* Dugmad */
+.edit-vozilo-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.btn {
+  padding: 12px 25px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.btn-cancel:hover {
+  background: #ffcdd2;
+  transform: translateY(-2px);
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+  color: white;
+  box-shadow: 0 4px 10px rgba(67, 160, 71, 0.2);
+}
+
+.btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(67, 160, 71, 0.3);
+}
+
+/* --- Servis sekcija (desno) --- */
+.servis-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(67, 160, 71, 0.1);
+  border: 1px solid #e1e5e9;
+  padding: 40px;
+}
+
+.servis-section h2 {
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #2d3748;
+  border-bottom: 2px solid #e1e5e9;
+  padding-bottom: 10px;
+}
+
+.servis-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.servis-table th,
+.servis-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.servis-table th {
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.servis-table tr:nth-child(even) {
+  background-color: #f9fdf9;
+}
+
+.servis-table tr:hover {
+  background-color: #f1f8f1;
+}
+
+.no-servis {
+  text-align: center;
+  font-style: italic;
+  color: #7a8a7a;
+  padding: 20px 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .edit-vozilo-main {
+    margin-left: 0;
+  }
+
+  .edit-vozilo-wrapper.sidebar-collapsed .edit-vozilo-main {
+    margin-left: 0;
+  }
+
+  .edit-vozilo-content {
+    padding: 20px;
+  }
+
+  .edit-vozilo-form,
+  .servis-section {
+    padding: 25px;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}

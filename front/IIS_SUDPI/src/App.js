@@ -32,6 +32,12 @@ import IzmeniArtikal from "./pages/IzmeniArtikal";
 import PregledZaliha from "./pages/PregledZaliha";
 import IzmenaZaliha from "./pages/IzmenaZaliha";
 import DashboardSO from "./pages/DashboardSO";
+import EditProfile from "./pages/EditProfile.js";
+import EditOtherProfile from "./pages/EditOtherProfile.js";
+import LogisticTransport from "./pages/LogisticTransport.js";
+import EditVozilo from "./pages/VoziloEdit.js";
+import DashboardLK from "./pages/DashboardLK.js";
+import PlanIsporuke from "./pages/PlanIsporuke.js";
 
 const App = () => {
   return (
@@ -41,7 +47,7 @@ const App = () => {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-
+        <Route path="/profile" element={<EditProfile />} />
         {/* Finansijski analiticar routes */}
         <Route
           path="/dashboard-fa"
@@ -209,7 +215,23 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-
+        {/* Logisticki kordinator routes */}
+        <Route
+          path="/dashboard-lk"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <DashboardLK />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan-isporuke/:isporukaId"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <PlanIsporuke />
+            </ProtectedRoute>
+          }
+        />
         {/* Admin routes */}
         <Route
           path="/dashboard-admin"
@@ -243,6 +265,23 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/logistics-transport"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <LogisticTransport />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit-profile"
+          element={
+            <ProtectedRoute allowedRoles={["administrator"]}>
+              <EditOtherProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/vozila/update/:id" element={<EditVozilo />} />
 
         {/* Catch all route - redirect to appropriate dashboard or login */}
         <Route path="*" element={<Navigate to="/login" />} />

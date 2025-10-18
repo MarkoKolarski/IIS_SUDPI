@@ -26,6 +26,7 @@ const Login = () => {
         try {
             const response = await axiosInstance.post('login/', formData);
             setMessage('Uspešna prijava!');
+            console.log("info:", response.data);
             sessionStorage.setItem('access_token', response.data.access);
             sessionStorage.setItem('refresh_token', response.data.refresh);
             sessionStorage.setItem('user_type', response.data.user_type);
