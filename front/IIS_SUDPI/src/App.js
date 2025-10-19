@@ -38,6 +38,7 @@ import LogisticTransport from "./pages/LogisticTransport.js";
 import EditVozilo from "./pages/VoziloEdit.js";
 import DashboardLK from "./pages/DashboardLK.js";
 import PlanIsporuke from "./pages/PlanIsporuke.js";
+import PregledRuta from "./pages/PregledRuta.js";
 
 const App = () => {
   return (
@@ -229,6 +230,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
               <PlanIsporuke />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/active-routes"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <PregledRuta />
             </ProtectedRoute>
           }
         />

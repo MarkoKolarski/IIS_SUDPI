@@ -474,9 +474,12 @@ class UpozorenjeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class VoziloOmogucavaTemperaturaSerializer(serializers.ModelSerializer):
-    temperatura_info = serializers.CharField(source='sifra_temp.vrednost', read_only=True)
-    vozilo_info = serializers.CharField(source='sifra_vozila.registracija', read_only=True)
-    isporuka_info = serializers.CharField(source='isporuka.sifra_i', read_only=True)
+    vozilo = VoziloSerializer(read_only=False)
+    Isporuka = IsporukaSerializer(read_only=False)
+    Temperatura = TemperaturaSerializer(read_only=False)
+    #temperatura_info = serializers.CharField(source='sifra_temp.vrednost', read_only=True)
+    #vozilo_info = serializers.CharField(source='sifra_vozila.registracija', read_only=True)
+    #isporuka_info = serializers.CharField(source='isporuka.sifra_i', read_only=True)
     
     class Meta:
         model = voziloOmogucavaTemperatura

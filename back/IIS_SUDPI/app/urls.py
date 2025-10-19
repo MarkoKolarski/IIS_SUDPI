@@ -167,4 +167,6 @@ urlpatterns = [
     path('api/rute/<int:pk>/map-preview/', views.ruta_map_preview, name='ruta_map_preview'),
     #upozorenja
     path('api/upozorenja/', views.list_upozorenja, name='list_upozorenja'),
+    path('api/upozorenja/create/', views.create_upozorenje, name='create_upozorenje'),
+    path('api/rute/<int:ruta_id>/simulate/', views.simuliraj_kretanje, name='simuliraj_kretanje'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

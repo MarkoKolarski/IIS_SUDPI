@@ -456,13 +456,18 @@ class Temperatura(models.Model):
     vreme_merenja = models.DateTimeField(auto_now_add=True)
     
     # Veza sa skladištem (beleži se u - 1,N : 1,N)
-    skladiste = models.ForeignKey(Skladiste, on_delete=models.CASCADE, related_name='temperature')
-    
+    skladiste = models.ForeignKey(Skladiste, on_delete=models.CASCADE, related_name='temperature',null=True, blank=True)
+    vozilo = models.ForeignKey('Vozilo', on_delete=models.CASCADE, related_name='temperature', null=True, blank=True)
     class Meta:
         db_table = 'temperatura'
     
     def __str__(self):
-        return f"Temperatura {self.vrednost}°C u {self.skladiste.mesto_s}"
+        string = "Temperatura {self.vrednost}°C u "
+        if self.skladiste is not None:
+            string += f"{self.skladiste.mesto_s}"
+        if self.vozilo is not None:
+            string += f"vozilu {self.vozilo.marka} {self.vozilo.model}"
+        #return f"Temperatura {self.vrednost}°C u {self.skladiste.mesto_s}"
 
 # Model za notifikaciju
 class Notifikacija(models.Model):

@@ -1,3 +1,4 @@
+import random
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from rest_framework.response import Response
@@ -2879,6 +2880,52 @@ def ruta_map_preview(request, pk):
             'polazna_tacka': ruta.polazna_tacka,
             'odrediste': ruta.odrediste
         })
+        
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_upozorenje(request):
+    try:
+        serializer = UpozorenjeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+def nadji_isporuku_po_ruti(ruta):
+    try:
+        isporuka = Isporuka.objects.get(ruta=ruta)
+        return isporuka
+    except Isporuka.DoesNotExist:
+        return None
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def simuliraj_kretanje(request, ruta_id):
+    try:
+        ruta = Ruta.objects.get(sifra_r=ruta_id)
+        
+        # Simuliraj odstupanje od rute (10% šansa)
+        if random.random() < 0.1:
+            upozorenje = Upozorenje.objects.create(
+                #isporuka=ruta.isporuka_set.first(),  # Prva povezana isporuka
+                isporuka = nadji_isporuku_po_ruti(ruta),
+                tip='odstupanje',
+                poruka='Vozilo je skrenulo sa planirane rute!'
+            )
+            return Response({
+                'upozorenje': UpozorenjeSerializer(upozorenje).data,
+                'poruka': 'Otkriveno odstupanje od rute'
+            })
+        
+        return Response({'poruka': 'Vozilo prati rutu'})
         
     except Ruta.DoesNotExist:
         return Response({'error': 'Ruta ne postoji'}, status=404)

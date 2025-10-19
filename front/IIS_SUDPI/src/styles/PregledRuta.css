@@ -1,0 +1,255 @@
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.main-content-wrapper {
+  flex: 1;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content-wrapper.collapsed {
+  margin-left: 80px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  margin-right: 15px;
+  color: #2e7d32;
+}
+
+.dashboard-header h1 {
+  color: #2e7d32;
+  margin: 0;
+}
+
+.dashboard-content {
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+}
+
+.routes-sidebar {
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  height: fit-content;
+}
+
+.routes-sidebar h3 {
+  color: #2e7d32;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+.routes-list {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.route-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.route-item:hover {
+  border-color: #4caf50;
+  background-color: #f8fff8;
+  transform: translateY(-2px);
+}
+
+.route-item.selected {
+  border-color: #2e7d32;
+  background-color: #e8f5e8;
+  box-shadow: 0 4px 8px rgba(46, 125, 50, 0.2);
+}
+
+.route-info {
+  font-size: 0.85em;
+  color: #666;
+  margin-top: 5px;
+}
+
+.route-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.route-status.u_toku {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.route-status.planirana {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.route-status.zavrsena {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.route-status.odstupanje {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.map-container {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alerts-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alerts-container h3 {
+  color: #2e7d32;
+  margin-bottom: 15px;
+}
+
+.alerts-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.alert {
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border-left: 4px solid #ff9800;
+  background-color: #fff3e0;
+  transition: all 0.3s ease;
+}
+
+.alert:hover {
+  transform: translateX(5px);
+}
+
+.alert-odstupanje {
+  border-left-color: #f44336;
+  background-color: #ffebee;
+}
+
+.alert-temperatura {
+  border-left-color: #2196f3;
+  background-color: #e3f2fd;
+}
+
+.alert-time {
+  font-size: 0.8em;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.alert-message {
+  font-weight: 500;
+}
+
+.no-alerts {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 20px;
+}
+
+.temperature-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Scrollbar styling */
+.routes-list::-webkit-scrollbar,
+.alerts-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.routes-list::-webkit-scrollbar-track,
+.alerts-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.routes-list::-webkit-scrollbar-thumb,
+.alerts-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.routes-list::-webkit-scrollbar-thumb:hover,
+.alerts-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .dashboard-content {
+    flex-direction: column;
+  }
+  
+  .routes-sidebar {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  
+  .main-content-wrapper {
+    margin-left: 0;
+  }
+  
+  .main-content-wrapper.collapsed {
+    margin-left: 0;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert {
+  animation: slideIn 0.3s ease;
+}
