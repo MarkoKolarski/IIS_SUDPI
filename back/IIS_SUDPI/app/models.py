@@ -1,8 +1,10 @@
+from typing import Iterable
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from decimal import Decimal
+from datetime import timedelta, datetime
 
 # Model za korisnika - centralni entitet
 class User(AbstractUser):
@@ -648,3 +650,84 @@ class voziloOmogucavaTemperatura(models.Model):
     class Meta:
         db_table = 'temperaturaVozilo'
 
+class Rampa(models.Model):
+    sifra_rp = models.AutoField(primary_key=True)
+    skladiste = models.ForeignKey(Skladiste, on_delete=models.CASCADE, related_name='rampe')
+    oznaka = models.CharField(max_length=50)
+    status_choices = [
+        ('slobodna', 'Slobodna'),
+        ('zauzeta', 'Zauzeta'),
+    ]
+    status = models.CharField(max_length=20, choices=status_choices, default='slobodna')
+
+    def __str__(self):
+        return f"Rampa {self.oznaka} ({self.status})"
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+    def zauzmi(self, trajanje_h):
+        """Označava rampu kao zauzetu i postavlja vreme oslobađanja."""
+        self.status = 'zauzeta'
+        #self.vreme_zauzeca = datetime.now()
+        #self.procenjeno_vreme_oslobadjanja = datetime.now() + timedelta(hours=trajanje_h)
+        self.save()
+
+    def oslobodi(self):
+        """Menja status rampe u slobodna."""
+        self.status = 'slobodna'
+        #self.vreme_zauzeca = None
+        #self.procenjeno_vreme_oslobadjanja = None
+        self.save()
+
+    class Meta:
+        db_table = 'rampa'
+
+class TerminUtovara(models.Model):
+    sifra_tu = models.AutoField(primary_key=True)
+    isporuka = models.OneToOneField('Isporuka', on_delete=models.CASCADE, related_name='termin_utovara')
+    skladiste = models.ForeignKey('Skladiste', on_delete=models.CASCADE)
+    vozilo = models.ForeignKey('Vozilo', on_delete=models.CASCADE)
+    rampa = models.ForeignKey('Rampa', on_delete=models.CASCADE)
+    operater = models.ForeignKey('SkladisniOperater', on_delete=models.SET_NULL, null=True)
+    vreme_pocetka = models.DateTimeField()
+    vreme_zavrsetka = models.DateTimeField()
+    vreme_utovara = models.DurationField(help_text="Trajanje utovara u satima", null=True, blank=True)
+    potvrda_operatera = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'termin_utovara'
+        #ordering = ['vreme_pocetka']
+
+    def __str__(self):
+        return f"Termin utovara {self.isporuka.sifra_i} ({self.vreme_pocetka.strftime('%d.%m.%Y %H:%M')})"
+
+    def potvrdi_utovar(self):
+        self.potvrda_operatera = True
+        self.save()
+
+    @staticmethod
+    def predlozi_optimalan_termin(vozilo, isporuka):
+        """
+        Dinamički predlog optimalnog termina:
+        - nalazi slobodnu rampu
+        - proverava status vozila i osoblja
+        """
+        slobodne_rampe = Rampa.objects.filter(status='slobodna')
+        slobodni_operateri = SkladisniOperater.objects.all()  # možeš dodati polje status kasnije
+
+        if not slobodne_rampe.exists() or not slobodni_operateri.exists():
+            return None
+
+        rampa = slobodne_rampe.first()
+        operater = slobodni_operateri.first()
+
+        vreme_pocetka = timezone.now() + timedelta(hours=1)
+        vreme_zavrsetka = vreme_pocetka + timedelta(hours=2)
+
+        return TerminUtovara.objects.create(
+            isporuka=isporuka,
+            vozilo=vozilo,
+            rampa=rampa,
+            operater=operater,
+            vreme_pocetka=vreme_pocetka,
+            vreme_zavrsetka=vreme_zavrsetka,
+        )

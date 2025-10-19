@@ -48,6 +48,11 @@ export const sidebarLinks = {
       href: "/pregled-zaliha",
       description: "Stanje zaliha po skladištima",
     },
+    {
+      title: "Pregled isporuka",
+      href: "/spremanje-isporuke",
+      description: "Spremanje isporuka za transport",
+    },
     // Add more SO specific links
   ],
   nabavni_menadzer: [

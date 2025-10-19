@@ -38,6 +38,7 @@ import LogisticTransport from "./pages/LogisticTransport.js";
 import EditVozilo from "./pages/VoziloEdit.js";
 import DashboardLK from "./pages/DashboardLK.js";
 import PlanIsporuke from "./pages/PlanIsporuke.js";
+import SpremanjeIsporuke from "./pages/SpremanjeIsporuke.js";
 
 const App = () => {
   return (
@@ -215,6 +216,14 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/spremanje-isporuke"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <SpremanjeIsporuke />
+            </ProtectedRoute>
+          }
+        />
         {/* Logisticki kordinator routes */}
         <Route
           path="/dashboard-lk"
@@ -232,6 +241,7 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+
         {/* Admin routes */}
         <Route
           path="/dashboard-admin"

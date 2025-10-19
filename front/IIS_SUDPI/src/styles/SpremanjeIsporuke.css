@@ -1,0 +1,114 @@
+.spremanje-container {
+  display: flex;
+  height: 100vh;
+  background-color: #eaf3ea;
+  transition: all 0.3s ease;
+}
+
+.spremanje-container.collapsed .content {
+  margin-left: 80px;
+}
+
+.content {
+  flex: 1;
+  padding: 20px 40px;
+  margin-left: 260px;
+  transition: margin-left 0.3s ease;
+}
+
+h2 {
+  text-align: center;
+  color: #0d5c2d;
+  margin-bottom: 20px;
+  background: #b7e3c7;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.isporuke-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 25px;
+  font-size: 15px;
+  background: #f8fdf9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.isporuke-table th,
+.isporuke-table td {
+  border: 1px solid #b2d8b6;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.isporuke-table th {
+  background-color: #b7e3c7;
+  color: #0a3e1b;
+}
+
+.isporuke-table tr:hover {
+  background-color: #d7f0db;
+  cursor: pointer;
+}
+
+.selected-row {
+  background-color: #9fd7a8 !important;
+}
+
+.form-section {
+  background-color: #f0faf0;
+  border-radius: 12px;
+  padding: 25px;
+  width: 60%;
+  margin: 0 auto;
+  box-shadow: 0 2px 8px rgba(0, 50, 0, 0.1);
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+label {
+  width: 40%;
+  font-weight: 500;
+  color: #104b22;
+}
+
+input {
+  width: 55%;
+  padding: 6px 10px;
+  border: 1px solid #9ccba2;
+  border-radius: 6px;
+  background: #f8fdf9;
+}
+
+.btn-potvrdi {
+  display: block;
+  width: 30%;
+  margin: 15px auto;
+  padding: 8px 12px;
+  background-color: #2b7a36;
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+.btn-potvrdi:hover {
+  background-color: #1f5c29;
+}
+
+.poruka {
+  text-align: center;
+  margin-top: 10px;
+  color: #145c2b;
+  font-weight: 500;
+}
+.poruka.error {
+  color: #b22222;
+}

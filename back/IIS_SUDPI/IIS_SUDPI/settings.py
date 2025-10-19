@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -171,6 +172,11 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
 }
+
+# Cron job settings
+#CRONJOBS = [
+#    ('*/5 * * * *', 'IIS_SUDPI.cron.proveri_rampe'),  # svakih 5 minuta
+#]
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True

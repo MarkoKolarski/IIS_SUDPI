@@ -1,3 +1,4 @@
+import random
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from rest_framework.response import Response
@@ -19,7 +20,7 @@ from django.contrib import messages
 import requests
 from datetime import timedelta
 from django.utils import timezone
-from .models import Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+from .models import Rampa, TerminUtovara, Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -44,7 +45,9 @@ from .serializers import (
     RutaSerializer,
     UpozorenjeSerializer,
     TemperaturaSerializer,
-    NotifikacijaSerializer
+    NotifikacijaSerializer,
+    RampaSerializer,
+    TerminUtovaraSerializer
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -2304,8 +2307,9 @@ def list_u_toku_isporuke(request):
                     'datum_kreiranja': isporuka.datum_kreiranja,
                     'kolicina_kg': getattr(isporuka, 'kolicina_kg', None),
                     'rok_isporuke': getattr(isporuka, 'rok_is', 'N/A'),
+                    'datum_polaska': getattr(isporuka, 'datum_polaska', 'N/A'),
                     'status': isporuka.status,
-                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A',
                 })
             
             return Response(isporuke_data)
@@ -2880,6 +2884,239 @@ def ruta_map_preview(request, pk):
             'odrediste': ruta.odrediste
         })
         
+    except Ruta.DoesNotExist:
+        return Response({'error': 'Ruta ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+# spremanje isporuke
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pronadji_skladiste_preko_isporuke(request, isporuka_id):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=isporuka_id)
+        ruta = isporuka.ruta
+        if not ruta:
+            return Response({'error': 'Isporuka nema dodeljenu rutu'}, status=404)
+        
+        odrediste = ruta.polazna_tacka
+        
+        skladiste = Skladiste.objects.filter(
+            mesto_s__iexact=odrediste
+            #mesto_s__in=odrediste
+        ).first()
+        
+        if not skladiste:
+            return Response({'error': 'Nije pronađeno skladište za dato odredište'}, status=404)
+        
+        serializer = SkladisteSerializer(skladiste)
+        return Response(serializer.data)
+        
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def rampe_list(request):
+    skladiste_id = request.GET.get('skladiste')
+    status = request.GET.get('status')
+    
+    queryset = Rampa.objects.all()
+    
+    if skladiste_id:
+        queryset = queryset.filter(skladiste_id=skladiste_id)
+    if status:
+        queryset = queryset.filter(status=status)
+    
+    data = [{
+        'sifra_rp': r.sifra_rp,
+        'oznaka': r.oznaka,
+        'status': r.status,
+        'skladiste': r.skladiste.mesto_s
+    } for r in queryset]
+    
+    return Response(data)
+def get_vreme_utovara(kolicina_kg):
+    if not kolicina_kg:
+        raise ValueError("Količina je obavezna za izračunavanje vremena utovara.")
+    
+    try:
+        osnovno_vreme = 0.5  
+        dodatak_po_toni = 0.1 
+        kolicina_tona = float(kolicina_kg) / 1000
+        vreme_utovara = osnovno_vreme + (kolicina_tona * dodatak_po_toni)
+        return vreme_utovara
+    except ValueError:
+        raise ValueError("Količina mora biti broj.")
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def izracunaj_vreme_utovara(request):
+    kolicina = request.GET.get('kolicina')
+    #vozilo_id = request.GET.get('vozilo')
+    
+    try:
+        vreme_utovara = get_vreme_utovara(kolicina)
+        
+        return Response({'vreme_utovara': round(vreme_utovara, 2)})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def kreiraj_notifikaciju(request):
+    poruka = request.data.get('poruka_n')
+    tip = request.data.get('tip')
+    
+    # prvi korisnik sa tom ulogom
+    from django.contrib.auth.models import User
+    try:
+        koordinator = User.objects.filter(groups__name='Logisticki koordinator').first()
+        if koordinator:
+            Notifikacija.objects.create(
+                poruka_n=poruka,
+                korisnik=koordinator,
+                link_n='/dashboard'
+            )
+            return Response({'status': 'Notifikacija poslata'})
+        else:
+            return Response({'error': 'Koordinator nije pronađen'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_aktivne_rampe(request):
+    try:
+            skladiste = request.GET.get('skladiste', None)
+            aktivne = Rampa.objects.filter(
+                status ='slobodna' ,
+                skladiste_id=skladiste
+                #status__in=['aktivna', 'aktivna_nova']
+            ).select_related('skladiste')
+            rampe_data = []
+            for rampa in aktivne:
+                rampe_data.append({
+                    'sifra_rp': rampa.sifra_rp,
+                    'oznaka': rampa.oznaka,
+                    'status': rampa.status,
+                    'skladiste_mesto': rampa.skladiste.mesto_s if rampa.skladiste else 'N/A'
+                })
+            
+            
+            return Response(rampe_data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju slobodnih rampi: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_aktivna_rampa(request):
+    try:
+        aktivne =  Rampa.objects.filter(
+            status='slobodna'
+        ).select_related('skladiste')
+
+        if aktivne.exists():
+            rampa = aktivne.first()
+        else:
+            Upozorenje.objects.create(
+                poruka_u="Nema slobodnih rampi u sistemu!",
+                datum_u=timezone.now()
+            )
+
+        serializer = RampaSerializer(rampa)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+from threading import Timer
+
+def zakazi_oslobadjanje_rampe(rampa, vreme_utovara_h):
+    sekunde = vreme_utovara_h * 3600
+    Timer(sekunde, lambda: rampa.oslobodi()).start()
+
+def azuriraj_status_rampe(isporuka):
+
+    slobodna_rampa = Rampa.objects.filter(status='slobodna').first()
+    if not slobodna_rampa:
+        return
+    vreme_utovara_sati = get_vreme_utovara(isporuka.kolicina_kg)
+    slobodna_rampa.zauzmi(vreme_utovara_sati)
+    zakazi_oslobadjanje_rampe(slobodna_rampa, vreme_utovara_sati)
+    slobodna_rampa.status = 'zauzeta'
+    serializer = RampaSerializer(slobodna_rampa)
+    TerminUtovara.objects.create(
+        isporuka=isporuka,
+        rampa=slobodna_rampa,
+        vreme_utovara=timezone.now(),
+        trajanje_utovara=timedelta(hours=vreme_utovara_sati)
+    )
+
+def azuriraj_rutu_vreme_polaska(isporuka):
+    if not isporuka.ruta:
+        return
+    
+    ruta = isporuka.ruta
+    vreme_utovara_h = get_vreme_utovara(isporuka.kolicina_kg)
+    delta_utovara = timedelta(hours=vreme_utovara_h)
+
+    if hasattr(ruta, 'vreme_polaska') and ruta.vreme_polaska:
+        ruta.vreme_polaska += delta_utovara
+    else:
+        ruta.vreme_polaska = timezone.now() + delta_utovara
+
+    ruta.save()
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def spremi_isporuku(request, pk):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=pk)
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
+    isporuka.status = 'u_toku'
+    serializer = IsporukaSerializer(isporuka, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+
+        azuriraj_status_rampe(isporuka)
+        azuriraj_rutu_vreme_polaska(isporuka)
+
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def rampa_detail(request, pk):
+    try:
+        rampa = Rampa.objects.get(sifra_rp=pk)
+    except Rampa.DoesNotExist:
+        return Response({'error': 'Rampa ne postoji'}, status=404)
+
+    if request.method == 'GET':
+        serializer = RampaSerializer(rampa)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = RampaSerializer(rampa, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def ruta_spremna(request, pk):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=pk)
+        #ruta = Ruta.objects.get(sifra_r=pk)
+        ruta = isporuka.ruta
+        serializer = RutaSerializer(ruta)
+        azuriraj_rutu_vreme_polaska(isporuka)
+        return Response(serializer.data)
     except Ruta.DoesNotExist:
         return Response({'error': 'Ruta ne postoji'}, status=404)
     except Exception as e:
