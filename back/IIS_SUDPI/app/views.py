@@ -3015,10 +3015,15 @@ def list_aktivne_rampe(request):
 @permission_classes([IsAuthenticated])
 def get_aktivna_rampa(request):
     try:
-        aktivne =  Rampa.objects.filter(
-            status='slobodna'
+        # aktivne =  Rampa.objects.filter(
+        #     status='slobodna'
+        # ).select_related('skladiste')
+        skladiste = request.GET.get('skladiste', None)
+        aktivne = Rampa.objects.filter(
+            status ='slobodna' ,
+            skladiste_id=skladiste
+            #status__in=['aktivna', 'aktivna_nova']
         ).select_related('skladiste')
-
         if aktivne.exists():
             rampa = aktivne.first()
         else:
@@ -3111,12 +3116,16 @@ def rampa_detail(request, pk):
 @permission_classes([IsAuthenticated])
 def ruta_spremna(request, pk):
     try:
-        isporuka = Isporuka.objects.get(sifra_i=pk)
-        #ruta = Ruta.objects.get(sifra_r=pk)
-        ruta = isporuka.ruta
-        serializer = RutaSerializer(ruta)
-        azuriraj_rutu_vreme_polaska(isporuka)
-        return Response(serializer.data)
+        vremeUtovara = float(request.data.get('vreme_utovara'))
+        #isporuka = Isporuka.objects.get(sifra_i=pk)
+        ruta = Ruta.objects.get(sifra_r=pk)
+        #ruta_id = isporuka.ruta
+        #ruta = Ruta.objects.get(sifra_r=ruta_id)
+        ruta.vreme_dolaska += timedelta(hours=vremeUtovara)
+        ruta.save()
+        #serializer = RutaSerializer(ruta)
+        #azuriraj_rutu_vreme_polaska(isporuka)
+        #return Response(serializer.data)
     except Ruta.DoesNotExist:
         return Response({'error': 'Ruta ne postoji'}, status=404)
     except Exception as e:

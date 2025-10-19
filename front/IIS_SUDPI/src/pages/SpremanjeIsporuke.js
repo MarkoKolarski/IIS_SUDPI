@@ -107,9 +107,18 @@ const SpremanjeIsporuke = () => {
         status: "spremna"
       });
       await axiosInstance.put(`/api/rampe/${resRampe.data.sifra_rp}/`, {
-        status: "slobodna"
+        status: "zauzeta"
       });
-      await axiosInstance.put(`/api/rute/${selectedIsporuka.sifra_i}/`);
+      //await axiosInstance.put(`/api/rute/${selectedIsporuka.sifra_i}/`);
+
+      if (selectedIsporuka?.ruta) {
+        console.debug("Updating ruta", selectedIsporuka.ruta);
+        await axiosInstance.patch(`/api/rute/${selectedIsporuka.ruta}/`, {
+          vreme_utovara: resUtovar.data.vreme_utovara
+        });
+      } else {
+        console.debug("No ruta id available on selectedIsporuka:", selectedIsporuka);
+      }
       
     // await axiosInstance.put(`api/isporuke/spremi/${selectedIsporuka.sifra_i}/`);
     } catch (error) {
