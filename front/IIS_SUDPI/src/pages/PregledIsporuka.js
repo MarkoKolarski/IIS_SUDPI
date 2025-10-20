@@ -11,7 +11,6 @@ const PregledIsporuka = () => {
   //const { isCollapsed } = useContext(MainSideBar);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-  const navigate = useNavigate();
 
   const fetchUserProfile = async () => {
     try {
