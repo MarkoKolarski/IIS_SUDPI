@@ -39,6 +39,7 @@ import EditVozilo from "./pages/VoziloEdit.js";
 import DashboardLK from "./pages/DashboardLK.js";
 import PlanIsporuke from "./pages/PlanIsporuke.js";
 import SpremanjeIsporuke from "./pages/SpremanjeIsporuke.js";
+import PregledIsporuka from "./pages/PregledIsporuka.js";
 
 const App = () => {
   return (
@@ -238,6 +239,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
               <PlanIsporuke />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pregled-isporuka"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <PregledIsporuka />
             </ProtectedRoute>
           }
         />

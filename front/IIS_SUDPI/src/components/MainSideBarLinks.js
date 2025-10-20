@@ -10,11 +10,11 @@ export const sidebarLinks = {
     //   href: "/dashboard-lk",
     //   description: "Pregled osnovnih informacija",
     // },
-    // {
-    //   title: "Pregled svih isporuka",
-    //   href: "/dashboard-lk",
-    //   description: "Pregled stanja isporuka",
-    // },
+    {
+      title: "Pregled svih isporuka",
+      href: "/pregled-isporuka",
+      description: "Pregled stanja isporuka",
+    },
     // {
     //   title: "Kontrola i izveštaji",
     //   href: "/dashboard-lk",
