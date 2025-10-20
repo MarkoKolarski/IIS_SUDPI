@@ -3174,7 +3174,8 @@ def generisi_izvestaj(request):
     tip_izvestaja = request.data.get('tip_izvestaja')
     datum = request.data.get('datum')
     selected_upozorenja = request.data.get('selected_upozorenja', [])
-    
+    sadrzaj = request.data.get('sadrzaj', '')
+
     # Kreiraj PDF
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
@@ -3244,7 +3245,10 @@ def generisi_izvestaj(request):
             ]))
             content.append(table)
             content.append(Spacer(1, 0.3*inch))
-    
+   
+    content.append(Paragraph("Dodatne informacije:", heading_style))
+    content.append(Paragraph(f"{sadrzaj}", normal_style))
+    content.append(Spacer(1, 0.2*inch))
     # Dodatni sadržaj izveštaja
     content.append(Paragraph("Rezime:", heading_style))
     content.append(Paragraph(f"Izveštaj je generisan automatski putem sistema za praćenje logistike. "

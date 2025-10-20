@@ -182,7 +182,22 @@
     transition: border-color 0.3s;
     background: white;
 }
-
+.upozorenja-form-input-sadrzaj {
+    
+    border: 2px solid #c8e6c9;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+    background: white;
+    height: 100px;
+    width: 500px;
+    resize: vertical;
+}
+.upozorenja-form-input-sadrzaj:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
 .upozorenja-form-input:focus, .upozorenja-form-select:focus {
     outline: none;
     border-color: #4caf50;

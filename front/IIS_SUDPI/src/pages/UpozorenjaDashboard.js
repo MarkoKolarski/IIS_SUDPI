@@ -8,6 +8,7 @@ const UpozorenjaDashboard = () => {
     const [selectedUpozorenja, setSelectedUpozorenja] = useState([]);
     const [tipIzvestaja, setTipIzvestaja] = useState('');
     const [datum, setDatum] = useState(new Date().toISOString().split('T')[0]);
+    const [sadrzaj, setSadrzaj] = useState('');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [loading, setLoading] = useState(false);
     const [pdfUrl, setPdfUrl] = useState(null);
@@ -63,6 +64,7 @@ const UpozorenjaDashboard = () => {
             const response = await axiosInstance.post('/api/generisi-izvestaj/', {
                 tip_izvestaja: tipIzvestaja,
                 datum: datum,
+                sadrzaj: sadrzaj,
                 selected_upozorenja: selectedUpozorenja
             }, {
                 responseType: 'blob'
@@ -178,7 +180,16 @@ const UpozorenjaDashboard = () => {
                                     </select>
                                 </div>
                             </div>
-
+                            <div className="upozorenja-form-grid">
+                                <div className="upozorenja-form-group">
+                                    <label>Sadrzaj:</label>
+                                    <input 
+                                        value={sadrzaj} 
+                                        onChange={(e) => setSadrzaj(e.target.value)}
+                                        className="upozorenja-form-input-sadrzaj"
+                                    />
+                                </div>
+                            </div>
                             <div className="upozorenja-selected-count">
                                 Odabrano upozorenja: {selectedUpozorenja.length}
                             </div>
