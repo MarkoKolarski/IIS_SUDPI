@@ -16,7 +16,7 @@
   transition: margin-left 0.3s ease;
 }
 
-h2 {
+.pi-h2 {
   text-align: center;
   color: #0d5c2d;
   margin-bottom: 20px;
@@ -52,7 +52,7 @@ h2 {
   cursor: pointer;
 }
 
-.selected-row {
+.pi-selected-row {
   background-color: #9fd7a8 !important;
 }
 

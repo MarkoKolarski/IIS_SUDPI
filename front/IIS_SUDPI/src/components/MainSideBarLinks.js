@@ -15,11 +15,11 @@ export const sidebarLinks = {
       href: "/pregled-isporuka",
       description: "Pregled stanja isporuka",
     },
-    // {
-    //   title: "Kontrola i izveštaji",
-    //   href: "/dashboard-lk",
-    //   //description: "Pregled logističkih operacija",
-    // },
+    {
+      title: "Kontrola i izveštaji",
+      href: "/izvestaji-lk",
+      //description: "Pregled logističkih operacija",
+    },
     // Add more LK specific links
   ],
   skladisni_operater: [

@@ -163,10 +163,11 @@ urlpatterns = [
     path('api/rute/<int:pk>/', views.ruta_detail, name='ruta_detail'),
     path('api/rute/<int:pk>/directions/', views.ruta_directions, name='ruta_directions'),
     path('api/rute/<int:pk>/map-preview/', views.ruta_map_preview, name='ruta_map_preview'),
-    path('api/rute/<int:pk>/', views.ruta_spremna, name='spremna_ruta'),
+    path('api/rute/spremna/<int:pk>/', views.ruta_spremna, name='spremna_ruta'),
     #upozorenja
     path('api/upozorenja/', views.list_upozorenja, name='list_upozorenja'),
 
+    path('api/generisi-izvestaj/', views.generisi_izvestaj, name='generisi_izvestaj'),
     # endpoints za termine utovara i rampe
     path('api/rampe/', views.rampe_list),
     path('api/rampe/aktivna/', views.get_aktivna_rampa),

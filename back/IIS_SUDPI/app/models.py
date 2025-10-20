@@ -417,6 +417,7 @@ class Izvestaj(models.Model):
         ('dobavljaci', 'Izveštaj o dobavljačima'),
         ('kvalitet', 'Izveštaj o kvalitetu'),
         ('temperature', 'Izveštaj o temperaturama'),
+        ('koordinator', 'Izveštaj logističkog koordinatora'),
     )
     
     sifra_i = models.AutoField(primary_key=True)

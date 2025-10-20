@@ -40,6 +40,7 @@ import DashboardLK from "./pages/DashboardLK.js";
 import PlanIsporuke from "./pages/PlanIsporuke.js";
 import SpremanjeIsporuke from "./pages/SpremanjeIsporuke.js";
 import PregledIsporuka from "./pages/PregledIsporuka.js";
+import UpozorenjaDashboard from "./pages/UpozorenjaDashboard.js";
 
 const App = () => {
   return (
@@ -247,6 +248,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
               <PregledIsporuka />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/izvestaji-lk"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <UpozorenjaDashboard />
             </ProtectedRoute>
           }
         />

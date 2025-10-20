@@ -76,6 +76,12 @@ const SpremanjeIsporuke = () => {
             skladiste: skladiste.sifra_s
          },
        });
+       if (resRampe.data.lenght === 0 ) {
+         setPoruka("Sačekajte — nema slobodnih rampi.");
+        //  await axiosInstance.post("/api/kreiraj_notifikaciju/", {
+        //     poruka_n: "Nema slobodnih rampi za utovar.",  
+        //  });
+        }
       //const resRampe = await axiosInstance.get("api/rampe/aktivna/");
     //   const resRampe = await axiosInstance.get("api/rampe/", {
     //     params: { status: "slobodna" },
@@ -96,7 +102,6 @@ const SpremanjeIsporuke = () => {
           vozilo: selectedIsporuka.vozilo,
         },
       });
-
       setVremeUtovara(resUtovar.data.vreme_utovara);
       setPoruka(`Slobodna rampa ${resRampe.data.oznaka} pronađena.`); // Vreme utovara: ${resUtovar.data.vreme_utovara} h
      
@@ -113,7 +118,7 @@ const SpremanjeIsporuke = () => {
 
       if (selectedIsporuka?.ruta) {
         console.debug("Updating ruta", selectedIsporuka.ruta);
-        await axiosInstance.patch(`/api/rute/${selectedIsporuka.ruta}/`, {
+        await axiosInstance.patch(`/api/rute/spremna/${selectedIsporuka.ruta}/`, {
           vreme_utovara: resUtovar.data.vreme_utovara
         });
       } else {
@@ -131,7 +136,7 @@ const SpremanjeIsporuke = () => {
     <div className={`spremanje-container ${isSidebarCollapsed ? "collapsed" : ""}`}>
       <MainSideBar onCollapseChange={setIsSidebarCollapsed} />
       <div className="content">
-        <h2>Pregled svih isporuka</h2>
+        <h2 className="pi-h2">Pregled svih isporuka</h2>
         <table className="isporuke-table">
           <thead>
             <tr>
@@ -160,7 +165,7 @@ const SpremanjeIsporuke = () => {
           </tbody>
         </table>
 
-        <div className="form-section">
+        <div className="pi-form-section">
           <div className="form-row">
             <label>Isporuka</label>
             <input
