@@ -12,6 +12,8 @@ class AppConfig(AppConfig):
         # Pokreni početnu proveru svih skladišta
         self._check_initial_skladista_status()
     
+        self._test_signali()
+
     def _check_initial_skladista_status(self):
         """
         Proveri i ažuriraj status svih skladišta prilikom pokretanja
@@ -53,3 +55,51 @@ class AppConfig(AppConfig):
             
         except Exception as e:
             print(f"Greška pri početnoj proveri skladišta: {e}")
+    def _test_signali(self):
+        """
+        Test funkcija za proveru da li signali rade ispravno
+        """
+        try:
+            from .models import Vozilo, Isporuka, User
+            from datetime import datetime, timedelta, date
+            from django.utils import timezone
+            
+            print("=== POKRETANJE TESTA SIGNALA - vozilo ===")
+            
+            # Kreiraj test vozilo
+            test_vozilo = Vozilo.objects.create(
+                marka='TestMarka',
+                model='TestModel',
+                status='slobodno',
+                registracija=date.today(),
+                kapacitet=1000
+            )
+            print(f"Kreirano test vozilo: {test_vozilo.marka} {test_vozilo.model} sa statusom {test_vozilo.status}")
+            
+            
+            print("=== POKRETANJE TESTA SIGNALA - isporuka ===")
+            
+            nova_isporuka = Isporuka.objects.create(
+                #sifra_i="TEST001",
+                kolicina_kg = 300,
+                status = 'aktivna',
+                datum_polaska = timezone.now(),
+                rok_is = timezone.now() + timedelta(days=4),
+                datum_dolaska = timezone.now() + timedelta(days=2),
+                vozilo=test_vozilo,
+                #datum_isporuke=datetime.now(),
+                #odrediste="Test destinacija",
+                #koordinator=koordinator
+            )
+            print(f"✅ Test 2: Kreirana test isporuka → signal aktiviran!")
+
+            # Promeni status vozila da izazove signal
+            test_vozilo.status = 'u_kvaru'
+            test_vozilo.save()
+            print(f"Ažuriran status test vozila na: {test_vozilo.status}")
+            
+
+            print("=== ZAVRŠETAK TESTA SIGNALA ===")
+            
+        except Exception as e:
+            print(f"Greška pri testiranju signala: {e}")

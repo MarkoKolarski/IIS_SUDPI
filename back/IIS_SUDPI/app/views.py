@@ -2391,6 +2391,15 @@ def list_temperature(request):
 #     return Response(serializer.data)
 
 # notifikacija
+def posalji_notifikaciju(korisnik, poruka, link=None):
+    Notifikacija.objects.create(
+        korisnik=korisnik,
+        poruka_n=poruka,
+        link_n=link,
+        procitana_n=False,
+        datum_n=timezone.now()
+    )
+
 @api_view(['GET'])
 def list_notifikacije(request):
     notifikacije = Notifikacija.objects.select_related('korisnik').all()
@@ -2636,6 +2645,10 @@ def isporuka_detail(request, pk):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+def datetime(*args, **kwargs):
+    raise NotImplementedError
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def kreiraj_isporuku(request, pk):
@@ -2647,27 +2660,27 @@ def kreiraj_isporuku(request, pk):
         except Isporuka.DoesNotExist:
             return Response({'error': 'Isporuka ne postoji.'}, status=404)
 
-        ruta_id = data.get('ruta_id')
-        vozac_id = data.get('vozac_id')
+        #ruta_id = data.get('ruta_id')
+        #vozac_id = data.get('vozac_id')
         naziv = data.get('naziv')
         datum_isporuke = data.get('datum_isporuke')
         rok_isporuke = data.get('rok_isporuke')
         datum_dolaska = data.get('datum_dolaska')
         kolicina_kg = Decimal(data.get('kolicina_kg', 0))
 
-        if not all([ruta_id, vozac_id, naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
+        if not all([naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
             return Response({'error': 'Sva polja su obavezna.'}, status=400)
 
         # Pronađi povezana polja
-        ruta = Ruta.objects.get(sifra_r=ruta_id)
-        vozac = Vozac.objects.get(sifra_vo=vozac_id)
-        vozilo = pronadji_optimalno_vozilo(kolicina_kg)
+        #ruta = Ruta.objects.get(sifra_r=ruta_id)
+        #vozac = Vozac.objects.get(sifra_vo=vozac_id)
+        #vozilo = pronadji_optimalno_vozilo(kolicina_kg)
 
         # Ažuriranje postojećeg zapisa
         with transaction.atomic():
-            isporuka.ruta = ruta
-            isporuka.vozilo = vozilo
-            isporuka.vozac = vozac
+            #isporuka.ruta = ruta
+            #isporuka.vozilo = vozilo
+            #isporuka.vozac = vozac
             isporuka.kolicina_kg = kolicina_kg
             isporuka.status = 'spremna'
             isporuka.datum_polaska = datum_isporuke
@@ -2676,18 +2689,20 @@ def kreiraj_isporuku(request, pk):
             isporuka.save()
 
             # Osveži statuse povezanih entiteta
-            ruta.status = 'u_toku'
-            ruta.save()
-            vozilo.status = 'zauzeto'
-            vozilo.save()
-            vozac.status = 'zauzet'
-            vozac.br_voznji += 1
-            vozac.save()
-
+            # ruta.status = 'u_toku'
+            # ruta.save()
+            # vozilo.status = 'zauzeto'
+            # vozilo.save()
+            # vozac.status = 'zauzet'
+            # vozac.br_voznji += 1
+            # vozac.save()
+        #datum = datetime(isporuka.datum_polaska).toLocaleDateString()
+        posalji_notifikaciju(request.user,
+                             f"Nova isporuka {isporuka.sifra_i} je planirana za {isporuka.datum_polaska}."
+        )
         serializer = IsporukaSerializer(isporuka)
         print("Isporuka uspešno ažurirana.")
         return Response(serializer.data, status=200)
-
     except Exception as e:
         print(f"Greška u kreiraj_isporuku: {e}")
         return Response({'error': str(e)}, status=500)

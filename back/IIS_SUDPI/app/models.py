@@ -420,7 +420,7 @@ class Izvestaj(models.Model):
         ('koordinator', 'Izveštaj logističkog koordinatora'),
     )
     
-    sifra_i = models.AutoField(primary_key=True)
+    sifra_iz = models.AutoField(primary_key=True)
     datum_i = models.DateTimeField(auto_now_add=True)
     tip_i = models.CharField(max_length=30, choices=TIP_CHOICES)
     sadrzaj_i = models.TextField()
