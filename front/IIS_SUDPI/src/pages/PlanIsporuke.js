@@ -7,7 +7,9 @@ import { useParams } from 'react-router-dom';
 
 const PlanIsporuke = () => {
   const navigate = useNavigate();
-  const { isporukaId } = useParams();
+  const { isporukaId 
+
+  } = useParams();
   console.log("Isporuka ID iz URL-a:", isporukaId);
   const [formData, setFormData] = useState({
     naziv: '',
@@ -144,7 +146,6 @@ const handleSubmit = async (e) => {
     const response = await axiosInstance.put(`/api/kreiraj-isporuku/${isporukaId}`, formData);
 
     alert('Isporuka je uspešno ažurirana!');
-    
     setFormData({
       naziv: '',
       vozac_id: predlozeniVozac?.id || '',

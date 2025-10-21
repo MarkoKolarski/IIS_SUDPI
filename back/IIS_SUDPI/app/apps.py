@@ -81,11 +81,11 @@ class AppConfig(AppConfig):
             
             nova_isporuka = Isporuka.objects.create(
                 #sifra_i="TEST001",
-                kolicina_kg = 300,
                 status = 'aktivna',
                 datum_polaska = timezone.now(),
                 rok_is = timezone.now() + timedelta(days=4),
                 datum_dolaska = timezone.now() + timedelta(days=2),
+                kolicina_kg = 300,
                 vozilo=test_vozilo,
                 #datum_isporuke=datetime.now(),
                 #odrediste="Test destinacija",
@@ -94,8 +94,9 @@ class AppConfig(AppConfig):
             print(f"✅ Test 2: Kreirana test isporuka → signal aktiviran!")
 
             # Promeni status vozila da izazove signal
-            test_vozilo.status = 'u_kvaru'
-            test_vozilo.save()
+            #test_vozilo.status = 'u_kvaru'
+            #test_vozilo.save()
+            Vozilo.objects.filter(pk=test_vozilo.pk).update(status='u_kvaru')
             print(f"Ažuriran status test vozila na: {test_vozilo.status}")
             
 

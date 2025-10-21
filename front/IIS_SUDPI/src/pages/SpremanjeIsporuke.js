@@ -178,7 +178,7 @@ const SpremanjeIsporuke = () => {
           <div className="form-row">
             <label>Skladište</label>
             {/* <input type="text" value={skladiste} readOnly /> */}
-            <input type="text" value={skladiste.mesto_s} readOnly />
+            <input type="text" value={skladiste.mesto_s} />
           </div>
 
           {/* <div className="form-row">

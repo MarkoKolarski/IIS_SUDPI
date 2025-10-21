@@ -297,6 +297,6 @@ def obavesti_o_novoj_isporuci(sender, instance, created, **kwargs):
         for k in koordinatori:
             posalji_notifikaciju(
                 k,
-                f"Nova isporuka #{instance.sifra_i} je kreirana. Proveri raspoloživost vozila.",
+                f"Nova isporuka #{instance.sifra_i} je kreirana.",
                 link=f"/isporuke/{instance.sifra_i}"
             )

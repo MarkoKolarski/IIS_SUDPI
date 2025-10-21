@@ -2642,7 +2642,8 @@ def isporuka_detail(request, pk):
     elif request.method == 'PUT':
         serializer = IsporukaSerializer(isporuka, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            #serializer.save()
+            serializer.update(isporuka, serializer.validated_data)
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
@@ -2666,7 +2667,7 @@ def kreiraj_isporuku(request, pk):
         datum_isporuke = data.get('datum_isporuke')
         rok_isporuke = data.get('rok_isporuke')
         datum_dolaska = data.get('datum_dolaska')
-        kolicina_kg = Decimal(data.get('kolicina_kg', 0))
+        #kolicina_kg = Decimal(data.get('kolicina_kg'))
 
         if not all([naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
             return Response({'error': 'Sva polja su obavezna.'}, status=400)
@@ -2681,8 +2682,8 @@ def kreiraj_isporuku(request, pk):
             #isporuka.ruta = ruta
             #isporuka.vozilo = vozilo
             #isporuka.vozac = vozac
-            isporuka.kolicina_kg = kolicina_kg
-            isporuka.status = 'spremna'
+            #isporuka.kolicina_kg = kolicina_kg
+            isporuka.status = 'u_toku'
             isporuka.datum_polaska = datum_isporuke
             isporuka.rok_is = rok_isporuke
             isporuka.datum_dolaska = datum_dolaska
