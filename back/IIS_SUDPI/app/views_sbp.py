@@ -9,9 +9,6 @@ from .models import Faktura, StavkaFakture, Proizvod, Ugovor, Dobavljac, Izvesta
 from decimal import Decimal
 import json
 import time
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -29,8 +26,6 @@ def dodaj_stavku_fakture(request):
         kolicina_sf = request.data.get('kolicina_sf')
         cena_po_jed = request.data.get('cena_po_jed')
 
-        logger.info(f"Primljeni parametri: faktura_id={faktura_id}, proizvod_id={proizvod_id}, naziv_sf={naziv_sf}, kolicina_sf={kolicina_sf}, cena_po_jed={cena_po_jed}")
-
         if not all([faktura_id, proizvod_id, naziv_sf, kolicina_sf, cena_po_jed]):
             return Response(
                 {'error': 'Svi parametri su obavezni'},
@@ -40,16 +35,12 @@ def dodaj_stavku_fakture(request):
         # Validacija da li faktura i proizvod postoje
         try:
             faktura = Faktura.objects.get(sifra_f=faktura_id)
-            logger.info(f"Pronađena faktura: {faktura_id}")
         except Faktura.DoesNotExist:
-            logger.error(f"Faktura sa ID {faktura_id} ne postoji")
             return Response({'error': f'Faktura sa ID {faktura_id} ne postoji'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             proizvod = Proizvod.objects.get(sifra_pr=proizvod_id)
-            logger.info(f"Pronađen proizvod: {proizvod_id}")
         except Proizvod.DoesNotExist:
-            logger.error(f"Proizvod sa ID {proizvod_id} ne postoji")
             return Response({'error': f'Proizvod sa ID {proizvod_id} ne postoji'}, status=status.HTTP_404_NOT_FOUND)
 
         stari_iznos = faktura.iznos_f
@@ -58,9 +49,7 @@ def dodaj_stavku_fakture(request):
         try:
             kolicina_sf = int(kolicina_sf)
             cena_po_jed = float(cena_po_jed)
-            logger.info(f"Konvertovani tipovi: kolicina_sf={kolicina_sf} (int), cena_po_jed={cena_po_jed} (float)")
         except (ValueError, TypeError) as e:
-            logger.error(f"Greška pri konverziji tipova: {str(e)}")
             return Response(
                 {'error': f'Pogrešan format podataka. Količina mora biti broj, cena mora biti decimalon broj. Greška: {str(e)}'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -73,19 +62,13 @@ def dodaj_stavku_fakture(request):
                         INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED, FAKTURA_ID, PROIZVOD_ID)
                         VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, %s, %s, %s, %s, %s)
                     """
-                    logger.info(f"Izvršavanje SQL INSERT u STAVKA_FAKTURE")
-                    logger.info(f"Parametri: naziv_sf={naziv_sf}, kolicina_sf={kolicina_sf}, cena_po_jed={cena_po_jed}, faktura_id={faktura_id}, proizvod_id={proizvod_id}")
-                    
                     cursor.execute(sql, [naziv_sf, kolicina_sf, cena_po_jed, faktura_id, proizvod_id])
-                    logger.info(f"Stavka fakture uspešno insertovana")
                 except Exception as e:
-                    logger.error(f"Greška pri INSERT-u stavke fakture: {str(e)}", exc_info=True)
                     raise
 
         # Osvežavanje fakture iz baze
         faktura.refresh_from_db()
         novi_iznos = faktura.iznos_f
-        logger.info(f"Faktura osvežena - stari iznos: {stari_iznos}, novi iznos: {novi_iznos}")
 
         return Response({
             'success': True,
@@ -97,7 +80,6 @@ def dodaj_stavku_fakture(request):
         })
 
     except Exception as e:
-        logger.error(f"Neočekivana greška u dodaj_stavku_fakture: {str(e)}", exc_info=True)
         return Response({'error': f'Greška: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -152,8 +134,6 @@ def izracunaj_dug_dobavljaca(request):
     Vraća sve dobavljače sa njihovim ukupnim dugom
     """
     try:
-        logger.info("Pozivanje funkcije IZRACUNAJ_DUG_DOBAVLJACU za sve dobavljače")
-        
         with connection.cursor() as cursor:
             try:
                 cursor.execute("""
@@ -170,10 +150,7 @@ def izracunaj_dug_dobavljaca(request):
                 
                 for row in cursor.fetchall():
                     results.append(dict(zip(columns, row)))
-                
-                logger.info(f"Uspešno preuzeti podaci za {len(results)} dobavljača")
             except Exception as e:
-                logger.error(f"Greška pri izvršavanju upita: {str(e)}", exc_info=True)
                 raise
 
         return Response({
@@ -182,7 +159,6 @@ def izracunaj_dug_dobavljaca(request):
         })
 
     except Exception as e:
-        logger.error(f"Greška u izracunaj_dug_dobavljaca: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -194,8 +170,6 @@ def test_indeksa_bez_indeksa(request):
     ZADATAK 3: Testira performanse upita BEZ indeksa
     """
     try:
-        logger.info("Testiranje performansi upita BEZ indeksa")
-        
         with connection.cursor() as cursor:
             start_time = time.time()
             
@@ -209,9 +183,7 @@ def test_indeksa_bez_indeksa(request):
                 
                 result = cursor.fetchone()
                 execution_time = time.time() - start_time
-                logger.info(f"Upit BEZ indeksa završen za {execution_time:.4f} sekundi")
             except Exception as e:
-                logger.error(f"Greška pri izvršavanju upita BEZ indeksa: {str(e)}", exc_info=True)
                 raise
 
         return Response({
@@ -222,7 +194,6 @@ def test_indeksa_bez_indeksa(request):
         })
 
     except Exception as e:
-        logger.error(f"Greška u test_indeksa_bez_indeksa: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -234,8 +205,6 @@ def test_indeksa_sa_indeksom(request):
     ZADATAK 3: Testira performanse upita SA indeksom
     """
     try:
-        logger.info("Testiranje performansi upita SA indeksom")
-        
         with connection.cursor() as cursor:
             start_time = time.time()
             
@@ -249,9 +218,7 @@ def test_indeksa_sa_indeksom(request):
                 
                 result = cursor.fetchone()
                 execution_time = time.time() - start_time
-                logger.info(f"Upit SA indeksom završen za {execution_time:.4f} sekundi")
             except Exception as e:
-                logger.error(f"Greška pri izvršavanju upita SA indeksom: {str(e)}", exc_info=True)
                 raise
 
         return Response({
@@ -262,7 +229,6 @@ def test_indeksa_sa_indeksom(request):
         })
 
     except Exception as e:
-        logger.error(f"Greška u test_indeksa_sa_indeksom: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -274,8 +240,6 @@ def generiši_test_fakture(request):
     ZADATAK 3: Generiše 800,000 test faktura za testiranje indeksa
     """
     try:
-        logger.info("Započinjanje generisanja 800,000 test faktura")
-        
         with connection.cursor() as cursor:
             try:
                 cursor.execute("""
@@ -307,9 +271,7 @@ def generiši_test_fakture(request):
                         COMMIT;
                     END;
                 """)
-                logger.info("800,000 test faktura uspešno generisano")
             except Exception as e:
-                logger.error(f"Greška pri generisanju test faktura: {str(e)}", exc_info=True)
                 raise
 
         return Response({
@@ -318,7 +280,6 @@ def generiši_test_fakture(request):
         })
 
     except Exception as e:
-        logger.error(f"Greška u generiši_test_fakture: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -330,8 +291,6 @@ def kreiraj_indeks(request):
     ZADATAK 3: Kreira indeks IDX_FAKTURA_STATUS_ROK
     """
     try:
-        logger.info("Kreiranje indeksa IDX_FAKTURA_STATUS_ROK")
-        
         with connection.cursor() as cursor:
             try:
                 cursor.execute("""
@@ -341,14 +300,11 @@ def kreiraj_indeks(request):
                         WHEN OTHERS THEN NULL;
                     END;
                 """)
-                logger.info("Stari indeks obrisan (ako je postojao)")
                 
                 cursor.execute("""
                     CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F)
                 """)
-                logger.info("Indeks IDX_FAKTURA_STATUS_ROK uspešno kreiran")
             except Exception as e:
-                logger.error(f"Greška pri kreiranju indeksa: {str(e)}", exc_info=True)
                 raise
 
         return Response({
@@ -357,7 +313,6 @@ def kreiraj_indeks(request):
         })
 
     except Exception as e:
-        logger.error(f"Greška u kreiraj_indeks: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -369,8 +324,6 @@ def obrisi_indeks(request):
     ZADATAK 3: Briše indeks IDX_FAKTURA_STATUS_ROK
     """
     try:
-        logger.info("Brisanje indeksa IDX_FAKTURA_STATUS_ROK")
-        
         with connection.cursor() as cursor:
             try:
                 cursor.execute("""
@@ -380,9 +333,7 @@ def obrisi_indeks(request):
                         WHEN OTHERS THEN NULL;
                     END;
                 """)
-                logger.info("Indeks IDX_FAKTURA_STATUS_ROK uspešno obrisan")
             except Exception as e:
-                logger.error(f"Greška pri brisanju indeksa: {str(e)}", exc_info=True)
                 raise
 
         return Response({
@@ -391,7 +342,6 @@ def obrisi_indeks(request):
         })
 
     except Exception as e:
-        logger.error(f"Greška u obrisi_indeks: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -413,8 +363,6 @@ def generisi_mesecni_izvestaj(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        logger.info(f"Generisanje izveštaja - mesec: {mesec}, godina: {godina}, kreator_id: {kreator_id}")
-
         with connection.cursor() as cursor:
             try:
                 sql = """
@@ -422,12 +370,8 @@ def generisi_mesecni_izvestaj(request):
                         GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI(%s, %s, %s);
                     END;
                 """
-                logger.info(f"Izvršavanje PL/SQL procedura sa parametrima: mesec={mesec}, godina={godina}, kreator_id={kreator_id}")
-                
                 cursor.execute(sql, [mesec, godina, kreator_id])
-                logger.info("Procedura uspešno izvršena")
             except Exception as e:
-                logger.error(f"Greška pri pozivanju procedure: {str(e)}", exc_info=True)
                 raise
 
         izvestaj = Izvestaj.objects.filter(
@@ -449,7 +393,6 @@ def generisi_mesecni_izvestaj(request):
             })
 
     except Exception as e:
-        logger.error(f"Greška u generisi_mesecni_izvestaj: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
