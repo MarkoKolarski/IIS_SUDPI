@@ -17,24 +17,26 @@
 
 CREATE OR REPLACE TRIGGER AZURIRAJ_FAKTURU_NAKON_UNOSA
 AFTER INSERT ON STAVKA_FAKTURE
+FOR EACH ROW
 DECLARE
+    v_iznos_nove_stavke NUMBER;
 BEGIN
-    -- Ažuriraj iznose svih faktura koje su dobile nove stavke u ovoj SQL izjavi
-    MERGE INTO FAKTURA F
-    USING (
-        SELECT FAKTURA_ID, SUM(CENA_PO_JED * KOLICINA_SF) AS UKUPAN_IZNOS
-        FROM STAVKA_FAKTURE
-        GROUP BY FAKTURA_ID
-    ) SF_SUM
-    ON (F.SIFRA_F = SF_SUM.FAKTURA_ID)
-    WHEN MATCHED THEN
-        UPDATE SET F.IZNOS_F = SF_SUM.UKUPAN_IZNOS;
+    -- Izračunaj iznos samo za red koji se unosi, koristeći :NEW
+    v_iznos_nove_stavke := :NEW.CENA_PO_JED * :NEW.KOLICINA_SF;
+    
+    UPDATE FAKTURA F
+    SET F.IZNOS_F = NVL(F.IZNOS_F, 0) + v_iznos_nove_stavke
+    WHERE F.SIFRA_F = :NEW.FAKTURA_ID;
+    
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Greška u trigeru AZURIRAJ_FAKTURU_NAKON_UNOSA: ' || SQLERRM);
         RAISE;
 END;
 /
+
+DROP TRIGGER AZURIRAJ_FAKTURU_NAKON_UNOSA;
+
 
 
 
