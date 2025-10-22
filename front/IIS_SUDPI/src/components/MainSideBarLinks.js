@@ -89,9 +89,9 @@ export const sidebarLinks = {
       description: "Evidencija i obračun kašnjenja",
     },
     {
-      title: "PL/SQL Procedure",
+      title: "Procedure",
       href: "/sbp-procedures",
-      description: "Testiranje PL/SQL komponenti",
+      description: "Upravljanje procedurama",
     },
   ],
   kontrolor_kvaliteta: [

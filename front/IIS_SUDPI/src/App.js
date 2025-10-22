@@ -38,7 +38,7 @@ import LogisticTransport from "./pages/LogisticTransport.js";
 import EditVozilo from "./pages/VoziloEdit.js";
 import DashboardLK from "./pages/DashboardLK.js";
 import PlanIsporuke from "./pages/PlanIsporuke.js";
-import SbpProcedures from "./pages/SbpProcedures.jsx";
+import Procedures from "./pages/Procedures.js";
 
 const App = () => {
   return (
@@ -86,7 +86,7 @@ const App = () => {
           path="/sbp-procedures"
           element={
             <ProtectedRoute allowedRoles={["finansijski_analiticar"]}>
-              <SbpProcedures />
+              <Procedures />
             </ProtectedRoute>
           }
         />

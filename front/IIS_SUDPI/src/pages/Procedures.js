@@ -287,8 +287,7 @@ const SbpProcedures = () => {
       />
       <main className={styles.sbpMainContent}>
         <header className={styles.sbpHeader}>
-          <h1>PL/SQL Procedure - Predispitne obaveze (SBP)</h1>
-          <p>Implementacija i testiranje PL/SQL komponenti iz fajla mk_sbp_procedures.sql</p>
+          <h1>Procedure</h1>
         </header>
 
         <div className={styles.tabsContainer}>
