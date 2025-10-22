@@ -296,25 +296,25 @@ const SbpProcedures = () => {
               className={`${styles.navLink} ${activeTab === 'zadatak1' ? styles.active : ''}`}
               onClick={() => setActiveTab('zadatak1')}
             >
-              Zadatak 1: Triger
+              Dodaj stavku fakture
             </button>
             <button
               className={`${styles.navLink} ${activeTab === 'zadatak2' ? styles.active : ''}`}
               onClick={() => setActiveTab('zadatak2')}
             >
-              Zadatak 2: Funkcija
+              Dug dobavljačima
             </button>
             <button
               className={`${styles.navLink} ${activeTab === 'zadatak3' ? styles.active : ''}`}
               onClick={() => setActiveTab('zadatak3')}
             >
-              Zadatak 3: Indeksi
+              Testiranje indeksa
             </button>
             <button
               className={`${styles.navLink} ${activeTab === 'zadatak4' ? styles.active : ''}`}
               onClick={() => setActiveTab('zadatak4')}
             >
-              Zadatak 4: Izveštaj
+              Generisanje izveštaja
             </button>
           </div>
         </div>
@@ -455,8 +455,7 @@ const SbpProcedures = () => {
           {activeTab === 'zadatak2' && (
             <div className={styles.card}>
               <div className={styles.cardHeader}>
-                <h5>IZRACUNAJ_DUG_DOBAVLJACU Funkcija</h5>
-                <small>PL/SQL funkcija koja računa ukupan dug po dobavljaču</small>
+                <h5>Izračunaj dug prema dobavljačima</h5>
               </div>
               <div className={styles.cardBody}>
                 {zadatak2.error && (
@@ -485,7 +484,7 @@ const SbpProcedures = () => {
 
                       <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#ecfdf5', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
                         <strong style={{ color: '#065f46' }}>
-                          Ukupan dug svih dobavljača: {zadatak2.ukupanDug.toFixed(2)} RSD
+                          Ukupan naš dug prema svim dobavljačima: {zadatak2.ukupanDug.toFixed(2)} RSD
                         </strong>
                       </div>
                     </div>
@@ -692,8 +691,7 @@ const SbpProcedures = () => {
           {activeTab === 'zadatak4' && (
             <div className={styles.card}>
               <div className={styles.cardHeader}>
-                <h5>GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI Procedura</h5>
-                <small>Složen izveštaj sa kurzorima, PL/SQL tipovima i agregatnim funkcijama</small>
+                <h5>Generisi mesečni izveštaj profitabilnosti</h5>
               </div>
               <div className={styles.cardBody}>
                 {zadatak4.error && (
