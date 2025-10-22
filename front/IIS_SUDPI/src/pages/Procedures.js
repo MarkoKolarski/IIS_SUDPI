@@ -324,8 +324,7 @@ const SbpProcedures = () => {
           {activeTab === 'zadatak1' && (
             <div className={styles.card}>
               <div className={styles.cardHeader}>
-                <h5>AZURIRAJ_FAKTURU_NAKON_UNOSA Triger</h5>
-                <small>AFTER INSERT triger koji automatski ažurira iznos fakture nakon unosa stavke</small>
+                <h5>Dodaj stavku fakture & Azuriraj fakturu nakon unosa automatski</h5>
               </div>
               <div className={styles.cardBody}>
                 {zadatak1.error && (

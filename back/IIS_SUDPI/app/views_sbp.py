@@ -2,13 +2,16 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import connection
+from django.db import connection, transaction
 from django.utils import timezone
 from .decorators import allowed_users
 from .models import Faktura, StavkaFakture, Proizvod, Ugovor, Dobavljac, Izvestaj
 from decimal import Decimal
 import json
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -26,27 +29,63 @@ def dodaj_stavku_fakture(request):
         kolicina_sf = request.data.get('kolicina_sf')
         cena_po_jed = request.data.get('cena_po_jed')
 
+        logger.info(f"Primljeni parametri: faktura_id={faktura_id}, proizvod_id={proizvod_id}, naziv_sf={naziv_sf}, kolicina_sf={kolicina_sf}, cena_po_jed={cena_po_jed}")
+
         if not all([faktura_id, proizvod_id, naziv_sf, kolicina_sf, cena_po_jed]):
             return Response(
                 {'error': 'Svi parametri su obavezni'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        faktura = Faktura.objects.get(sifra_f=faktura_id)
-        proizvod = Proizvod.objects.get(sifra_pr=proizvod_id)
+        # Validacija da li faktura i proizvod postoje
+        try:
+            faktura = Faktura.objects.get(sifra_f=faktura_id)
+            logger.info(f"Pronađena faktura: {faktura_id}")
+        except Faktura.DoesNotExist:
+            logger.error(f"Faktura sa ID {faktura_id} ne postoji")
+            return Response({'error': f'Faktura sa ID {faktura_id} ne postoji'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            proizvod = Proizvod.objects.get(sifra_pr=proizvod_id)
+            logger.info(f"Pronađen proizvod: {proizvod_id}")
+        except Proizvod.DoesNotExist:
+            logger.error(f"Proizvod sa ID {proizvod_id} ne postoji")
+            return Response({'error': f'Proizvod sa ID {proizvod_id} ne postoji'}, status=status.HTTP_404_NOT_FOUND)
 
         stari_iznos = faktura.iznos_f
 
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED, FAKTURA_ID, PROIZVOD_ID)
-                VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, :1, :2, :3, :4, :5)
-            """, [naziv_sf, kolicina_sf, cena_po_jed, faktura_id, proizvod_id])
-            
-            cursor.execute("COMMIT")
+        # Konverzija tipova podataka
+        try:
+            kolicina_sf = int(kolicina_sf)
+            cena_po_jed = float(cena_po_jed)
+            logger.info(f"Konvertovani tipovi: kolicina_sf={kolicina_sf} (int), cena_po_jed={cena_po_jed} (float)")
+        except (ValueError, TypeError) as e:
+            logger.error(f"Greška pri konverziji tipova: {str(e)}")
+            return Response(
+                {'error': f'Pogrešan format podataka. Količina mora biti broj, cena mora biti decimalon broj. Greška: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                try:
+                    sql = """
+                        INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED, FAKTURA_ID, PROIZVOD_ID)
+                        VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, %s, %s, %s, %s, %s)
+                    """
+                    logger.info(f"Izvršavanje SQL INSERT u STAVKA_FAKTURE")
+                    logger.info(f"Parametri: naziv_sf={naziv_sf}, kolicina_sf={kolicina_sf}, cena_po_jed={cena_po_jed}, faktura_id={faktura_id}, proizvod_id={proizvod_id}")
+                    
+                    cursor.execute(sql, [naziv_sf, kolicina_sf, cena_po_jed, faktura_id, proizvod_id])
+                    logger.info(f"Stavka fakture uspešno insertovana")
+                except Exception as e:
+                    logger.error(f"Greška pri INSERT-u stavke fakture: {str(e)}", exc_info=True)
+                    raise
+
+        # Osvežavanje fakture iz baze
         faktura.refresh_from_db()
         novi_iznos = faktura.iznos_f
+        logger.info(f"Faktura osvežena - stari iznos: {stari_iznos}, novi iznos: {novi_iznos}")
 
         return Response({
             'success': True,
@@ -57,12 +96,9 @@ def dodaj_stavku_fakture(request):
             'faktura_id': faktura_id
         })
 
-    except Faktura.DoesNotExist:
-        return Response({'error': 'Faktura ne postoji'}, status=status.HTTP_404_NOT_FOUND)
-    except Proizvod.DoesNotExist:
-        return Response({'error': 'Proizvod ne postoji'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(f"Neočekivana greška u dodaj_stavku_fakture: {str(e)}", exc_info=True)
+        return Response({'error': f'Greška: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
