@@ -96,6 +96,7 @@ FROM
     unutar tog znatno manjeg skupa podataka efikasno pretražuje po datumu, drastično smanjujući vreme izvršavanja.
 ====================================================================================================================================
 */
+DROP INDEX IDX_FAKTURA_STATUS_ROK;
 
 --------------------------------------
 PROMPT
@@ -159,8 +160,8 @@ DECLARE
 BEGIN
     SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR FETCH FIRST 1 ROWS ONLY;
 
-    DBMS_OUTPUT.PUT_LINE('Pocinje generisanje 800,000 faktura...');
-    FOR i IN 1..800000 LOOP
+    DBMS_OUTPUT.PUT_LINE('Pocinje generisanje 500,000 faktura...');
+    FOR i IN 1..500000 LOOP
         INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
         VALUES (
             FAKTURA_SEQ.NEXTVAL,
@@ -175,11 +176,10 @@ BEGIN
                     -- 90% faktura ima rok u budućnosti (sledeća 2-6 meseci)
                     SYSDATE + TRUNC(DBMS_RANDOM.VALUE(60, 180))
             END,
-            -- Većina faktura je PLAĆENA
-            CASE TRUNC(DBMS_RANDOM.VALUE(0, 10))
-                WHEN 0 THEN 'primljena'      -- 10% primljene
-                WHEN 1 THEN 'verifikovana'   -- 10% verifikovane
-                ELSE 'isplacena'              -- 80% isplaćene
+            CASE TRUNC(DBMS_RANDOM.VALUE(0, 100) / 50)
+                WHEN 0 THEN 'primljena'      -- 25% primljene (ne-plaćene)
+                WHEN 1 THEN 'verifikovana'   -- 25% verifikovane (ne-plaćene)
+                ELSE 'isplacena'              -- 50% isplaćene
             END,
             v_ugovor_id
         );
