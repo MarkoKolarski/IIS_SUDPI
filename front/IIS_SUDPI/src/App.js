@@ -38,6 +38,7 @@ import LogisticTransport from "./pages/LogisticTransport.js";
 import EditVozilo from "./pages/VoziloEdit.js";
 import DashboardLK from "./pages/DashboardLK.js";
 import PlanIsporuke from "./pages/PlanIsporuke.js";
+import SbpProcedures from "./pages/SbpProcedures.jsx";
 
 const App = () => {
   return (
@@ -78,6 +79,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["finansijski_analiticar"]}>
               <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sbp-procedures"
+          element={
+            <ProtectedRoute allowedRoles={["finansijski_analiticar"]}>
+              <SbpProcedures />
             </ProtectedRoute>
           }
         />

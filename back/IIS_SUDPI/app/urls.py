@@ -1,6 +1,7 @@
 from django.urls import path, include
 from . import views
 from . import views_mv
+from . import views_sbp
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
 from .views import (LoginView, index, register, api_login, dashboard_finansijski_analiticar, invoice_list, 
                     invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, 
@@ -108,6 +109,19 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 
     path('api/izvestaji/upload/', upload_izvestaj, name='izvestaj-upload'),
+
+    # SBP Procedures endpoints
+    path('api/sbp/zadatak1/dodaj-stavku/', views_sbp.dodaj_stavku_fakture, name='sbp-dodaj-stavku'),
+    path('api/sbp/zadatak1/fakture/', views_sbp.get_fakture_za_stavke, name='sbp-fakture'),
+    path('api/sbp/zadatak1/proizvodi/', views_sbp.get_proizvodi, name='sbp-proizvodi'),
+    path('api/sbp/zadatak2/dug-dobavljaca/', views_sbp.izracunaj_dug_dobavljaca, name='sbp-dug-dobavljaca'),
+    path('api/sbp/zadatak3/test-bez-indeksa/', views_sbp.test_indeksa_bez_indeksa, name='sbp-test-bez-indeksa'),
+    path('api/sbp/zadatak3/test-sa-indeksom/', views_sbp.test_indeksa_sa_indeksom, name='sbp-test-sa-indeksom'),
+    path('api/sbp/zadatak3/generiši-test-fakture/', views_sbp.generiši_test_fakture, name='sbp-generiši-test-fakture'),
+    path('api/sbp/zadatak3/kreiraj-indeks/', views_sbp.kreiraj_indeks, name='sbp-kreiraj-indeks'),
+    path('api/sbp/zadatak3/obrisi-indeks/', views_sbp.obrisi_indeks, name='sbp-obrisi-indeks'),
+    path('api/sbp/zadatak4/generiši-izvestaj/', views_sbp.generisi_mesecni_izvestaj, name='sbp-generiši-izvestaj'),
+    path('api/sbp/zadatak4/poslednji-izvestaj/', views_sbp.poslednji_izvestaj, name='sbp-poslednji-izvestaj'),
 
     # Profil trenutnog korisnika
     path('api/user/profile/', views.get_user_profile, name='get_user_profile'),

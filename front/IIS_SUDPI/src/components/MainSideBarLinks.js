@@ -88,6 +88,11 @@ export const sidebarLinks = {
       href: "/penalties",
       description: "Evidencija i obračun kašnjenja",
     },
+    {
+      title: "PL/SQL Procedure",
+      href: "/sbp-procedures",
+      description: "Testiranje PL/SQL komponenti",
+    },
   ],
   kontrolor_kvaliteta: [
     {
