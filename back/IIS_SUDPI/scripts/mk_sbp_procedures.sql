@@ -98,7 +98,6 @@ FROM
     unutar tog znatno manjeg skupa podataka efikasno pretražuje po datumu, drastično smanjujući vreme izvršavanja.
 ====================================================================================================================================
 */
-DROP INDEX IDX_FAKTURA_STATUS_ROK;
 
 --------------------------------------
 PROMPT
@@ -107,28 +106,35 @@ PROMPT TESTIRANJE BEZ INDEKSA
 PROMPT ============================================
 
 SET TIMING ON;
+
 SELECT COUNT(*), AVG(IZNOS_F)
 FROM FAKTURA 
 WHERE STATUS_F IN ('primljena', 'verifikovana') 
   AND ROK_PLACANJA_F < SYSDATE;
+
 SET TIMING OFF;
 
 PROMPT
 PROMPT Execution plan BEZ indeksa:
-EXPLAIN PLAN FOR 
+
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'bez_indeksa'
+FOR 
 SELECT SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F 
 FROM FAKTURA 
 WHERE STATUS_F IN ('primljena', 'verifikovana') 
   AND ROK_PLACANJA_F < SYSDATE;
 
-SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY(NULL, NULL, 'BASIC +COST'));
+SELECT PLAN_TABLE_OUTPUT 
+FROM TABLE(DBMS_XPLAN.DISPLAY(NULL, 'bez_indeksa', 'BASIC +COST'));
 
 PROMPT
 PROMPT ============================================
 PROMPT KREIRANJE INDEKSA
 PROMPT ============================================
 
-CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F);
+CREATE INDEX IDX_FAKTURA_STATUS_ROK 
+ON FAKTURA(STATUS_F, ROK_PLACANJA_F);
 
 PROMPT
 PROMPT ============================================
@@ -136,21 +142,34 @@ PROMPT TESTIRANJE SA INDEKSOM
 PROMPT ============================================
 
 SET TIMING ON;
+
 SELECT COUNT(*), AVG(IZNOS_F)
 FROM FAKTURA 
 WHERE STATUS_F IN ('primljena', 'verifikovana') 
   AND ROK_PLACANJA_F < SYSDATE;
+
 SET TIMING OFF;
 
 PROMPT
 PROMPT Execution plan SA indeksom:
-EXPLAIN PLAN FOR 
+
+EXPLAIN PLAN 
+SET STATEMENT_ID = 'sa_indeksom'
+FOR 
 SELECT SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F 
 FROM FAKTURA 
 WHERE STATUS_F IN ('primljena', 'verifikovana') 
   AND ROK_PLACANJA_F < SYSDATE;
 
-SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY(NULL, NULL, 'BASIC +COST'));
+SELECT PLAN_TABLE_OUTPUT 
+FROM TABLE(DBMS_XPLAN.DISPLAY(NULL, 'sa_indeksom', 'BASIC +COST'));
+
+PROMPT
+PROMPT ============================================
+PROMPT ZAVRŠETAK TESTIRANJA
+PROMPT ============================================
+
+DROP INDEX IDX_FAKTURA_STATUS_ROK;
 
 --------------------------------------
 
