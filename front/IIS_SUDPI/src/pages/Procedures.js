@@ -347,21 +347,16 @@ const SbpProcedures = () => {
                   <div className={styles.row}>
                     <div className={styles.colHalf}>
                       <div>
-                        <label className={styles.formLabel}>Faktura</label>
-                        <select
-                          className={styles.formSelect}
+                        <label className={styles.formLabel}>ID Fakture</label>
+                        <input
+                          type="number"
+                          className={styles.formControl}
                           value={zadatak1.selectedFaktura}
                           onChange={(e) => setZadatak1(prev => ({ ...prev, selectedFaktura: e.target.value }))}
+                          placeholder="Unesite ID fakture"
                           required
                           disabled={zadatak1.loading}
-                        >
-                          <option value="">Izaberite fakturu...</option>
-                          {zadatak1.fakture.map(f => (
-                            <option key={f.sifra_f} value={f.sifra_f}>
-                              ID: {f.sifra_f} | {f.dobavljac} | {f.iznos_f} RSD | {f.status_f}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </div>
                     </div>
                     <div className={styles.colHalf}>
