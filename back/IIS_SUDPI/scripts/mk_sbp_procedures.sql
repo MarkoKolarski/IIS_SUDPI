@@ -267,7 +267,7 @@ BEGIN
     ORDER BY SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED) DESC;
 
     -- Generisanje sadržaja izveštaja u JSON formatu
-    v_sadrzaj_izvestaja := '{"izvestaj": "2Mesecna profitabilnost po kategorijama", "mesec": ' || p_mesec || ', "godina": ' || p_godina || ', "stavke": [';
+    v_sadrzaj_izvestaja := '{"izvestaj": "Mesecna profitabilnost po kategorijama", "mesec": ' || p_mesec || ', "godina": ' || p_godina || ', "stavke": [';
 
     FOR i IN 1..l_profitabilnost.COUNT LOOP
         v_sadrzaj_izvestaja := v_sadrzaj_izvestaja ||

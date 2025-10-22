@@ -152,28 +152,37 @@ def izracunaj_dug_dobavljaca(request):
     Vraća sve dobavljače sa njihovim ukupnim dugom
     """
     try:
+        logger.info("Pozivanje funkcije IZRACUNAJ_DUG_DOBAVLJACU za sve dobavljače")
+        
         with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT
-                    SIFRA_D,
-                    NAZIV,
-                    IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_D) AS UKUPAN_DUG
-                FROM DOBAVLJAC
-                ORDER BY IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_D) DESC
-            """)
-            
-            columns = [col[0] for col in cursor.description]
-            results = []
-            
-            for row in cursor.fetchall():
-                results.append(dict(zip(columns, row)))
+            try:
+                cursor.execute("""
+                    SELECT
+                        SIFRA_D,
+                        NAZIV,
+                        IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_D) AS UKUPAN_DUG
+                    FROM DOBAVLJAC
+                    ORDER BY IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_D) DESC
+                """)
+                
+                columns = [col[0] for col in cursor.description]
+                results = []
+                
+                for row in cursor.fetchall():
+                    results.append(dict(zip(columns, row)))
+                
+                logger.info(f"Uspešno preuzeti podaci za {len(results)} dobavljača")
+            except Exception as e:
+                logger.error(f"Greška pri izvršavanju upita: {str(e)}", exc_info=True)
+                raise
 
         return Response({
             'dobavljaci': results,
-            'ukupan_dug_svi': sum(float(d['UKUPAN_DUG']) for d in results)
+            'ukupan_dug_svi': sum(float(d['UKUPAN_DUG']) for d in results) if results else 0
         })
 
     except Exception as e:
+        logger.error(f"Greška u izracunaj_dug_dobavljaca: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -185,18 +194,25 @@ def test_indeksa_bez_indeksa(request):
     ZADATAK 3: Testira performanse upita BEZ indeksa
     """
     try:
+        logger.info("Testiranje performansi upita BEZ indeksa")
+        
         with connection.cursor() as cursor:
             start_time = time.time()
             
-            cursor.execute("""
-                SELECT COUNT(*) as CNT, AVG(IZNOS_F) as AVG_IZNOS
-                FROM FAKTURA 
-                WHERE STATUS_F IN ('primljena', 'verifikovana') 
-                  AND ROK_PLACANJA_F < SYSDATE
-            """)
-            
-            result = cursor.fetchone()
-            execution_time = time.time() - start_time
+            try:
+                cursor.execute("""
+                    SELECT COUNT(*) as CNT, AVG(IZNOS_F) as AVG_IZNOS
+                    FROM FAKTURA 
+                    WHERE STATUS_F IN ('primljena', 'verifikovana') 
+                      AND ROK_PLACANJA_F < SYSDATE
+                """)
+                
+                result = cursor.fetchone()
+                execution_time = time.time() - start_time
+                logger.info(f"Upit BEZ indeksa završen za {execution_time:.4f} sekundi")
+            except Exception as e:
+                logger.error(f"Greška pri izvršavanju upita BEZ indeksa: {str(e)}", exc_info=True)
+                raise
 
         return Response({
             'count': result[0],
@@ -206,6 +222,7 @@ def test_indeksa_bez_indeksa(request):
         })
 
     except Exception as e:
+        logger.error(f"Greška u test_indeksa_bez_indeksa: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -217,18 +234,25 @@ def test_indeksa_sa_indeksom(request):
     ZADATAK 3: Testira performanse upita SA indeksom
     """
     try:
+        logger.info("Testiranje performansi upita SA indeksom")
+        
         with connection.cursor() as cursor:
             start_time = time.time()
             
-            cursor.execute("""
-                SELECT COUNT(*) as CNT, AVG(IZNOS_F) as AVG_IZNOS
-                FROM FAKTURA 
-                WHERE STATUS_F IN ('primljena', 'verifikovana') 
-                  AND ROK_PLACANJA_F < SYSDATE
-            """)
-            
-            result = cursor.fetchone()
-            execution_time = time.time() - start_time
+            try:
+                cursor.execute("""
+                    SELECT COUNT(*) as CNT, AVG(IZNOS_F) as AVG_IZNOS
+                    FROM FAKTURA 
+                    WHERE STATUS_F IN ('primljena', 'verifikovana') 
+                      AND ROK_PLACANJA_F < SYSDATE
+                """)
+                
+                result = cursor.fetchone()
+                execution_time = time.time() - start_time
+                logger.info(f"Upit SA indeksom završen za {execution_time:.4f} sekundi")
+            except Exception as e:
+                logger.error(f"Greška pri izvršavanju upita SA indeksom: {str(e)}", exc_info=True)
+                raise
 
         return Response({
             'count': result[0],
@@ -238,6 +262,7 @@ def test_indeksa_sa_indeksom(request):
         })
 
     except Exception as e:
+        logger.error(f"Greška u test_indeksa_sa_indeksom: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -249,36 +274,43 @@ def generiši_test_fakture(request):
     ZADATAK 3: Generiše 800,000 test faktura za testiranje indeksa
     """
     try:
+        logger.info("Započinjanje generisanja 800,000 test faktura")
+        
         with connection.cursor() as cursor:
-            cursor.execute("""
-                DECLARE
-                    v_ugovor_id UGOVOR.SIFRA_U%TYPE;
-                BEGIN
-                    SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR FETCH FIRST 1 ROWS ONLY;
+            try:
+                cursor.execute("""
+                    DECLARE
+                        v_ugovor_id UGOVOR.SIFRA_U%TYPE;
+                    BEGIN
+                        SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR FETCH FIRST 1 ROWS ONLY;
 
-                    FOR i IN 1..800000 LOOP
-                        INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
-                        VALUES (
-                            FAKTURA_SEQ.NEXTVAL,
-                            TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2),
-                            SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 365)),
-                            CASE 
-                                WHEN DBMS_RANDOM.VALUE(0, 100) < 10 THEN 
-                                    SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 90))
-                                ELSE 
-                                    SYSDATE + TRUNC(DBMS_RANDOM.VALUE(60, 180))
-                            END,
-                            CASE TRUNC(DBMS_RANDOM.VALUE(0, 10))
-                                WHEN 0 THEN 'primljena'
-                                WHEN 1 THEN 'verifikovana'
-                                ELSE 'isplacena'
-                            END,
-                            v_ugovor_id
-                        );
-                    END LOOP;
-                    COMMIT;
-                END;
-            """)
+                        FOR i IN 1..800000 LOOP
+                            INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
+                            VALUES (
+                                FAKTURA_SEQ.NEXTVAL,
+                                TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2),
+                                SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 365)),
+                                CASE 
+                                    WHEN DBMS_RANDOM.VALUE(0, 100) < 10 THEN 
+                                        SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 90))
+                                    ELSE 
+                                        SYSDATE + TRUNC(DBMS_RANDOM.VALUE(60, 180))
+                                END,
+                                CASE TRUNC(DBMS_RANDOM.VALUE(0, 10))
+                                    WHEN 0 THEN 'primljena'
+                                    WHEN 1 THEN 'verifikovana'
+                                    ELSE 'isplacena'
+                                END,
+                                v_ugovor_id
+                            );
+                        END LOOP;
+                        COMMIT;
+                    END;
+                """)
+                logger.info("800,000 test faktura uspešno generisano")
+            except Exception as e:
+                logger.error(f"Greška pri generisanju test faktura: {str(e)}", exc_info=True)
+                raise
 
         return Response({
             'success': True,
@@ -286,6 +318,7 @@ def generiši_test_fakture(request):
         })
 
     except Exception as e:
+        logger.error(f"Greška u generiši_test_fakture: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -297,18 +330,26 @@ def kreiraj_indeks(request):
     ZADATAK 3: Kreira indeks IDX_FAKTURA_STATUS_ROK
     """
     try:
+        logger.info("Kreiranje indeksa IDX_FAKTURA_STATUS_ROK")
+        
         with connection.cursor() as cursor:
-            cursor.execute("""
-                BEGIN
-                    EXECUTE IMMEDIATE 'DROP INDEX IDX_FAKTURA_STATUS_ROK';
-                EXCEPTION
-                    WHEN OTHERS THEN NULL;
-                END;
-            """)
-            
-            cursor.execute("""
-                CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F)
-            """)
+            try:
+                cursor.execute("""
+                    BEGIN
+                        EXECUTE IMMEDIATE 'DROP INDEX IDX_FAKTURA_STATUS_ROK';
+                    EXCEPTION
+                        WHEN OTHERS THEN NULL;
+                    END;
+                """)
+                logger.info("Stari indeks obrisan (ako je postojao)")
+                
+                cursor.execute("""
+                    CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F)
+                """)
+                logger.info("Indeks IDX_FAKTURA_STATUS_ROK uspešno kreiran")
+            except Exception as e:
+                logger.error(f"Greška pri kreiranju indeksa: {str(e)}", exc_info=True)
+                raise
 
         return Response({
             'success': True,
@@ -316,6 +357,7 @@ def kreiraj_indeks(request):
         })
 
     except Exception as e:
+        logger.error(f"Greška u kreiraj_indeks: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -327,14 +369,21 @@ def obrisi_indeks(request):
     ZADATAK 3: Briše indeks IDX_FAKTURA_STATUS_ROK
     """
     try:
+        logger.info("Brisanje indeksa IDX_FAKTURA_STATUS_ROK")
+        
         with connection.cursor() as cursor:
-            cursor.execute("""
-                BEGIN
-                    EXECUTE IMMEDIATE 'DROP INDEX IDX_FAKTURA_STATUS_ROK';
-                EXCEPTION
-                    WHEN OTHERS THEN NULL;
-                END;
-            """)
+            try:
+                cursor.execute("""
+                    BEGIN
+                        EXECUTE IMMEDIATE 'DROP INDEX IDX_FAKTURA_STATUS_ROK';
+                    EXCEPTION
+                        WHEN OTHERS THEN NULL;
+                    END;
+                """)
+                logger.info("Indeks IDX_FAKTURA_STATUS_ROK uspešno obrisan")
+            except Exception as e:
+                logger.error(f"Greška pri brisanju indeksa: {str(e)}", exc_info=True)
+                raise
 
         return Response({
             'success': True,
@@ -342,6 +391,7 @@ def obrisi_indeks(request):
         })
 
     except Exception as e:
+        logger.error(f"Greška u obrisi_indeks: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -363,12 +413,22 @@ def generisi_mesecni_izvestaj(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        logger.info(f"Generisanje izveštaja - mesec: {mesec}, godina: {godina}, kreator_id: {kreator_id}")
+
         with connection.cursor() as cursor:
-            cursor.execute("""
-                BEGIN
-                    GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI(:mesec, :godina, :kreator_id);
-                END;
-            """, [mesec, godina, kreator_id])
+            try:
+                sql = """
+                    BEGIN
+                        GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI(%s, %s, %s);
+                    END;
+                """
+                logger.info(f"Izvršavanje PL/SQL procedura sa parametrima: mesec={mesec}, godina={godina}, kreator_id={kreator_id}")
+                
+                cursor.execute(sql, [mesec, godina, kreator_id])
+                logger.info("Procedura uspešno izvršena")
+            except Exception as e:
+                logger.error(f"Greška pri pozivanju procedure: {str(e)}", exc_info=True)
+                raise
 
         izvestaj = Izvestaj.objects.filter(
             tip_i='finansijski',
@@ -389,6 +449,7 @@ def generisi_mesecni_izvestaj(request):
             })
 
     except Exception as e:
+        logger.error(f"Greška u generisi_mesecni_izvestaj: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
