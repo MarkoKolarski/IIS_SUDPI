@@ -28,13 +28,43 @@ const PlanIsporuke = () => {
   const [loading, setLoading] = useState(false);
   const [rutaLoading, setRutaLoading] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isporuka, setIsporuka] = useState([])
   
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  useEffect(() => {
+  if (isporukaId) { 
+    axiosInstance.get(`api/isporuke/${isporukaId}/`)
+      .then(res => {
+        const isporukaData = res.data;
+        setIsporuka(isporukaData);
+        // Postavite formData sa stvarnim podacima iz isporuke
+        setFormData(prev => ({ 
+          ...prev, 
+          naziv: `Isporuka ${isporukaId}`,
+          datum_isporuke: isporukaData.datum_polaska || '',
+          rok_isporuke: isporukaData.rok_is || '',
+          //kolicina_kg: isporukaData.kolicina_kg
+          //polazna_tacka: isporukaData.polazna_tacka || '',
+          //odrediste: isporukaData.odrediste || '',
+          //vozac_id: isporukaData.vozac_id || '',
+          //ruta_id: isporukaData.ruta_id || ''
+        }));
+      })
+      .catch(err => console.error('Greška pri učitavanju isporuke:', err));
+  }
+}, [isporukaId]);
 //   useEffect(() => {
-//   if (isporukaId) {
-//     axiosInstance.get(`api/isporuka/${isporukaId}/`)
-//       .then(res => setFormData(res.data))
+//   if (isporukaId) { 
+//     axiosInstance.get(`api/isporuke/${isporukaId}/`)
+//       //.then(res => setFormData(res.data))
+//       .then(res => setIsporuka(res.data))
 //       .catch(err => console.error('Greška pri učitavanju isporuke:', err));
+//        setFormData(prev => ({ 
+//         ...prev, 
+//         naziv: `Isporuka ${isporukaId}`,
+//         datum_isporuke: isporuka.datum_polaska,
+//         rok_isporuke: isporuka.rok_is
+//       }));
 //   }
 // }, [isporukaId]);
   useEffect(() => {
@@ -174,7 +204,7 @@ const handleSubmit = async (e) => {
 
   const handleOdustani = () => {
     // Vrati se na dashboard
-    navigate('/dashboardLK');
+    navigate("/dashboard-lk");
   };
 
   // Formatiranje datuma za input polja

@@ -732,3 +732,15 @@ class TerminUtovara(models.Model):
             vreme_pocetka=vreme_pocetka,
             vreme_zavrsetka=vreme_zavrsetka,
         )
+    
+class Voznja(models.Model):
+    ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE)
+    trenutna_lat = models.FloatField()
+    trenutna_lon = models.FloatField()
+    vreme_azuriranja = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Voznja rute {self.ruta.polazna_tacka} → {self.ruta.odrediste} ({self.trenutna_lat}, {self.trenutna_lon})"
+
+    class Meta:
+        db_table = 'voznja'

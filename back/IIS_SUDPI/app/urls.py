@@ -172,6 +172,11 @@ urlpatterns = [
     path('api/rute/<int:pk>/directions/', views.ruta_directions, name='ruta_directions'),
     path('api/rute/<int:pk>/map-preview/', views.ruta_map_preview, name='ruta_map_preview'),
     path('api/rute/spremna/<int:pk>/', views.ruta_spremna, name='spremna_ruta'),
+    path('api/simulacija-rute/<int:pk>/', views.simulacija_voznje, name='simulacija_voznje'),
+    path('api/simulacija-temperature/<int:pk>/', views.simulacija_temperature, name = 'simulacija_temperature'),
+    path('api/voznje/<int:pk>/trenutna/', views.trenutna_pozicija, name='trenutna_pozicija'),
+    path('api/temperature/ruta/<int:pk>/', views.temperatura_po_ruti, name='temperatura_po_ruti'),
+
     #upozorenja
     path('api/upozorenja/', views.list_upozorenja, name='list_upozorenja'),
 

@@ -41,6 +41,7 @@ import PlanIsporuke from "./pages/PlanIsporuke.js";
 import SpremanjeIsporuke from "./pages/SpremanjeIsporuke.js";
 import PregledIsporuka from "./pages/PregledIsporuka.js";
 import UpozorenjaDashboard from "./pages/UpozorenjaDashboard.js";
+import PregledRuta from "./pages/PregledRuta.js";
 
 const App = () => {
   return (
@@ -256,6 +257,14 @@ const App = () => {
           element={
             <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
               <UpozorenjaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pregled-ruta"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <PregledRuta />
             </ProtectedRoute>
           }
         />

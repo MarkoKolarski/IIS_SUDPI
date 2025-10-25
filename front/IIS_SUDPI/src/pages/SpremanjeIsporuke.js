@@ -7,7 +7,8 @@ const SpremanjeIsporuke = () => {
   const [isporuke, setIsporuke] = useState([]);
   const [selectedIsporuka, setSelectedIsporuka] = useState(null);
   //const [skladiste, setSkladiste] = useState("");
-  const [skladiste, setSkladiste] = useState([]);
+  const [skladista, setSkladista] = useState([]);
+  const [izabranoSkladiste, setIzabranoSkladiste] = useState(null);
   const [datumIsporuke, setDatumIsporuke] = useState("");
   const [spremnaKolicina, setSpremnaKolicina] = useState("");
   const [poruka, setPoruka] = useState("");
@@ -20,22 +21,31 @@ const SpremanjeIsporuke = () => {
       .then((res) => setIsporuke(res.data))
       .catch((err) => console.error("Greška pri učitavanju isporuka:", err));
   }, []);
+  useEffect(() => {
+    const fetchSkladista = async () => {
+      try { 
+        const res = await axiosInstance.get("skladista/");
+        setSkladista(res.data);
+      } catch (err) {
+        console.error("Greška pri učitavanju skladišta:", err);
+      }
+    };
+    fetchSkladista();
+  }, []);
 
   const handleSelectIsporuka = (isporuka) => {
     setSelectedIsporuka(isporuka);
     setDatumIsporuke(isporuka.datum_polaska?.split("T")[0] || "");
     setPoruka("");
 
-    axiosInstance
-      .get(`api/skladiste/${isporuka.sifra_i}`)
-      .then((res) => setSkladiste(res.data))
-      .catch((err) => console.error("Greška pri učitavanju isporuka:", err));
+    // axiosInstance
+    //   .get(`api/skladiste/${isporuka.sifra_i}`)
+    //   .then((res) => setSkladiste(res.data.mesto_s))
+    //   .catch((err) => console.error("Greška pri učitavanju isporuka:", err));
       //.then((res) => setSkladiste(res.data.naziv_s || res.data.mesto_s))
       //.catch(() => setSkladiste("Nije pronađeno"));
   };
   
-
-  // ----------------- Promena datuma isporuke -----------------
   const handleDatumChange = async (e) => {
     const newDatum = e.target.value;
     setDatumIsporuke(newDatum);
@@ -73,7 +83,7 @@ const SpremanjeIsporuke = () => {
       // 1️⃣ proveri slobodne rampe
       const resRampe = await axiosInstance.get("api/rampe/aktivna/", {
          params: { status: "slobodna",
-            skladiste: skladiste.sifra_s
+            skladiste: izabranoSkladiste.sifra_s
          },
        });
        if (resRampe.data.lenght === 0 ) {
@@ -107,18 +117,18 @@ const SpremanjeIsporuke = () => {
      
       //'/api/isporuke/${selectedIsporuka.sifra_i}/
       
-      await axiosInstance.put(`/api/isporuke/${selectedIsporuka.sifra_i}/`, {
+      await axiosInstance.put(`api/isporuke/${selectedIsporuka.sifra_i}/`, {
         kolicina_kg: spremnaKolicina || selectedIsporuka.kolicina_kg,
         status: "spremna"
       });
-      await axiosInstance.put(`/api/rampe/${resRampe.data.sifra_rp}/`, {
+      await axiosInstance.put(`api/rampe/${resRampe.data.sifra_rp}/`, {
         status: "zauzeta"
       });
       //await axiosInstance.put(`/api/rute/${selectedIsporuka.sifra_i}/`);
 
       if (selectedIsporuka?.ruta) {
         console.debug("Updating ruta", selectedIsporuka.ruta);
-        await axiosInstance.patch(`/api/rute/spremna/${selectedIsporuka.ruta}/`, {
+        await axiosInstance.patch(`api/rute/spremna/${selectedIsporuka.ruta}/`, {
           vreme_utovara: resUtovar.data.vreme_utovara
         });
       } else {
@@ -178,7 +188,23 @@ const SpremanjeIsporuke = () => {
           <div className="form-row">
             <label>Skladište</label>
             {/* <input type="text" value={skladiste} readOnly /> */}
-            <input type="text" value={skladiste.mesto_s} />
+            <input
+              list="skladistaLista"
+              onChange={(e) => {
+                const selected = skladista.find(
+                  (s) => s.mesto_s === e.target.value
+                );
+                setIzabranoSkladiste(selected);
+              }}
+              placeholder="Odaberi ili unesi skladište"
+            />
+            <datalist id="skladistaLista">
+              {skladista.map((s) => (
+                <option key={s.sifra_s} value={s.mesto_s}>
+                  {s.mesto_s}
+                </option>
+              ))}
+            </datalist>
           </div>
 
           {/* <div className="form-row">

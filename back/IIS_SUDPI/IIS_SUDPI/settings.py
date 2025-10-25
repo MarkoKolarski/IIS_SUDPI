@@ -75,6 +75,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'csp.middleware.CSPMiddleware',
 ]
 
 ROOT_URLCONF = 'IIS_SUDPI.urls'
@@ -173,6 +174,13 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
 }
+# CSP settings
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = ["'self'"]
+CSP_STYLE_SRC = ["'self'"]
+CSP_IMG_SRC = ["'self'", "data:", "https://*.openstreetmap.org"]
+CSP_FRAME_SRC = ["'self'", "https://*.openstreetmap.org"]
+CSP_CONNECT_SRC = ["'self'"]
 
 # Cron job settings
 #CRONJOBS = [

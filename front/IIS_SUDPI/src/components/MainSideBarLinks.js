@@ -5,11 +5,11 @@ export const sidebarLinks = {
       href: "/dashboard-lk",
       description: "Pregled logističkih operacija",
     },
-    // {
-    //   title: "Pregled aktivnih ruta",
-    //   href: "/dashboard-lk",
-    //   description: "Pregled osnovnih informacija",
-    // },
+    {
+      title: "Pregled aktivnih ruta",
+      href: "/pregled-ruta",
+      description: "Pregled osnovnih informacija",
+    },
     {
       title: "Pregled svih isporuka",
       href: "/pregled-isporuka",
