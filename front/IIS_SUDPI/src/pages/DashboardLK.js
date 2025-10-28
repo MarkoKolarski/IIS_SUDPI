@@ -79,6 +79,7 @@ const DashboardLK = () => {
   const formatDate = (dateString) => {
     const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('sr-RS', options);
+    //return dateString.toLocaleDateString()[0];
   };
 
   return (
@@ -156,7 +157,7 @@ const DashboardLK = () => {
                       <td>{delivery.naziv || `Isporuka ${delivery.sifra_i}`}</td>
                       <td>{formatDate(delivery.datum_kreiranja)}</td>
                       <td>{delivery.kolicina_kg || 'N/A'}</td>
-                      <td>{delivery.rok_isporuke || 'N/A'}</td>
+                      <td>{formatDate(delivery.rok_isporuke) || 'N/A'}</td>
                       <td>
                         <button 
                           className="select-button"

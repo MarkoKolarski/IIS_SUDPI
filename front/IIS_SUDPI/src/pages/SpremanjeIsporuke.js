@@ -14,6 +14,8 @@ const SpremanjeIsporuke = () => {
   const [poruka, setPoruka] = useState("");
   const [vremeUtovara, setVremeUtovara] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [greskaKolicina, setGreskaKolicina] = useState("");
+
 
   useEffect(() => {
     axiosInstance
@@ -37,7 +39,7 @@ const SpremanjeIsporuke = () => {
     setSelectedIsporuka(isporuka);
     setDatumIsporuke(isporuka.datum_polaska?.split("T")[0] || "");
     setPoruka("");
-
+    setGreskaKolicina(""); 
     // axiosInstance
     //   .get(`api/skladiste/${isporuka.sifra_i}`)
     //   .then((res) => setSkladiste(res.data.mesto_s))
@@ -45,6 +47,35 @@ const SpremanjeIsporuke = () => {
       //.then((res) => setSkladiste(res.data.naziv_s || res.data.mesto_s))
       //.catch(() => setSkladiste("Nije pronađeno"));
   };
+
+  const validateKolicina = (kolicina) => {
+    if (!selectedIsporuka) return "";
+    
+    const kolicinaNum = parseFloat(kolicina);
+    const maxKolicina = parseFloat(selectedIsporuka.kolicina_kg);
+    
+    if (kolicinaNum > maxKolicina) {
+      return `Količina ne sme da bude veća od ${maxKolicina} kg`;
+    }
+    if (kolicinaNum <= 0) {
+      return "Količina mora biti veća od 0";
+    }
+    return "";
+  };
+  const handleSpremnaKolicinaChange = (e) => {
+    const value = e.target.value;
+    setSpremnaKolicina(value);
+    
+    const greska = validateKolicina(value);
+    setGreskaKolicina(greska);
+    
+    if (greska) {
+      setPoruka(greska);
+    } else {
+      setPoruka(""); 
+    }
+  };
+  
   
   const handleDatumChange = async (e) => {
     const newDatum = e.target.value;
@@ -78,6 +109,15 @@ const SpremanjeIsporuke = () => {
       setPoruka("Selektuj isporuku pre potvrde.");
       return;
     }
+    if (greskaKolicina) {
+      setPoruka(greskaKolicina);
+      return;
+    }
+    const finalnaGreska = validateKolicina(spremnaKolicina);
+    if (finalnaGreska) {
+      setPoruka(finalnaGreska);
+      return;
+    }
 
     try {
       // 1️⃣ proveri slobodne rampe
@@ -86,7 +126,7 @@ const SpremanjeIsporuke = () => {
             skladiste: izabranoSkladiste.sifra_s
          },
        });
-       if (resRampe.data.lenght === 0 ) {
+       if (resRampe.data.length === 0 ) {
          setPoruka("Sačekajte — nema slobodnih rampi.");
         //  await axiosInstance.post("/api/kreiraj_notifikaciju/", {
         //     poruka_n: "Nema slobodnih rampi za utovar.",  
@@ -105,7 +145,6 @@ const SpremanjeIsporuke = () => {
     //     });
     //     return;
     //   }
-
       const resUtovar = await axiosInstance.get("api/izracunaj-vreme-utovara/", {
         params: {
           kolicina: spremnaKolicina || selectedIsporuka.kolicina_kg,
@@ -116,24 +155,25 @@ const SpremanjeIsporuke = () => {
       setPoruka(`Slobodna rampa ${resRampe.data.oznaka} pronađena.`); // Vreme utovara: ${resUtovar.data.vreme_utovara} h
      
       //'/api/isporuke/${selectedIsporuka.sifra_i}/
-      
-      await axiosInstance.put(`api/isporuke/${selectedIsporuka.sifra_i}/`, {
-        kolicina_kg: spremnaKolicina || selectedIsporuka.kolicina_kg,
-        status: "spremna"
-      });
       await axiosInstance.put(`api/rampe/${resRampe.data.sifra_rp}/`, {
         status: "zauzeta"
       });
       //await axiosInstance.put(`/api/rute/${selectedIsporuka.sifra_i}/`);
-
-      if (selectedIsporuka?.ruta) {
-        console.debug("Updating ruta", selectedIsporuka.ruta);
-        await axiosInstance.patch(`api/rute/spremna/${selectedIsporuka.ruta}/`, {
+      console.log("Updating ruta", selectedIsporuka.ruta_id);
+      if (selectedIsporuka?.ruta_id) {
+        console.debug("Updating ruta", selectedIsporuka.ruta_id);
+        await axiosInstance.put(`api/rute/spremna/${selectedIsporuka.ruta_id}/`, {
+          status: "u_toku",
           vreme_utovara: resUtovar.data.vreme_utovara
         });
       } else {
         console.debug("No ruta id available on selectedIsporuka:", selectedIsporuka);
       }
+            
+      await axiosInstance.put(`api/isporuke/${selectedIsporuka.sifra_i}/`, {
+        kolicina_kg: spremnaKolicina || selectedIsporuka.kolicina_kg,
+        status: "spremna"
+      });
       
     // await axiosInstance.put(`api/isporuke/spremi/${selectedIsporuka.sifra_i}/`);
     } catch (error) {
@@ -224,14 +264,20 @@ const SpremanjeIsporuke = () => {
               value={spremnaKolicina}
               onChange={(e) => setSpremnaKolicina(e.target.value)}
               placeholder="Unesi količinu"
+              className={greskaKolicina ? "error-input" : ""}
             />
+            {greskaKolicina && <div className="error-message">{greskaKolicina}</div>}
           </div>
 
-          <button className="btn-potvrdi" onClick={handlePotvrdi}>
+          <button className="btn-potvrdi" onClick={handlePotvrdi} disabled={!!greskaKolicina}>
             Potvrdi
           </button>
 
-          {poruka && <p className="poruka">{poruka}</p>}
+          {poruka && (
+            <p className={`poruka ${greskaKolicina ? "error-poruka" : ""}`}>
+              {poruka}
+            </p>
+          )}
           {vremeUtovara && <p className="poruka">⏱ Vreme utovara: {vremeUtovara} h</p>}
         </div>
       </div>

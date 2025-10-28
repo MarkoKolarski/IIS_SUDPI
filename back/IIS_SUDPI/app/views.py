@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
 from django.db.models import Sum, Q, Count, Avg, Max
 from decimal import Decimal
-from datetime import timedelta, date
+from datetime import timedelta, datetime
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -2312,7 +2312,8 @@ def list_u_toku_isporuke(request):
                     'rok_isporuke': getattr(isporuka, 'rok_is', 'N/A'),
                     'datum_polaska': getattr(isporuka, 'datum_polaska', 'N/A'),
                     'status': isporuka.status,
-                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A',
+                    #'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A',
+                    'ruta_id' : isporuka.ruta.sifra_r
                 })
             
             return Response(isporuke_data)
@@ -2351,7 +2352,7 @@ def debug_sve_isporuke(request):
 def list_upozorenja(request):
     #upozorenja = Upozorenje.objects.select_related('isporuka').all()
     try:
-        upozorenja = Upozorenje.objects.all()
+        upozorenja = Upozorenje.objects.all().order_by('-vreme')
         serializer = UpozorenjeSerializer(upozorenja, many=True)
         return Response(serializer.data)
     except Exception as e:
@@ -3129,12 +3130,11 @@ def azuriraj_rutu_vreme_polaska(isporuka):
     ruta = isporuka.ruta
     vreme_utovara_h = get_vreme_utovara(isporuka.kolicina_kg)
     delta_utovara = timedelta(hours=vreme_utovara_h)
-
     if hasattr(ruta, 'vreme_polaska') and ruta.vreme_polaska:
         ruta.vreme_polaska += delta_utovara
     else:
         ruta.vreme_polaska = timezone.now() + delta_utovara
-
+    ruta.status='u_toku'
     ruta.save()
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -3179,6 +3179,7 @@ def rampa_detail(request, pk):
 def ruta_spremna(request, pk):
     try:
         vremeUtovara = float(request.data.get('vreme_utovara'))
+        status = request.data.get('status')
         #isporuka = Isporuka.objects.get(sifra_i=pk)
         ruta = Ruta.objects.get(sifra_r=pk)
         #ruta_id = isporuka.ruta
@@ -3191,7 +3192,7 @@ def ruta_spremna(request, pk):
         else:
             ruta.vreme_dolaska = ruta.vreme_dolaska + delta
 
-
+        ruta.status = status
         ruta.save()
 
         serializer = RutaSerializer(ruta)
@@ -3201,115 +3202,272 @@ def ruta_spremna(request, pk):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-from reportlab.pdfgen import canvas
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from io import BytesIO
+from datetime import datetime as dt  # Promenjeno ime da izbegnemo konflikt
+import logging
+
+logger = logging.getLogger(__name__)
+
 @api_view(['POST'])
 @login_required
 def generisi_izvestaj(request):
-    tip_izvestaja = request.data.get('tip_izvestaja')
-    datum = request.data.get('datum')
-    selected_upozorenja = request.data.get('selected_upozorenja', [])
-    sadrzaj = request.data.get('sadrzaj', '')
+    try:
+        # Proveri da li su svi potrebni podaci prisutni
+        tip_izvestaja = request.data.get('tip_izvestaja')
+        datum = request.data.get('datum')
+        selected_upozorenja = request.data.get('selected_upozorenja', [])
+        sadrzaj = request.data.get('sadrzaj', '')
+        
+        logger.info(f"Generisanje izveštaja: tip={tip_izvestaja}, datum={datum}, upozorenja={len(selected_upozorenja)}")
 
-    # Kreiraj PDF
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    styles = getSampleStyleSheet()
-    
-    # Custom stilovi
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.darkgreen,
-        spaceAfter=30,
-    )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=12,
-        textColor=colors.darkgreen,
-        spaceAfter=12,
-    )
-    
-    normal_style = styles['Normal']
-    
-    # Sadržaj PDF-a
-    content = []
-    
-    # Naslov
-    content.append(Paragraph("IZVEŠTAJ - LOGISTIČKI SISTEM", title_style))
-    content.append(Spacer(1, 0.2*inch))
-    
-    # Osnovne informacije
-    content.append(Paragraph(f"Datum izveštaja: {datum}", normal_style))
-    content.append(Paragraph(f"Tip izveštaja: {dict(Izvestaj.TIP_CHOICES).get(tip_izvestaja, tip_izvestaja)}", normal_style))
-    content.append(Spacer(1, 0.2*inch))
-    
-    # Ako postoje odabrana upozorenja
-    if selected_upozorenja:
-        content.append(Paragraph("Obuhvaćena upozorenja:", heading_style))
+        # Validacija obaveznih polja
+        if not tip_izvestaja or not datum:
+            return HttpResponse("Tip izveštaja i datum su obavezni", status=400)
+
+        # Paleta tamno zelenih nijansi
+        DARK_GREEN_PALETTE = {
+            'primary': colors.HexColor('#1a472a'),
+            'secondary': colors.HexColor('#2a623d'),
+            'accent': colors.HexColor('#3d7a56'),
+            'light': colors.HexColor('#5d9274'),
+            'background': colors.HexColor('#f0f7f4'),
+            'header_bg': colors.HexColor('#2a623d'),
+            'border': colors.HexColor('#5d9274')
+        }
+
+        # Kreiraj PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, 
+            pagesize=A4,
+            topMargin=1*inch,
+            bottomMargin=1*inch,
+            leftMargin=0.75*inch,
+            rightMargin=0.75*inch
+        )
         
-        upozorenja_data = [['Tip', 'Poruka', 'Vreme', 'Isporuka']]
-        for upozorenje_id in selected_upozorenja:
-            try:
-                upozorenje = Upozorenje.objects.get(sifra_u=upozorenje_id)
-                upozorenja_data.append([
-                    #upozorenje.get_tip_display(),
-                    upozorenje.tip,
-                    upozorenje.poruka,
-                    upozorenje.vreme.strftime('%d.%m.%Y %H:%M'),
-                    str(upozorenje.isporuka)
+        styles = getSampleStyleSheet()
+        
+        # Definiši stilove
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=13,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            spaceAfter=10,
+            spaceBefore=15,
+            fontName='Helvetica-Bold'
+        )
+        
+        table_text_style = ParagraphStyle(
+            'TableText',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            alignment=TA_LEFT,
+            leading=10,
+            wordWrap='LTR'
+        )
+        
+        table_header_style = ParagraphStyle(
+            'TableHeader',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.white,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+
+        normal_style = ParagraphStyle(
+            'NormalJustified',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            alignment=TA_JUSTIFY,
+            leading=13
+        )
+
+        content = []
+        
+        # Naslov
+        content.append(Paragraph("IZVEŠTAJ - LOGISTIČKI SISTEM", title_style))
+        content.append(Spacer(1, 0.2*inch))
+        
+        # Osnovne informacije
+        content.append(Paragraph("OSNOVNE INFORMACIJE", heading_style))
+        
+        info_data = [
+            ['Datum izveštaja:', str(datum)],
+            #['Tip izveštaja:', str(tip_izvestaja)],
+            ['Tip izveštaja:', 'Izveštaj logističkog koordinatora'],
+            #['Kreirao:', f"{request.user.get_full_name() or request.user.username}"],
+           # ['Kreirao:', f"{request.user.username}"],
+            ['Vreme generisanja:', dt.now().strftime('%d.%m.%Y %H:%M')]  # Ispravljeno: dt.now() umesto datetime.now()
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), DARK_GREEN_PALETTE['background']),
+            ('TEXTCOLOR', (0, 0), (-1, -1), DARK_GREEN_PALETTE['primary']),
+            ('GRID', (0, 0), (-1, -1), 0.5, DARK_GREEN_PALETTE['border']),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        content.append(info_table)
+        content.append(Spacer(1, 0.3*inch))
+
+        if selected_upozorenja:
+            content.append(Paragraph("OBUHVAĆENA UPozorenja".upper(), heading_style))
+            
+            # Priprema podataka za tabelu sa Paragraph elementima
+            upozorenja_data = [
+                [
+                    Paragraph('Tip', table_header_style),
+                    Paragraph('Poruka', table_header_style),
+                    Paragraph('Vreme', table_header_style),
+                    Paragraph('Isporuka', table_header_style)
+                ]
+            ]
+            
+            # ZAMENI SA TVOJIM MODELOM UPozorenje
+            # from your_app.models import Upozorenje
+            for upozorenje_id in selected_upozorenja:
+                try:
+                    # OVO JE PRIMER - ZAMENI SA TVOJIM MODELOM
+                    upozorenje = Upozorenje.objects.get(sifra_u=upozorenje_id)
+                    upozorenja_data.append([
+                        Paragraph(upozorenje.tip, table_text_style),
+                        Paragraph(upozorenje.poruka, table_text_style),
+                        Paragraph(upozorenje.vreme.strftime('%d.%m.%Y %H:%M'), table_text_style),
+                        Paragraph(str(upozorenje.isporuka), table_text_style)
+                    ])
+
+                except Exception as e:
+                    logger.error(f"Greška pri učitavanju upozorenja {upozorenje_id}: {str(e)}")
+                    continue
+            
+            if len(upozorenja_data) > 1:
+                col_widths = [1.0*inch, 3.5*inch, 1.2*inch, 1.5*inch]
+                
+                table = Table(upozorenja_data, colWidths=col_widths, repeatRows=1)
+                
+                table_style = TableStyle([
+                    # Stil za zaglavlje
+                    ('BACKGROUND', (0, 0), (-1, 0), DARK_GREEN_PALETTE['header_bg']),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                    ('TOPPADDING', (0, 0), (-1, 0), 8),
+                    
+                    # Stil za telo tabele
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), DARK_GREEN_PALETTE['primary']),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('VALIGN', (0, 1), (-1, -1), 'TOP'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                    ('TOPPADDING', (0, 1), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+                    
+                    # Grid linije
+                    ('GRID', (0, 0), (-1, -1), 0.5, DARK_GREEN_PALETTE['border']),
+                    
+                    # Naizmenične boje redova
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), 
+                     [colors.white, DARK_GREEN_PALETTE['background']]),
                 ])
-            except Upozorenje.DoesNotExist:
-                continue
-        
-        if len(upozorenja_data) > 1:
-            table = Table(upozorenja_data, colWidths=[1.5*inch, 3*inch, 1.5*inch, 2*inch])
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.darkgreen),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 10),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                ('FONTSIZE', (0, 1), (-1, -1), 8),
-                ('GRID', (0, 0), (-1, -1), 1, colors.green)
-            ]))
-            content.append(table)
+                
+                table.setStyle(table_style)
+                content.append(table)
+                content.append(Spacer(1, 0.3*inch))
+                
+                # Statistika upozorenja
+                content.append(Paragraph("STATISTIKA UPozorenja".upper(), heading_style))
+                content.append(Paragraph(f"Ukupan broj upozorenja: <b>{len(selected_upozorenja)}</b>", normal_style))
+                content.append(Spacer(1, 0.2*inch))
+
+        # Dodatne informacije
+        if sadrzaj and str(sadrzaj).strip():
+            content.append(Paragraph("DODATNE INFORMACIJE".upper(), heading_style))
+            
+            info_box_style = ParagraphStyle(
+                'InfoBox',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=DARK_GREEN_PALETTE['primary'],
+                backColor=DARK_GREEN_PALETTE['background'],
+                borderColor=DARK_GREEN_PALETTE['border'],
+                borderWidth=1,
+                borderPadding=10,
+                borderRadius=3,
+                alignment=TA_JUSTIFY,
+                leading=13,
+                wordWrap='LTR'
+            )
+            
+            content.append(Paragraph(f"{sadrzaj}", info_box_style))
             content.append(Spacer(1, 0.3*inch))
-   
-    content.append(Paragraph("Dodatne informacije:", heading_style))
-    content.append(Paragraph(f"{sadrzaj}", normal_style))
-    content.append(Spacer(1, 0.2*inch))
-    # Dodatni sadržaj izveštaja
-    content.append(Paragraph("Rezime:", heading_style))
-    content.append(Paragraph(f"Izveštaj je generisan automatski putem sistema za praćenje logistike. "
-                           f"Ukupno obuhvaćenih upozorenja: {len(selected_upozorenja)}.", normal_style))
-    
-    # Build PDF
-    doc.build(content)
-    
-    # Vrati PDF response
-    buffer.seek(0)
-    response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="izvestaj_{datum}.pdf"'
-    
-    # Sačuvaj izveštaj u bazi
-    izvestaj = Izvestaj.objects.create(
-        tip_i=tip_izvestaja,
-        sadrzaj_i=f"Izveštaj generisan {datum}. Odabrana upozorenja: {selected_upozorenja}",
-        kreirao=request.user
-    )
-    
-    return response
+
+        # Rezime
+        content.append(Paragraph("REZIME I ZAKLJUČAK".upper(), heading_style))
+        summary_text = f"""
+        Izveštaj je generisan automatski putem sistema za praćenje logistike. 
+        Ukupno je obuhvaćeno <b>{len(selected_upozorenja)} upozorenja</b> za period izveštaja.
+        """
+        content.append(Paragraph(summary_text, normal_style))
+        content.append(Spacer(1, 0.2*inch))
+        
+        # Footer note
+        footer_note = ParagraphStyle(
+            'FooterNote',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=DARK_GREEN_PALETTE['light'],
+            alignment=TA_CENTER,
+            spaceBefore=20
+        )
+        content.append(Paragraph("<hr/>", normal_style))
+        content.append(Paragraph(f"Dokument generisan: {dt.now().strftime('%d.%m.%Y %H:%M:%S')} | Logistički sistem v1.0", footer_note))
+
+        # Build PDF
+        doc.build(content)
+        
+        # Vrati PDF response
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="izvestaj_logistika_{datum}.pdf"'
+
+        izvestaj = Izvestaj.objects.create(
+            tip_i=tip_izvestaja,
+            sadrzaj_i=f"Izveštaj generisan {datum}. Odabrana upozorenja: {selected_upozorenja}",
+            kreirao=request.user
+        )
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Greška pri generisanju PDF-a: {str(e)}")
+        return HttpResponse(f"Došlo je do greške pri generisanju izveštaja: {str(e)}", status=500)
 
 import time
 import random
@@ -3319,7 +3477,36 @@ from django.http import HttpResponse
 from django.utils import timezone
 from .models import Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Vozilo, Temperatura
 
-
+def get_isporuka_ruta(ruta_id):
+    try:
+        ruta = Ruta.objects.get(sifra_r=ruta_id)
+        isporuka = Isporuka.objects.get(ruta=ruta)
+        return isporuka
+    except Isporuka.DoesNotExist:
+        return None
+def get_isporuka_vozilo(vozilo):
+    try:
+        isporuka = Isporuka.objects.get(vozilo=vozilo)
+        return isporuka
+    except Isporuka.DoesNotExist:
+        return None
+    
+def get_vozilo_isporuka(isporuka_id):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i = isporuka_id)
+        vozilo = Vozilo.objects.get(sifra_v = isporuka.vozilo)
+        return vozilo
+    except Vozilo.DoesNotExist:
+        return None
+    
+def get_vozac_isporuka(isporuka_id):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i = isporuka_id)
+        vozac = Vozac.objects.get(sifra_vo = isporuka.vozac)
+        return vozac
+    except Vozac.DoesNotExist:
+        return None
+    
 def simulacija_voznje(request, pk):
     try:
         ruta = Ruta.objects.get(sifra_r=pk)
@@ -3347,6 +3534,9 @@ def simulacija_voznje(request, pk):
                         tip="odstupanje",
                         poruka=f"Vozilo je odstupilo od planirane rute ({ruta.polazna_tacka} → {ruta.odrediste})."
                     )
+                    posalji_notifikaciju(request.user,
+                             f"Vozilo je odstupilo od planirane rute ({ruta.polazna_tacka} → {ruta.odrediste})."
+        )
                     ruta.status = "odstupanje"
                     ruta.save()
 
@@ -3357,9 +3547,23 @@ def simulacija_voznje(request, pk):
                     #vreme_azuriranja = datetime.now()
                 )
                 time.sleep(2)  # pomeranje na svaka 2 sekunde
-
-            ruta.status = "zavrsena"
-            ruta.save()
+            with transaction.atomic():
+                ruta.status = "zavrsena"
+                ruta.save()
+                isporuka = get_isporuka_ruta(ruta.sifra_r)
+                if isporuka:
+                    vozac = get_vozac_isporuka(isporuka.sifra_i)
+                    vozilo = get_vozilo_isporuka(isporuka.sifra_i)
+                    isporuka.status = 'zavrsena'
+                    isporuka.save()
+                if vozac:
+                    vozac.status = 'slobodan'
+                    vozac.save()
+                if vozilo:
+                    vozilo.status = 'slobodno'
+                    vozilo.save()
+            # ruta.status = "zavrsena"
+            # ruta.save()
 
         threading.Thread(target=pokreni_simulaciju).start()
 
@@ -3370,19 +3574,7 @@ def simulacija_voznje(request, pk):
     except Exception as e:
         return HttpResponse(f"Greška: {e}", status=500)
 
-def get_isporuka_ruta(ruta_id):
-    try:
-        ruta = Ruta.objects.get(sifra_r=ruta_id)
-        isporuka = Isporuka.objects.get(ruta=ruta)
-        return isporuka
-    except Isporuka.DoesNotExist:
-        return None
-def get_isporuka_vozilo(vozilo):
-    try:
-        isporuka = Isporuka.objects.get(vozilo=vozilo)
-        return isporuka
-    except Isporuka.DoesNotExist:
-        return None
+
     
 #def simulacija_temperature(request, isporuka_id):
 def simulacija_temperature(request, pk):
@@ -3392,12 +3584,12 @@ def simulacija_temperature(request, pk):
             return HttpResponse("Isporuka nije pronađena za datu rutu.", status=404)
         vozilo = isporuka.vozilo
         temp_obj = Temperatura.objects.first()
-
+        min_g = random.randint(0, 2)
+        max_g = random.randint(7, 9)
         def generisi_temperature():
             #while isporuka.status == 'u_toku':
             while isporuka.status == 'spremna':
-                min_g = random.uniform(2, 4)
-                max_g = random.uniform(6, 8)
+
                 vrednost = random.uniform(min_g - 1, max_g + 1)
 
                 t = voziloOmogucavaTemperatura.objects.create(
@@ -3415,6 +3607,9 @@ def simulacija_temperature(request, pk):
                         tip="temperatura",
                         poruka=f"Temperatura {vrednost:.2f}°C je izvan granica ({min_g:.1f} - {max_g:.1f})."
                     )
+                    posalji_notifikaciju(request.user,
+                             f"Temperatura {vrednost:.2f}°C je izvan granica ({min_g:.1f} - {max_g:.1f}).")
+                    
 
                 time.sleep(5)
 

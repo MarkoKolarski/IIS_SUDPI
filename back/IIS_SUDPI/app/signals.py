@@ -276,8 +276,6 @@ def obavesti_o_kvaru(sender, instance, **kwargs):
             isporuka=get_isporuka_vozilo(instance),
             tip='kvar',
             poruka=f"Vozilo {instance.marka} {instance.model} je u kvaru.",
-            vreme = datetime.now(),
-            status = False,
         )
         # šalje obaveštenje lk
         isporuka = get_isporuka_vozilo(instance)

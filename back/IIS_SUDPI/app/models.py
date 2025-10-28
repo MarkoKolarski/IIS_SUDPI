@@ -183,6 +183,57 @@ class SeBavi(models.Model):
     def __str__(self):
         return f"{self.skladisni_operater} se bavi {self.artikal}"
 
+class TerminUtovara(models.Model):
+    sifra_tu = models.AutoField(primary_key=True)
+    isporuka = models.OneToOneField('Isporuka', on_delete=models.CASCADE, related_name='termin_utovara')
+    skladiste = models.ForeignKey('Skladiste', on_delete=models.CASCADE)
+    vozilo = models.ForeignKey('Vozilo', on_delete=models.CASCADE)
+    rampa = models.ForeignKey('Rampa', on_delete=models.CASCADE)
+    operater = models.ForeignKey('SkladisniOperater', on_delete=models.SET_NULL, null=True)
+    vreme_pocetka = models.DateTimeField()
+    vreme_zavrsetka = models.DateTimeField()
+    vreme_utovara = models.DurationField(help_text="Trajanje utovara u satima", null=True, blank=True)
+    potvrda_operatera = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'termin_utovara'
+        #ordering = ['vreme_pocetka']
+
+    def __str__(self):
+        return f"Termin utovara {self.isporuka.sifra_i} ({self.vreme_pocetka.strftime('%d.%m.%Y %H:%M')})"
+
+    def potvrdi_utovar(self):
+        self.potvrda_operatera = True
+        self.save()
+
+    @staticmethod
+    def predlozi_optimalan_termin(vozilo, isporuka):
+        """
+        Dinamički predlog optimalnog termina:
+        - nalazi slobodnu rampu
+        - proverava status vozila i osoblja
+        """
+        slobodne_rampe = Rampa.objects.filter(status='slobodna')
+        slobodni_operateri = SkladisniOperater.objects.all()  # možeš dodati polje status kasnije
+
+        if not slobodne_rampe.exists() or not slobodni_operateri.exists():
+            return None
+
+        rampa = slobodne_rampe.first()
+        operater = slobodni_operateri.first()
+
+        vreme_pocetka = timezone.now() + timedelta(hours=1)
+        vreme_zavrsetka = vreme_pocetka + timedelta(hours=2)
+
+        return TerminUtovara.objects.create(
+            isporuka=isporuka,
+            vozilo=vozilo,
+            rampa=rampa,
+            operater=operater,
+            vreme_pocetka=vreme_pocetka,
+            vreme_zavrsetka=vreme_zavrsetka,
+        )
+    
 # Model za ugovor
 class Ugovor(models.Model):
     STATUS_CHOICES = (
@@ -682,57 +733,6 @@ class Rampa(models.Model):
     class Meta:
         db_table = 'rampa'
 
-class TerminUtovara(models.Model):
-    sifra_tu = models.AutoField(primary_key=True)
-    isporuka = models.OneToOneField('Isporuka', on_delete=models.CASCADE, related_name='termin_utovara')
-    skladiste = models.ForeignKey('Skladiste', on_delete=models.CASCADE)
-    vozilo = models.ForeignKey('Vozilo', on_delete=models.CASCADE)
-    rampa = models.ForeignKey('Rampa', on_delete=models.CASCADE)
-    operater = models.ForeignKey('SkladisniOperater', on_delete=models.SET_NULL, null=True)
-    vreme_pocetka = models.DateTimeField()
-    vreme_zavrsetka = models.DateTimeField()
-    vreme_utovara = models.DurationField(help_text="Trajanje utovara u satima", null=True, blank=True)
-    potvrda_operatera = models.BooleanField(default=False)
-
-    class Meta:
-        db_table = 'termin_utovara'
-        #ordering = ['vreme_pocetka']
-
-    def __str__(self):
-        return f"Termin utovara {self.isporuka.sifra_i} ({self.vreme_pocetka.strftime('%d.%m.%Y %H:%M')})"
-
-    def potvrdi_utovar(self):
-        self.potvrda_operatera = True
-        self.save()
-
-    @staticmethod
-    def predlozi_optimalan_termin(vozilo, isporuka):
-        """
-        Dinamički predlog optimalnog termina:
-        - nalazi slobodnu rampu
-        - proverava status vozila i osoblja
-        """
-        slobodne_rampe = Rampa.objects.filter(status='slobodna')
-        slobodni_operateri = SkladisniOperater.objects.all()  # možeš dodati polje status kasnije
-
-        if not slobodne_rampe.exists() or not slobodni_operateri.exists():
-            return None
-
-        rampa = slobodne_rampe.first()
-        operater = slobodni_operateri.first()
-
-        vreme_pocetka = timezone.now() + timedelta(hours=1)
-        vreme_zavrsetka = vreme_pocetka + timedelta(hours=2)
-
-        return TerminUtovara.objects.create(
-            isporuka=isporuka,
-            vozilo=vozilo,
-            rampa=rampa,
-            operater=operater,
-            vreme_pocetka=vreme_pocetka,
-            vreme_zavrsetka=vreme_zavrsetka,
-        )
-    
 class Voznja(models.Model):
     ruta = models.ForeignKey(Ruta, on_delete=models.CASCADE)
     trenutna_lat = models.FloatField()

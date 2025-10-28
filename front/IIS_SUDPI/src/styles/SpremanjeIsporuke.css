@@ -112,3 +112,31 @@ input {
 .poruka.error {
   color: #b22222;
 }
+.error-input {
+  border: 2px solid #ff4444 !important;
+  background-color: #fff8f8;
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 0.85em;
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+.error-poruka {
+  color: #ff4444;
+  font-weight: bold;
+}
+
+/* Onemogućeno dugme */
+.btn-potvrdi:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-potvrdi:disabled:hover {
+  background-color: #cccccc;
+  transform: none;
+}
