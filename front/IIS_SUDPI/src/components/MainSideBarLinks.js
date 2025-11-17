@@ -7,20 +7,19 @@ export const sidebarLinks = {
     },
     {
       title: "Pregled aktivnih ruta",
-      href: "/active-routes",
+      href: "/pregled-ruta",
       description: "Pregled osnovnih informacija",
     },
-    // {
-    //   title: "Pregled svih isporuka",
-    //   href: "/dashboard-lk",
-    //   description: "Pregled stanja isporuka",
-    // },
-    // {
-    //   title: "Kontrola i izveštaji",
-    //   href: "/dashboard-lk",
-    //   //description: "Pregled logističkih operacija",
-    // },
-    // Add more LK specific links
+    {
+      title: "Pregled svih isporuka",
+      href: "/pregled-isporuka",
+      description: "Pregled stanja isporuka",
+    },
+    {
+      title: "Kontrola i izveštaji",
+      href: "/izvestaji-lk",
+      //description: "Pregled logističkih operacija",
+    },
   ],
   skladisni_operater: [
     {
@@ -47,6 +46,11 @@ export const sidebarLinks = {
       title: "Pregled zaliha",
       href: "/pregled-zaliha",
       description: "Stanje zaliha po skladištima",
+    },
+    {
+      title: "Pregled isporuka",
+      href: "/spremanje-isporuke",
+      description: "Spremanje isporuka za transport",
     },
     // Add more SO specific links
   ],

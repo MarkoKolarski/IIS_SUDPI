@@ -24,6 +24,9 @@ from django.conf.urls.static import static
 from django.conf import settings
 #from .views import LoginView, index, register, dashboard_finansijski_analiticar, invoice_list, invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, penalties_list, penalties_filter_options, penalties_analysis, suppliers, visits_list, visit_detail, create_visit, complaints_list, create_complaint, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama
 from . import views
+import json
+from django.http import JsonResponse, HttpResponseNotAllowed
+from django.views.decorators.http import require_http_methods
 
 urlpatterns = [
     path('', index, name='index'),
@@ -150,7 +153,11 @@ urlpatterns = [
     path('notifikacije/<int:pk>/mark-as-read/', views.mark_notifikacija_as_read, name='mark_notifikacija_as_read'),
     path('notifikacije/user/<int:user_id>/', views.list_user_notifikacije, name='list_user_notifikacije'),
 
-     # Plan isporuke endpoints
+    path('api/isporuke/spremi/<int:pk>/', views.spremi_isporuku, name='spremi_isporuku'),
+    path('api/isporuke/<int:pk>/', views.isporuka_detail),
+    #path('api/isporuke/<int:isporuka_id>/zavrsi/', views.zavrsi_isporuku, name='zavrsi_isporuku'),
+    
+    # Plan isporuke endpoints
     path('api/predlozi-vozaca/', views.predlozi_vozaca, name='predlozi_vozaca'),
     path('api/predlozi-vozilo/', views.predlozi_vozilo, name='predlozi_vozilo'),
     path('api/predlozi-rutu/', views.predlozi_rutu, name='predlozi_rutu'),
@@ -158,15 +165,32 @@ urlpatterns = [
     path('api/izracunaj-datum-dolaska/', views.izracunaj_datum_dolaska, name='izracunaj_datum_dolaska'),
     #path('api/isporuke/<int:pk>/', views.isporuka_detail, name='isporuka_detail'),
     #path('api/isporuke/<int:isporuka_id>/zavrsi/', views.zavrsi_isporuku, name='zavrsi_isporuku'),
-
     # endpoints za rute
     path('api/rute/', views.list_rute, name='list_rute'),
     path('api/rute/aktivne/', views.list_aktivne_rute, name='list_aktivne_rute'),
     path('api/rute/<int:pk>/', views.ruta_detail, name='ruta_detail'),
     path('api/rute/<int:pk>/directions/', views.ruta_directions, name='ruta_directions'),
     path('api/rute/<int:pk>/map-preview/', views.ruta_map_preview, name='ruta_map_preview'),
+    path('api/rute/spremna/<int:pk>/', views.ruta_spremna, name='spremna_ruta'),
+    path('api/simulacija-rute/<int:pk>/', views.simulacija_voznje, name='simulacija_voznje'),
+    path('api/simulacija-temperature/<int:pk>/', views.simulacija_temperature, name = 'simulacija_temperature'),
+    path('api/voznje/<int:pk>/trenutna/', views.trenutna_pozicija, name='trenutna_pozicija'),
+    path('api/temperature/ruta/<int:pk>/', views.temperatura_po_ruti, name='temperatura_po_ruti'),
+
     #upozorenja
     path('api/upozorenja/', views.list_upozorenja, name='list_upozorenja'),
+
     path('api/upozorenja/create/', views.create_upozorenje, name='create_upozorenje'),
     path('api/rute/<int:ruta_id>/simulate/', views.simuliraj_kretanje, name='simuliraj_kretanje'),
+
+    path('api/generisi-izvestaj/', views.generisi_izvestaj, name='generisi_izvestaj'),
+    # endpoints za termine utovara i rampe
+    path('api/rampe/', views.rampe_list),
+    path('api/rampe/aktivna/', views.get_aktivna_rampa),
+    path('api/rampe/<int:pk>/', views.rampa_detail),
+    path('api/izracunaj-vreme-utovara/', views.izracunaj_vreme_utovara),
+    path('api/notifikacije/', views.kreiraj_notifikaciju),
+    path('api/izracunaj-datum-dolaska/', views.izracunaj_datum_dolaska),
+    path('api/skladiste/<int:isporuka_id>', views.pronadji_skladiste_preko_isporuke)
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

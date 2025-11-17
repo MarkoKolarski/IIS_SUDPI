@@ -2,8 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from decimal import Decimal
 from django.utils import timezone
-from .models import Faktura, Vozac, User, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj, Sertifikat
-
+from .models import Faktura, Vozac, Voznja, User, Dobavljac, Transakcija, Ugovor, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, Skladiste, Artikal, Zalihe, Popust, Temperatura, Notifikacija, Vozilo, Servis, Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Izvestaj, Sertifikat, Rampa, TerminUtovara
 
 class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -561,3 +560,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = ['sifra_k', 'ime_k', 'prz_k', 'mail_k', 'tip_k', 'tip_k_display']
         read_only_fields = ['sifra_k']
+
+class RampaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rampa
+        fields = '__all__'
+
+class TerminUtovaraSerializer(serializers.ModelSerializer):
+    skladiste = SkladisteSerializer(read_only=True)
+    rampa = RampaSerializer(read_only=True)
+    vozilo = VoziloSerializer(read_only=True)
+    #operater = SkladisniOperaterSerializer(read_only=True)
+    
+    class Meta:
+        model = TerminUtovara
+        fields = '__all__'
+
+class VoznjaSerializer(serializers.ModelSerializer):
+    ruta = RutaSerializer()
+    class Meta:
+        model = Voznja
+        fields = '__all__'

@@ -1,6 +1,8 @@
+from difflib import SequenceMatcher
 import random
 from django.template.loader import render_to_string
-from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse, JsonResponse
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -11,7 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
 from django.db.models import Sum, Q, Count, Avg, Max
 from decimal import Decimal
-from datetime import timedelta, date
+from datetime import timedelta, datetime
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -20,7 +22,7 @@ from django.contrib import messages
 import requests
 from datetime import timedelta
 from django.utils import timezone
-from .models import Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+from .models import Rampa, Voznja, TerminUtovara, Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija, Izvestaj, voziloOmogucavaTemperatura
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -45,7 +47,10 @@ from .serializers import (
     RutaSerializer,
     UpozorenjeSerializer,
     TemperaturaSerializer,
-    NotifikacijaSerializer
+    NotifikacijaSerializer,
+    RampaSerializer,
+    TerminUtovaraSerializer,
+    VoziloOmogucavaTemperaturaSerializer
 )
 from rest_framework import generics, filters
 from django.db import transaction
@@ -2305,8 +2310,10 @@ def list_u_toku_isporuke(request):
                     'datum_kreiranja': isporuka.datum_kreiranja,
                     'kolicina_kg': getattr(isporuka, 'kolicina_kg', None),
                     'rok_isporuke': getattr(isporuka, 'rok_is', 'N/A'),
+                    'datum_polaska': getattr(isporuka, 'datum_polaska', 'N/A'),
                     'status': isporuka.status,
-                    'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A'
+                    #'ruta_naziv': f"Ruta {isporuka.ruta.sifra_r}" if isporuka.ruta else 'N/A',
+                    'ruta_id' : isporuka.ruta.sifra_r
                 })
             
             return Response(isporuke_data)
@@ -2345,12 +2352,34 @@ def debug_sve_isporuke(request):
 def list_upozorenja(request):
     #upozorenja = Upozorenje.objects.select_related('isporuka').all()
     try:
-        upozorenja = Upozorenje.objects.all()
+        upozorenja = Upozorenje.objects.all().order_by('-vreme')
         serializer = UpozorenjeSerializer(upozorenja, many=True)
         return Response(serializer.data)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
+@api_view(['GET'])
+def upozorenja_detail(request, pk):
+    upozorenje = get_object_or_404(Upozorenje, pk=pk)
+    serializer = UpozorenjeSerializer(upozorenje)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def upozorenja_create(request):
+    serializer = UpozorenjeSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=201)
+    return Response(serializer.errors, status=400)
+
+@api_view(['PUT'])
+def upozorenja_update(request, pk):
+    upozorenje = get_object_or_404(Upozorenje, pk=pk)
+    serializer = UpozorenjeSerializer(upozorenje, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
 
 # temperatura
 @api_view(['GET'])
@@ -2366,6 +2395,15 @@ def list_temperature(request):
 #     return Response(serializer.data)
 
 # notifikacija
+def posalji_notifikaciju(korisnik, poruka, link=None):
+    Notifikacija.objects.create(
+        korisnik=korisnik,
+        poruka_n=poruka,
+        link_n=link,
+        procitana_n=False,
+        datum_n=timezone.now()
+    )
+
 @api_view(['GET'])
 def list_notifikacije(request):
     notifikacije = Notifikacija.objects.select_related('korisnik').all()
@@ -2608,9 +2646,14 @@ def isporuka_detail(request, pk):
     elif request.method == 'PUT':
         serializer = IsporukaSerializer(isporuka, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            #serializer.save()
+            serializer.update(isporuka, serializer.validated_data)
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+def datetime(*args, **kwargs):
+    raise NotImplementedError
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def kreiraj_isporuku(request, pk):
@@ -2622,15 +2665,18 @@ def kreiraj_isporuku(request, pk):
         except Isporuka.DoesNotExist:
             return Response({'error': 'Isporuka ne postoji.'}, status=404)
 
+
         ruta_id = data.get('ruta_id')
         vozac_id = data.get('vozac_id')
+        print("vozac id: ", vozac_id, "ruta_id ", ruta_id)
         naziv = data.get('naziv')
         datum_isporuke = data.get('datum_isporuke')
         rok_isporuke = data.get('rok_isporuke')
         datum_dolaska = data.get('datum_dolaska')
-        kolicina_kg = Decimal(data.get('kolicina_kg', 0))
 
-        if not all([ruta_id, vozac_id, naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
+        kolicina_kg = Decimal(isporuka.kolicina_kg)
+
+        if not all([naziv, datum_isporuke, rok_isporuke, datum_dolaska]):
             return Response({'error': 'Sva polja su obavezna.'}, status=400)
 
         # Pronađi povezana polja
@@ -2644,25 +2690,30 @@ def kreiraj_isporuku(request, pk):
             isporuka.vozilo = vozilo
             isporuka.vozac = vozac
             isporuka.kolicina_kg = kolicina_kg
-            isporuka.status = 'spremna'
+            isporuka.status = 'u_toku'
             isporuka.datum_polaska = datum_isporuke
             isporuka.rok_is = rok_isporuke
             isporuka.datum_dolaska = datum_dolaska
             isporuka.save()
 
             # Osveži statuse povezanih entiteta
-            ruta.status = 'u_toku'
+            #ruta.status = 'u_toku'
+            ruta.status = 'planirana'
             ruta.save()
-            vozilo.status = 'zauzeto'
-            vozilo.save()
+            if vozilo:
+                Vozilo.objects.filter(pk=vozilo.sifra_v).update(status='zauzeto')
+            #vozilo.status = 'zauzeto'
+            #vozilo.save()
             vozac.status = 'zauzet'
             vozac.br_voznji += 1
             vozac.save()
-
+        #datum = datetime(isporuka.datum_polaska).toLocaleDateString()
+        posalji_notifikaciju(request.user,
+                             f"Nova isporuka {isporuka.sifra_i} je planirana za {isporuka.datum_polaska}."
+        )
         serializer = IsporukaSerializer(isporuka)
         print("Isporuka uspešno ažurirana.")
         return Response(serializer.data, status=200)
-
     except Exception as e:
         print(f"Greška u kreiraj_isporuku: {e}")
         return Response({'error': str(e)}, status=500)
@@ -2779,7 +2830,8 @@ def list_rute(request):
 def list_aktivne_rute(request):
     try:
         aktivne_rute = Ruta.objects.filter(
-             Q(status='u_toku')   #Q(status='planirana')
+             status__in=['u_toku', 'odstupanje']
+             #Q(status='u_toku') #and Q(status='odstupanje')
         ).order_by('-sifra_r')
         serializer = RutaSerializer(aktivne_rute, many=True)
         return Response(serializer.data)
@@ -2886,48 +2938,716 @@ def ruta_map_preview(request, pk):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
     
-@api_view(['POST'])
+# spremanje isporuke
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def create_upozorenje(request):
+def pronadji_skladiste_preko_isporuke(request, isporuka_id):
     try:
-        serializer = UpozorenjeSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
+        isporuka = Isporuka.objects.get(sifra_i=isporuka_id)
+        ruta = isporuka.ruta
+        if not ruta:
+            return Response({'error': 'Isporuka nema dodeljenu rutu'}, status=404)
+        
+        odrediste = ruta.polazna_tacka
+        
+        naziv_mesta = odrediste.split()[-1]
+
+        # skladiste = Skladiste.objects.filter(
+        #     mesto_s__iexact=odrediste
+        #     #mesto_s__in=odrediste
+        # ).first()
+        skladista = Skladiste.objects.filter(mesto_s__icontains=naziv_mesta)
+
+        if not skladista.exists():
+            # ako nema, pokušaj fuzzy pretragu (npr. "Čačak" ~ "Cacak")
+            sva_skladista = Skladiste.objects.all()
+            najbolji_match = None
+            najbolji_score = 0
+            for s in sva_skladista:
+                score = SequenceMatcher(None, s.mesto_s.lower(), naziv_mesta.lower()).ratio()
+                if score > najbolji_score:
+                    najbolji_score = score
+                    najbolji_match = s
+            if najbolji_score < 0.6:
+                return Response({'error': 'Nije pronađeno skladište za dato odredište'}, status=404)
+            skladiste = najbolji_match
+        else:
+            skladiste = skladista.first()
+        
+        serializer = SkladisteSerializer(skladiste)
+        return Response(serializer.data)
+        
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-def nadji_isporuku_po_ruti(ruta):
-    try:
-        isporuka = Isporuka.objects.get(ruta=ruta)
-        return isporuka
-    except Isporuka.DoesNotExist:
-        return None
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def rampe_list(request):
+    skladiste_id = request.GET.get('skladiste')
+    status = request.GET.get('status')
     
+    queryset = Rampa.objects.all()
+    
+    if skladiste_id:
+        queryset = queryset.filter(skladiste_id=skladiste_id)
+    if status:
+        queryset = queryset.filter(status=status)
+    
+    data = [{
+        'sifra_rp': r.sifra_rp,
+        'oznaka': r.oznaka,
+        'status': r.status,
+        'skladiste': r.skladiste.mesto_s
+    } for r in queryset]
+    
+    return Response(data)
+def get_vreme_utovara(kolicina_kg):
+    if not kolicina_kg:
+        raise ValueError("Količina je obavezna za izračunavanje vremena utovara.")
+    
+    try:
+        osnovno_vreme = 0.5  
+        dodatak_po_toni = 0.1 
+        kolicina_tona = float(kolicina_kg) / 1000
+        vreme_utovara = osnovno_vreme + (kolicina_tona * dodatak_po_toni)
+        return vreme_utovara
+    except ValueError:
+        raise ValueError("Količina mora biti broj.")
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def izracunaj_vreme_utovara(request):
+    kolicina = request.GET.get('kolicina')
+    #vozilo_id = request.GET.get('vozilo')
+    
+    try:
+        vreme_utovara = get_vreme_utovara(kolicina)
+        
+        return Response({'vreme_utovara': round(vreme_utovara, 2)})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def simuliraj_kretanje(request, ruta_id):
+def kreiraj_notifikaciju(request):
+    poruka = request.data.get('poruka_n')
+    tip = request.data.get('tip')
+    
+    # prvi korisnik sa tom ulogom
+    from django.contrib.auth.models import User
     try:
-        ruta = Ruta.objects.get(sifra_r=ruta_id)
-        
-        # Simuliraj odstupanje od rute (10% šansa)
-        if random.random() < 0.1:
-            upozorenje = Upozorenje.objects.create(
-                #isporuka=ruta.isporuka_set.first(),  # Prva povezana isporuka
-                isporuka = nadji_isporuku_po_ruti(ruta),
-                tip='odstupanje',
-                poruka='Vozilo je skrenulo sa planirane rute!'
+        koordinator = User.objects.filter(groups__name='Logisticki koordinator').first()
+        if koordinator:
+            Notifikacija.objects.create(
+                poruka_n=poruka,
+                korisnik=koordinator,
+                link_n='/dashboard'
             )
-            return Response({
-                'upozorenje': UpozorenjeSerializer(upozorenje).data,
-                'poruka': 'Otkriveno odstupanje od rute'
-            })
-        
-        return Response({'poruka': 'Vozilo prati rutu'})
-        
+            return Response({'status': 'Notifikacija poslata'})
+        else:
+            return Response({'error': 'Koordinator nije pronađen'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_aktivne_rampe(request):
+    try:
+            skladiste = request.GET.get('skladiste', None)
+            aktivne = Rampa.objects.filter(
+                status ='slobodna' ,
+                skladiste_id=skladiste
+                #status__in=['aktivna', 'aktivna_nova']
+            ).select_related('skladiste')
+            rampe_data = []
+            for rampa in aktivne:
+                rampe_data.append({
+                    'sifra_rp': rampa.sifra_rp,
+                    'oznaka': rampa.oznaka,
+                    'status': rampa.status,
+                    'skladiste_mesto': rampa.skladiste.mesto_s if rampa.skladiste else 'N/A'
+                })
+            
+            return Response(rampe_data)
+    except Exception as e:
+        print(f"Greška pri dohvatanju slobodnih rampi: {e}")
+        return Response({'detail': 'Došlo je do greške na serveru.'}, status=500)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_aktivna_rampa(request):
+    try:
+        # aktivne =  Rampa.objects.filter(
+        #     status='slobodna'
+        # ).select_related('skladiste')
+        skladiste = request.GET.get('skladiste', None)
+        aktivne = Rampa.objects.filter(
+            status ='slobodna' ,
+            skladiste_id=skladiste
+            #status__in=['aktivna', 'aktivna_nova']
+        ).select_related('skladiste')
+        if not aktivne.exists():
+            Upozorenje.objects.create(
+                poruka_u="Utovar robe kasni. Nema slobodne rampe.",
+                datum_u=timezone.now()
+            )
+            return Response({'message': 'Nema slobodne rampe. Upozorenje kreirano.'}, status=200)
+
+        rampa = aktivne.first()
+        serializer = RampaSerializer(rampa)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+from threading import Timer
+
+def zakazi_oslobadjanje_rampe(rampa, vreme_utovara_h):
+    sekunde = vreme_utovara_h * 3600
+    Timer(sekunde, lambda: rampa.oslobodi()).start()
+
+def azuriraj_status_rampe(isporuka):
+
+    slobodna_rampa = Rampa.objects.filter(status='slobodna').first()
+    if not slobodna_rampa:
+        return
+    vreme_utovara_sati = get_vreme_utovara(isporuka.kolicina_kg)
+    slobodna_rampa.zauzmi(vreme_utovara_sati)
+    zakazi_oslobadjanje_rampe(slobodna_rampa, vreme_utovara_sati)
+    slobodna_rampa.status = 'zauzeta'
+    serializer = RampaSerializer(slobodna_rampa)
+    TerminUtovara.objects.create(
+        isporuka=isporuka,
+        rampa=slobodna_rampa,
+        vreme_utovara=timezone.now(),
+        trajanje_utovara=timedelta(hours=vreme_utovara_sati)
+    )
+
+def azuriraj_rutu_vreme_polaska(isporuka):
+    if not isporuka.ruta:
+        return
+    
+    ruta = isporuka.ruta
+    vreme_utovara_h = get_vreme_utovara(isporuka.kolicina_kg)
+    delta_utovara = timedelta(hours=vreme_utovara_h)
+    if hasattr(ruta, 'vreme_polaska') and ruta.vreme_polaska:
+        ruta.vreme_polaska += delta_utovara
+    else:
+        ruta.vreme_polaska = timezone.now() + delta_utovara
+    ruta.status='u_toku'
+    ruta.save()
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def spremi_isporuku(request, pk):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i=pk)
+    except Isporuka.DoesNotExist:
+        return Response({'error': 'Isporuka ne postoji'}, status=404)
+    isporuka.status = 'u_toku'
+    serializer = IsporukaSerializer(isporuka, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+
+        azuriraj_status_rampe(isporuka)
+        azuriraj_rutu_vreme_polaska(isporuka)
+
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def rampa_detail(request, pk):
+    try:
+        rampa = Rampa.objects.get(sifra_rp=pk)
+    except Rampa.DoesNotExist:
+        return Response({'error': 'Rampa ne postoji'}, status=404)
+
+    if request.method == 'GET':
+        serializer = RampaSerializer(rampa)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = RampaSerializer(rampa, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def ruta_spremna(request, pk):
+    try:
+        vremeUtovara = float(request.data.get('vreme_utovara'))
+        status = request.data.get('status')
+        #isporuka = Isporuka.objects.get(sifra_i=pk)
+        ruta = Ruta.objects.get(sifra_r=pk)
+        #ruta_id = isporuka.ruta
+        #ruta = Ruta.objects.get(sifra_r=ruta_id)
+        # Ensure we have a numeric value for hours
+        delta = timedelta(hours=vremeUtovara)
+
+        if ruta.vreme_dolaska is None:
+            ruta.vreme_dolaska = delta
+        else:
+            ruta.vreme_dolaska = ruta.vreme_dolaska + delta
+
+        ruta.status = status
+        ruta.save()
+
+        serializer = RutaSerializer(ruta)
+        return Response(serializer.data)
     except Ruta.DoesNotExist:
         return Response({'error': 'Ruta ne postoji'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from io import BytesIO
+from datetime import datetime as dt  # Promenjeno ime da izbegnemo konflikt
+import logging
+
+logger = logging.getLogger(__name__)
+
+@api_view(['POST'])
+@login_required
+def generisi_izvestaj(request):
+    try:
+        # Proveri da li su svi potrebni podaci prisutni
+        tip_izvestaja = request.data.get('tip_izvestaja')
+        datum = request.data.get('datum')
+        selected_upozorenja = request.data.get('selected_upozorenja', [])
+        sadrzaj = request.data.get('sadrzaj', '')
+        
+        logger.info(f"Generisanje izveštaja: tip={tip_izvestaja}, datum={datum}, upozorenja={len(selected_upozorenja)}")
+
+        # Validacija obaveznih polja
+        if not tip_izvestaja or not datum:
+            return HttpResponse("Tip izveštaja i datum su obavezni", status=400)
+
+        # Paleta tamno zelenih nijansi
+        DARK_GREEN_PALETTE = {
+            'primary': colors.HexColor('#1a472a'),
+            'secondary': colors.HexColor('#2a623d'),
+            'accent': colors.HexColor('#3d7a56'),
+            'light': colors.HexColor('#5d9274'),
+            'background': colors.HexColor('#f0f7f4'),
+            'header_bg': colors.HexColor('#2a623d'),
+            'border': colors.HexColor('#5d9274')
+        }
+
+        # Kreiraj PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, 
+            pagesize=A4,
+            topMargin=1*inch,
+            bottomMargin=1*inch,
+            leftMargin=0.75*inch,
+            rightMargin=0.75*inch
+        )
+        
+        styles = getSampleStyleSheet()
+        
+        # Definiši stilove
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=13,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            spaceAfter=10,
+            spaceBefore=15,
+            fontName='Helvetica-Bold'
+        )
+        
+        table_text_style = ParagraphStyle(
+            'TableText',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            alignment=TA_LEFT,
+            leading=10,
+            wordWrap='LTR'
+        )
+        
+        table_header_style = ParagraphStyle(
+            'TableHeader',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.white,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+
+        normal_style = ParagraphStyle(
+            'NormalJustified',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=DARK_GREEN_PALETTE['primary'],
+            alignment=TA_JUSTIFY,
+            leading=13
+        )
+
+        content = []
+        
+        # Naslov
+        content.append(Paragraph("IZVEŠTAJ - LOGISTIČKI SISTEM", title_style))
+        content.append(Spacer(1, 0.2*inch))
+        
+        # Osnovne informacije
+        content.append(Paragraph("OSNOVNE INFORMACIJE", heading_style))
+        
+        info_data = [
+            ['Datum izveštaja:', str(datum)],
+            #['Tip izveštaja:', str(tip_izvestaja)],
+            ['Tip izveštaja:', 'Izveštaj logističkog koordinatora'],
+            #['Kreirao:', f"{request.user.get_full_name() or request.user.username}"],
+           # ['Kreirao:', f"{request.user.username}"],
+            ['Vreme generisanja:', dt.now().strftime('%d.%m.%Y %H:%M')]  # Ispravljeno: dt.now() umesto datetime.now()
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), DARK_GREEN_PALETTE['background']),
+            ('TEXTCOLOR', (0, 0), (-1, -1), DARK_GREEN_PALETTE['primary']),
+            ('GRID', (0, 0), (-1, -1), 0.5, DARK_GREEN_PALETTE['border']),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        content.append(info_table)
+        content.append(Spacer(1, 0.3*inch))
+
+        if selected_upozorenja:
+            content.append(Paragraph("OBUHVAĆENA UPozorenja".upper(), heading_style))
+            
+            # Priprema podataka za tabelu sa Paragraph elementima
+            upozorenja_data = [
+                [
+                    Paragraph('Tip', table_header_style),
+                    Paragraph('Poruka', table_header_style),
+                    Paragraph('Vreme', table_header_style),
+                    Paragraph('Isporuka', table_header_style)
+                ]
+            ]
+            
+            # ZAMENI SA TVOJIM MODELOM UPozorenje
+            # from your_app.models import Upozorenje
+            for upozorenje_id in selected_upozorenja:
+                try:
+                    # OVO JE PRIMER - ZAMENI SA TVOJIM MODELOM
+                    upozorenje = Upozorenje.objects.get(sifra_u=upozorenje_id)
+                    upozorenja_data.append([
+                        Paragraph(upozorenje.tip, table_text_style),
+                        Paragraph(upozorenje.poruka, table_text_style),
+                        Paragraph(upozorenje.vreme.strftime('%d.%m.%Y %H:%M'), table_text_style),
+                        Paragraph(str(upozorenje.isporuka), table_text_style)
+                    ])
+
+                except Exception as e:
+                    logger.error(f"Greška pri učitavanju upozorenja {upozorenje_id}: {str(e)}")
+                    continue
+            
+            if len(upozorenja_data) > 1:
+                col_widths = [1.0*inch, 3.5*inch, 1.2*inch, 1.5*inch]
+                
+                table = Table(upozorenja_data, colWidths=col_widths, repeatRows=1)
+                
+                table_style = TableStyle([
+                    # Stil za zaglavlje
+                    ('BACKGROUND', (0, 0), (-1, 0), DARK_GREEN_PALETTE['header_bg']),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                    ('TOPPADDING', (0, 0), (-1, 0), 8),
+                    
+                    # Stil za telo tabele
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), DARK_GREEN_PALETTE['primary']),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('VALIGN', (0, 1), (-1, -1), 'TOP'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                    ('TOPPADDING', (0, 1), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+                    
+                    # Grid linije
+                    ('GRID', (0, 0), (-1, -1), 0.5, DARK_GREEN_PALETTE['border']),
+                    
+                    # Naizmenične boje redova
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), 
+                     [colors.white, DARK_GREEN_PALETTE['background']]),
+                ])
+                
+                table.setStyle(table_style)
+                content.append(table)
+                content.append(Spacer(1, 0.3*inch))
+                
+                # Statistika upozorenja
+                content.append(Paragraph("STATISTIKA UPozorenja".upper(), heading_style))
+                content.append(Paragraph(f"Ukupan broj upozorenja: <b>{len(selected_upozorenja)}</b>", normal_style))
+                content.append(Spacer(1, 0.2*inch))
+
+        # Dodatne informacije
+        if sadrzaj and str(sadrzaj).strip():
+            content.append(Paragraph("DODATNE INFORMACIJE".upper(), heading_style))
+            
+            info_box_style = ParagraphStyle(
+                'InfoBox',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=DARK_GREEN_PALETTE['primary'],
+                backColor=DARK_GREEN_PALETTE['background'],
+                borderColor=DARK_GREEN_PALETTE['border'],
+                borderWidth=1,
+                borderPadding=10,
+                borderRadius=3,
+                alignment=TA_JUSTIFY,
+                leading=13,
+                wordWrap='LTR'
+            )
+            
+            content.append(Paragraph(f"{sadrzaj}", info_box_style))
+            content.append(Spacer(1, 0.3*inch))
+
+        # Rezime
+        content.append(Paragraph("REZIME I ZAKLJUČAK".upper(), heading_style))
+        summary_text = f"""
+        Izveštaj je generisan automatski putem sistema za praćenje logistike. 
+        Ukupno je obuhvaćeno <b>{len(selected_upozorenja)} upozorenja</b> za period izveštaja.
+        """
+        content.append(Paragraph(summary_text, normal_style))
+        content.append(Spacer(1, 0.2*inch))
+        
+        # Footer note
+        footer_note = ParagraphStyle(
+            'FooterNote',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=DARK_GREEN_PALETTE['light'],
+            alignment=TA_CENTER,
+            spaceBefore=20
+        )
+        content.append(Paragraph("<hr/>", normal_style))
+        content.append(Paragraph(f"Dokument generisan: {dt.now().strftime('%d.%m.%Y %H:%M:%S')} | Logistički sistem v1.0", footer_note))
+
+        # Build PDF
+        doc.build(content)
+        
+        # Vrati PDF response
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="izvestaj_logistika_{datum}.pdf"'
+
+        izvestaj = Izvestaj.objects.create(
+            tip_i=tip_izvestaja,
+            sadrzaj_i=f"Izveštaj generisan {datum}. Odabrana upozorenja: {selected_upozorenja}",
+            kreirao=request.user
+        )
+        
+        return response
+
+    except Exception as e:
+        logger.error(f"Greška pri generisanju PDF-a: {str(e)}")
+        return HttpResponse(f"Došlo je do greške pri generisanju izveštaja: {str(e)}", status=500)
+
+import time
+import random
+import threading
+import requests
+from django.http import HttpResponse
+from django.utils import timezone
+from .models import Ruta, Isporuka, Upozorenje, voziloOmogucavaTemperatura, Vozilo, Temperatura
+
+def get_isporuka_ruta(ruta_id):
+    try:
+        ruta = Ruta.objects.get(sifra_r=ruta_id)
+        isporuka = Isporuka.objects.get(ruta=ruta)
+        return isporuka
+    except Isporuka.DoesNotExist:
+        return None
+def get_isporuka_vozilo(vozilo):
+    try:
+        isporuka = Isporuka.objects.get(vozilo=vozilo)
+        return isporuka
+    except Isporuka.DoesNotExist:
+        return None
+    
+def get_vozilo_isporuka(isporuka_id):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i = isporuka_id)
+        vozilo = Vozilo.objects.get(sifra_v = isporuka.vozilo)
+        return vozilo
+    except Vozilo.DoesNotExist:
+        return None
+    
+def get_vozac_isporuka(isporuka_id):
+    try:
+        isporuka = Isporuka.objects.get(sifra_i = isporuka_id)
+        vozac = Vozac.objects.get(sifra_vo = isporuka.vozac)
+        return vozac
+    except Vozac.DoesNotExist:
+        return None
+    
+def simulacija_voznje(request, pk):
+    try:
+        ruta = Ruta.objects.get(sifra_r=pk)
+        if ruta.status != 'u_toku':
+            return HttpResponse("Ruta nije aktivna (status nije 'u_toku').")
+
+        # OSRM API za dobijanje koordinata
+        polaziste_lat, polaziste_lon = geokodiraj_adresu(ruta.polazna_tacka)
+        odrediste_lat, odrediste_lon = geokodiraj_adresu(ruta.odrediste)
+
+        url = f"http://router.project-osrm.org/route/v1/driving/{polaziste_lon},{polaziste_lat};{odrediste_lon},{odrediste_lat}?overview=full&geometries=geojson"
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        koordinate = data["routes"][0]["geometry"]["coordinates"]  # lista [lon, lat]
+
+        def pokreni_simulaciju():
+            for i, tacka in enumerate(koordinate):
+                lon, lat = tacka
+                # 5% šanse da vozilo odstupi od rute
+                if random.random() < 0.05:
+                    lon += random.uniform(0.001, 0.003)
+                    lat += random.uniform(0.001, 0.003)
+                    Upozorenje.objects.create(
+                        isporuka=Isporuka.objects.filter(ruta=ruta).first(),
+                        tip="odstupanje",
+                        poruka=f"Vozilo je odstupilo od planirane rute ({ruta.polazna_tacka} → {ruta.odrediste})."
+                    )
+        #             posalji_notifikaciju(request.user,
+        #                      f"Vozilo je odstupilo od planirane rute ({ruta.polazna_tacka} → {ruta.odrediste})."
+        # )
+                    ruta.status = "odstupanje"
+                    ruta.save()
+
+                voznja = Voznja.objects.create(
+                    ruta = ruta,
+                    trenutna_lat = lat, 
+                    trenutna_lon = lon,
+                    #vreme_azuriranja = datetime.now()
+                )
+                time.sleep(2)  # pomeranje na svaka 2 sekunde
+            with transaction.atomic():
+                ruta.status = "zavrsena"
+                ruta.save()
+                isporuka = get_isporuka_ruta(ruta.sifra_r)
+                if isporuka:
+                    vozac = get_vozac_isporuka(isporuka.sifra_i)
+                    vozilo = get_vozilo_isporuka(isporuka.sifra_i)
+                    isporuka.status = 'zavrsena'
+                    isporuka.save()
+                if vozac:
+                    vozac.status = 'slobodan'
+                    vozac.save()
+                if vozilo:
+                    vozilo.status = 'slobodno'
+                    vozilo.save()
+            # ruta.status = "zavrsena"
+            # ruta.save()
+
+        threading.Thread(target=pokreni_simulaciju).start()
+
+        return HttpResponse(f"Simulacija vožnje za rutu {ruta.polazna_tacka} → {ruta.odrediste} je pokrenuta.")
+
+    except Ruta.DoesNotExist:
+        return HttpResponse("Ruta ne postoji.", status=404)
+    except Exception as e:
+        return HttpResponse(f"Greška: {e}", status=500)
+
+
+    
+#def simulacija_temperature(request, isporuka_id):
+def simulacija_temperature(request, pk):
+    try:
+        isporuka = get_isporuka_ruta(pk)
+        if not isporuka:
+            return HttpResponse("Isporuka nije pronađena za datu rutu.", status=404)
+        vozilo = isporuka.vozilo
+        temp_obj = Temperatura.objects.first()
+        min_g = random.randint(0, 2)
+        max_g = random.randint(7, 9)
+        def generisi_temperature():
+            #while isporuka.status == 'u_toku':
+            while isporuka.status == 'spremna':
+
+                vrednost = random.uniform(min_g - 1, max_g + 1)
+
+                t = voziloOmogucavaTemperatura.objects.create(
+                    sifra_temp=temp_obj,
+                    sifra_vozila=vozilo,
+                    isporuka=isporuka,
+                    vrednost=vrednost,
+                    min_granica=min_g,
+                    max_granica=max_g
+                )
+
+                if vrednost < min_g or vrednost > max_g:
+                    Upozorenje.objects.create(
+                        isporuka=isporuka,
+                        tip="temperatura",
+                        poruka=f"Temperatura {vrednost:.2f}°C je izvan granica ({min_g:.1f} - {max_g:.1f})."
+                    )
+                    # posalji_notifikaciju(request.user,
+                    #          f"Temperatura {vrednost:.2f}°C je izvan granica ({min_g:.1f} - {max_g:.1f}).")
+                    
+
+                time.sleep(5)
+
+        threading.Thread(target=generisi_temperature).start()
+        return HttpResponse(f"Simulacija temperature za isporuku {isporuka.sifra_i} je pokrenuta.")
+
+    except Isporuka.DoesNotExist:
+        return HttpResponse("Isporuka ne postoji.", status=404)
+    except Exception as e:
+        return HttpResponse(f"Greška: {e}", status=500)
+    
+
+@api_view(['GET'])
+def trenutna_pozicija(request, pk):
+    try:
+        voznja = Voznja.objects.filter(ruta_id=pk).order_by('-vreme_azuriranja').first()
+        if not voznja:
+            return HttpResponse("Nema aktivne vožnje za ovu rutu.", status=404)
+
+        return HttpResponse(f"{voznja.trenutna_lat},{voznja.trenutna_lon}")
+    except Exception as e:
+        return HttpResponse(f"Greška: {e}", status=500)
+
+@api_view(['GET'])
+def temperatura_po_ruti(request, pk):
+    try:
+        isporuka = Isporuka.objects.get(ruta__sifra_r=pk)
+        podaci = voziloOmogucavaTemperatura.objects.filter(isporuka=isporuka).order_by('-vreme')[:20]
+
+        rezultat = [
+            {
+                "vreme": t.vreme.strftime("%H:%M:%S"),
+                "vrednost": float(t.vrednost),
+                "min_granica": float(t.min_granica),
+                "max_granica": float(t.max_granica)
+            }
+            for t in podaci
+        ]
+        return Response(rezultat)
+    except Isporuka.DoesNotExist:
+        return Response({"error": "Isporuka ne postoji."}, status=404)

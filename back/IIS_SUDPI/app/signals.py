@@ -1,9 +1,10 @@
 from django.db.models.signals import post_save, post_migrate
 from django.dispatch import receiver
 from django.apps import apps
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from decimal import Decimal
-from .models import Artikal, Popust, Skladiste, Temperatura
+from .models import Artikal, Popust, Skladiste, Temperatura, Vozilo, Isporuka, Upozorenje, User
+from .views import posalji_notifikaciju
 import logging
 
 # Postavi logging
@@ -261,5 +262,39 @@ def check_all_artikli_on_startup(sender, **kwargs):
             
         except Exception as e:
             logger.error(f"Greška pri automatskoj proveri na startup-u: {str(e)}")
+def get_isporuka_vozilo(vozilo):
+    try:
+        isporuka = Isporuka.objects.get(vozilo=vozilo)
+        return isporuka
+    except Isporuka.DoesNotExist:
+        return None
+@receiver(post_save, sender=Vozilo)
+def obavesti_o_kvaru(sender, instance, **kwargs):
+    #prethodno = Vozilo.objects.get(pk=instance.pk) prethodno.status != instance.status
+    if instance.status == 'u_kvaru':
+        upozorenje = Upozorenje.objects.create(
+            isporuka=get_isporuka_vozilo(instance),
+            tip='kvar',
+            poruka=f"Vozilo {instance.marka} {instance.model} je u kvaru.",
+        )
+        # šalje obaveštenje lk
+        isporuka = get_isporuka_vozilo(instance)
+        koordinatori = User.objects.filter(tip_k='logisitcki_koordinator')
+        for n in koordinatori:
+            posalji_notifikaciju(
+                n,
+                f"Kvar na vozilu {instance.registracija}. Pogledaj detalje isporuke #{isporuka.sifra_i}.",
+                link=f"/upozorenja/{upozorenje.sifra_u}"
+            )
 
-
+@receiver(post_save, sender=Isporuka)
+def obavesti_o_novoj_isporuci(sender, instance, created, **kwargs):
+    if created:
+        # šalje se logističkom koordinatoru
+        koordinatori = User.objects.filter(tip_k='logisticki_koordinator')
+        for k in koordinatori:
+            posalji_notifikaciju(
+                k,
+                f"Nova isporuka #{instance.sifra_i} je kreirana.",
+                link=f"/isporuke/{instance.sifra_i}"
+            )

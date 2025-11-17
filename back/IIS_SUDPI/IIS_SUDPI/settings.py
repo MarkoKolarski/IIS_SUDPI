@@ -58,10 +58,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'app',
+    #'app',
+    'app.apps.AppConfig',
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -73,6 +75,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'csp.middleware.CSPMiddleware',
 ]
 
 ROOT_URLCONF = 'IIS_SUDPI.urls'
@@ -171,6 +174,18 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
 }
+# CSP settings
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = ["'self'"]
+CSP_STYLE_SRC = ["'self'"]
+CSP_IMG_SRC = ["'self'", "data:", "https://*.openstreetmap.org"]
+CSP_FRAME_SRC = ["'self'", "https://*.openstreetmap.org"]
+CSP_CONNECT_SRC = ["'self'"]
+
+# Cron job settings
+#CRONJOBS = [
+#    ('*/5 * * * *', 'IIS_SUDPI.cron.proveri_rampe'),  # svakih 5 minuta
+#]
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True

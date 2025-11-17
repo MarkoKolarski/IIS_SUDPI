@@ -38,6 +38,10 @@ import LogisticTransport from "./pages/LogisticTransport.js";
 import EditVozilo from "./pages/VoziloEdit.js";
 import DashboardLK from "./pages/DashboardLK.js";
 import PlanIsporuke from "./pages/PlanIsporuke.js";
+import SpremanjeIsporuke from "./pages/SpremanjeIsporuke.js";
+import PregledIsporuka from "./pages/PregledIsporuka.js";
+import UpozorenjaDashboard from "./pages/UpozorenjaDashboard.js";
+
 import PregledRuta from "./pages/PregledRuta.js";
 
 const App = () => {
@@ -216,6 +220,14 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/spremanje-isporuke"
+          element={
+            <ProtectedRoute allowedRoles={["skladisni_operater"]}>
+              <SpremanjeIsporuke />
+            </ProtectedRoute>
+          }
+        />
         {/* Logisticki kordinator routes */}
         <Route
           path="/dashboard-lk"
@@ -234,13 +246,30 @@ const App = () => {
           }
         />
         <Route
-          path="/active-routes"
+          path="/pregled-isporuka"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <PregledIsporuka />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/izvestaji-lk"
+          element={
+            <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
+              <UpozorenjaDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pregled-ruta"
           element={
             <ProtectedRoute allowedRoles={["logisticki_koordinator"]}>
               <PregledRuta />
             </ProtectedRoute>
           }
         />
+
         {/* Admin routes */}
         <Route
           path="/dashboard-admin"

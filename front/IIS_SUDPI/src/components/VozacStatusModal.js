@@ -12,7 +12,7 @@ const VozacStatusModal = ({ modalOpen, selectedVozac, newStatus, setNewStatus, h
                     <option value="">-- Izaberi status --</option>
                     <option value="slobodan">Slobodan</option>
                     <option value="zauzet">Zauzet</option>
-                    <option value="na odmoru">Na odmoru</option>
+                    <option value="na_odmoru">Na odmoru</option>
                 </select>
                 <div style={{marginTop: '10px'}}>
                     <button className="btn-confirm" onClick={handleConfirmStatus}>Potvrdi</button>
