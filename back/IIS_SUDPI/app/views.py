@@ -3534,9 +3534,9 @@ def simulacija_voznje(request, pk):
                         tip="odstupanje",
                         poruka=f"Vozilo je odstupilo od planirane rute ({ruta.polazna_tacka} → {ruta.odrediste})."
                     )
-                    posalji_notifikaciju(request.user,
-                             f"Vozilo je odstupilo od planirane rute ({ruta.polazna_tacka} → {ruta.odrediste})."
-        )
+        #             posalji_notifikaciju(request.user,
+        #                      f"Vozilo je odstupilo od planirane rute ({ruta.polazna_tacka} → {ruta.odrediste})."
+        # )
                     ruta.status = "odstupanje"
                     ruta.save()
 
@@ -3607,8 +3607,8 @@ def simulacija_temperature(request, pk):
                         tip="temperatura",
                         poruka=f"Temperatura {vrednost:.2f}°C je izvan granica ({min_g:.1f} - {max_g:.1f})."
                     )
-                    posalji_notifikaciju(request.user,
-                             f"Temperatura {vrednost:.2f}°C je izvan granica ({min_g:.1f} - {max_g:.1f}).")
+                    # posalji_notifikaciju(request.user,
+                    #          f"Temperatura {vrednost:.2f}°C je izvan granica ({min_g:.1f} - {max_g:.1f}).")
                     
 
                 time.sleep(5)
