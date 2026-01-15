@@ -394,7 +394,7 @@ class NotifikacijaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class VoziloSerializer(serializers.ModelSerializer):
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    #status_display = serializers.CharField(source='get_status_display', read_only=True)
     
     class Meta:
         model = Vozilo

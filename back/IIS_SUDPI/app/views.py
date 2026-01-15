@@ -2195,13 +2195,16 @@ def get_vozilo(request, pk):
     return Response(serializer.data)
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-@allowed_users(['administrator'])
+#@permission_classes([IsAuthenticated])
+#@allowed_users(['administrator'])
 def update_vozilo(request, pk):
     vozilo = get_object_or_404(Vozilo, pk=pk)
+    #data = request.data.copy()
+
     serializer = VoziloSerializer(vozilo, data=request.data, partial = True)
     allowed_fields = ['status', 'registracija', 'kapacitet']
     for field in request.data.keys():
+    #for field in data.keys():
         if field not in allowed_fields:
             return Response(
                 {"error": f"Polje '{field}' ne može da se menja."},
@@ -2212,7 +2215,19 @@ def update_vozilo(request, pk):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+def create_vozilo(request):
+    data = request.data
 
+    vozilo = Vozilo.objects.create(
+        marka=data.get("marka"),
+        model=data.get("model"),
+        registracija=data.get("registracija"),
+        kapacitet=data.get("kapacitetKg"),  # mapiranje naziva!
+        status=data.get("status", "slobodno")
+    )
+
+    return Response({"id": vozilo.sifra_v}, status=201)
 @api_view(['DELETE'])
 def delete_vozilo(request, pk):
     vozilo = get_object_or_404(Vozilo, pk=pk)

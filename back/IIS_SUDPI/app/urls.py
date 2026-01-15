@@ -132,6 +132,7 @@ urlpatterns = [
     path('vozila/update/<int:pk>/', views.update_vozilo, name='update_vozilo'),
     path('vozila/delete/<int:pk>/', views.delete_vozilo, name='delete_vozilo'),
     path('vozila/<int:vozilo_id>/servisi/', views.servisi_po_vozilu, name='servisi_po_vozilu'),
+    path('vozila/create/', views.create_vozilo, name='create_vozilo'),
 
     # Servisi
     path('servisi/', views.list_servisi, name='list_servisi'),
@@ -180,8 +181,9 @@ urlpatterns = [
     #upozorenja
     path('api/upozorenja/', views.list_upozorenja, name='list_upozorenja'),
 
-    path('api/upozorenja/create/', views.create_upozorenje, name='create_upozorenje'),
-    path('api/rute/<int:ruta_id>/simulate/', views.simuliraj_kretanje, name='simuliraj_kretanje'),
+    path('api/upozorenja/create/', views.upozorenja_create, name='create_upozorenje'),
+    path('api/rute/<int:ruta_id>/simulate/', views.simulacija_voznje, name='simuliraj_kretanje'),
+    #path('api/rute/<int:ruta_id>/simulate/', views.simuliraj_kretanje, name='simuliraj_kretanje'),
 
     path('api/generisi-izvestaj/', views.generisi_izvestaj, name='generisi_izvestaj'),
     # endpoints za termine utovara i rampe
