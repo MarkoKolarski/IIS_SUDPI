@@ -56,6 +56,7 @@
     display: flex;
     flex-direction: column;
     border: 1px solid #a7f3d0; /* Light green border */
+    min-height: 360px;
 }
 
 .cardHeader {
@@ -73,6 +74,40 @@
 .cardContent {
     padding: 20px;
     flex-grow: 1;
+}
+
+.scrollablePanel {
+    max-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    scrollbar-gutter: stable;
+    mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
+}
+
+.scrollablePanel:focus-visible {
+    outline: 2px solid #14b8a6;
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.scrollablePanel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scrollablePanel::-webkit-scrollbar-track {
+    background: #ecfeff;
+    border-radius: 8px;
+}
+
+.scrollablePanel::-webkit-scrollbar-thumb {
+    background-color: #5eead4;
+    border-radius: 8px;
+    border: 2px solid #ecfeff;
+}
+
+.scrollablePanel::-webkit-scrollbar-thumb:hover {
+    background-color: #2dd4bf;
 }
 
 /* Card 1: Finance Overview */
@@ -103,6 +138,19 @@
     font-size: 16px;
     padding: 15px 0;
     color: #134e4a;
+    gap: 12px;
+}
+
+.supplierItem span:first-child {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.supplierItem span:last-child {
+    white-space: nowrap;
+    font-weight: 600;
+    color: #0f766e;
 }
 
 .supplierItem:not(:last-child) {
@@ -115,6 +163,7 @@
     flex-direction: column;
     width: 100%;
     color: #134e4a;
+    height: 100%;
 }
 
 .tableHeaderRow, .tableRow {
@@ -127,6 +176,10 @@
     font-weight: 700;
     color: #065f46; /* Darker green for header */
     border-bottom: 2px solid #14b8a6; /* Main green border */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #ffffff;
 }
 
 .tableRow:not(:last-child) {
@@ -135,6 +188,11 @@
 
 .tableCol {
     text-align: left;
+}
+
+.tableRow .supplierCol {
+    overflow-wrap: anywhere;
+    padding-right: 10px;
 }
 
 .idCol { width: 25%; }
@@ -230,6 +288,10 @@
     .dashboardContent {
         padding: 24px;
     }
+
+    .scrollablePanel {
+        max-height: 280px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -244,5 +306,17 @@
     }
     .dashboardHeader h1 {
         font-size: 24px;
+    }
+
+    .dashboardCard {
+        min-height: 320px;
+    }
+
+    .scrollablePanel {
+        max-height: 240px;
+    }
+
+    .tableHeaderRow, .tableRow {
+        font-size: 14px;
     }
 }

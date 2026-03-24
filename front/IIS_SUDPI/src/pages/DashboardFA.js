@@ -104,14 +104,21 @@ const DashboardFA = () => {
                 </div>
                 <div className={styles.cardContent}>
                   {dashboardData.profitabilnost_dobavljaca.length > 0 ? (
-                    dashboardData.profitabilnost_dobavljaca.map(
-                      (supplier, index) => (
-                        <div key={index} className={styles.supplierItem}>
-                          <span>{supplier.name}</span>
-                          <span>{supplier.profitability}</span>
-                        </div>
-                      )
-                    )
+                    <div
+                      className={styles.scrollablePanel}
+                      role="region"
+                      aria-label="Lista profitabilnosti dobavljača"
+                      tabIndex={0}
+                    >
+                      {dashboardData.profitabilnost_dobavljaca.map(
+                        (supplier, index) => (
+                          <div key={index} className={styles.supplierItem}>
+                            <span>{supplier.name}</span>
+                            <span>{supplier.profitability}</span>
+                          </div>
+                        )
+                      )}
+                    </div>
                   ) : (
                     <div className={styles.noData}>Nema podataka o dobavljačima</div>
                   )}
@@ -131,20 +138,27 @@ const DashboardFA = () => {
                       <div className={`${styles.tableCol} ${styles.amountCol}`}>Iznos</div>
                     </div>
                     {dashboardData.nadolazece_isplate.length > 0 ? (
-                      dashboardData.nadolazece_isplate.map((payment) => (
-                        <div key={payment.id} className={styles.tableRow}>
-                          <div className={`${styles.tableCol} ${styles.idCol}`}>{payment.id}</div>
-                          <div className={`${styles.tableCol} ${styles.supplierCol}`}>
-                            {payment.supplier}
+                      <div
+                        className={styles.scrollablePanel}
+                        role="region"
+                        aria-label="Tabela nadolazećih isplata"
+                        tabIndex={0}
+                      >
+                        {dashboardData.nadolazece_isplate.map((payment) => (
+                          <div key={payment.id} className={styles.tableRow}>
+                            <div className={`${styles.tableCol} ${styles.idCol}`}>{payment.id}</div>
+                            <div className={`${styles.tableCol} ${styles.supplierCol}`}>
+                              {payment.supplier}
+                            </div>
+                            <div className={`${styles.tableCol} ${styles.amountCol}`}>
+                              {parseFloat(payment.amount).toLocaleString(
+                                "sr-Latn-RS"
+                              )}{" "}
+                              RSD
+                            </div>
                           </div>
-                          <div className={`${styles.tableCol} ${styles.amountCol}`}>
-                            {parseFloat(payment.amount).toLocaleString(
-                              "sr-Latn-RS"
-                            )}{" "}
-                            RSD
-                          </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     ) : (
                       <div className={styles.noData}>Nema nadolazećih isplata</div>
                     )}
