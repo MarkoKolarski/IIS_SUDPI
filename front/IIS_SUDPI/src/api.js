@@ -35,6 +35,8 @@ axiosInstance.interceptors.request.use(
 
 export const dashboardAPI = {
   getFinansijskiAnalitičarData: () => axiosInstance.get("dashboard-fa/"),
+  getFinansijskiAnaliticarCostsTrend: (offset = 0, limit = 6) =>
+    axiosInstance.get("dashboard-fa/costs-trend/", { params: { offset, limit } }),
 
   // Add function to get expiring certificates
   getExpiringCertificates: () => axiosInstance.get("/expiring-certificates/"),

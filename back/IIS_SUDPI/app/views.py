@@ -9,6 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
 from django.db.models import Sum, Q, Count, Avg, Max
+from django.db.models.functions import TruncMonth
 from decimal import Decimal
 from datetime import timedelta, date
 from django.core.paginator import Paginator
@@ -19,7 +20,7 @@ from django.contrib import messages
 import requests
 from datetime import timedelta
 from django.utils import timezone
-from .models import Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
+from .models import Ruta, Notifikacija, Isporuka,Temperatura, Upozorenje, Vozilo, Vozac, Servis, Faktura, Ugovor, User, Dobavljac, Penal, StavkaFakture, Proizvod, Poseta, Reklamacija, KontrolorKvaliteta, FinansijskiAnaliticar, NabavniMenadzer, LogistickiKoordinator, SkladisniOperater, Administrator, Skladiste, Artikal, Zalihe, Popust, Transakcija
 from .serializers import (
     RegistrationSerializer, 
     FakturaSerializer,
@@ -107,6 +108,63 @@ class LoginView(DjangoLoginView):
             }, status=status.HTTP_200_OK)
         else:
             return Response({'detail': 'Incorrect email or password.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+def shift_month(month_start, delta):
+    """Pomera prvi dan u mesecu za zadati broj meseci (moze i negativan)."""
+    month_index = month_start.month - 1 + delta
+    year = month_start.year + (month_index // 12)
+    month = (month_index % 12) + 1
+    return date(year, month, 1)
+
+
+def get_cost_window(offset=0, limit=6):
+    """
+    Vraća agregirane troškove po mesecu za prozor od "limit" meseci.
+    offset=0 -> tekući + prethodnih (limit-1) meseci,
+    offset=1 -> prethodni blok od limit meseci, itd.
+    """
+    current_month = date.today().replace(day=1)
+    newest_month = shift_month(current_month, -(offset * limit))
+    oldest_month = shift_month(newest_month, -(limit - 1))
+    next_after_newest = shift_month(newest_month, 1)
+
+    monthly_rows = (
+        Faktura.objects.filter(
+            datum_prijema_f__gte=oldest_month,
+            datum_prijema_f__lt=next_after_newest,
+            status_f='isplacena'
+        )
+        .annotate(month=TruncMonth('datum_prijema_f'))
+        .values('month')
+        .annotate(total=Sum('iznos_f'))
+        .order_by('month')
+    )
+
+    totals_by_month = {}
+    for row in monthly_rows:
+        month_value = row['month']
+        # TruncMonth moze vratiti date ili datetime, zavisno od backend-a baze.
+        if hasattr(month_value, 'date'):
+            month_value = month_value.date()
+        month_key = month_value.replace(day=1)
+        totals_by_month[month_key] = float(row['total'] or 0)
+
+    troskovi_po_mesecima = []
+    for i in range(limit):
+        month_date = shift_month(oldest_month, i)
+        troskovi_po_mesecima.append({
+            'mesec': month_date.strftime('%m/%Y'),
+            'iznos': totals_by_month.get(month_date, 0.0),
+        })
+
+    return {
+        'offset': offset,
+        'limit': limit,
+        'window_start': oldest_month.strftime('%m/%Y'),
+        'window_end': newest_month.strftime('%m/%Y'),
+        'vizualizacija_troskova': troskovi_po_mesecima,
+    }
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -260,36 +318,50 @@ def dashboard_finansijski_analiticar(request):
         nadolazece_isplate.append({
             'id': str(faktura.sifra_f),
             'supplier': faktura.ugovor.dobavljac.naziv,
-            'amount': f"{float(faktura.iznos_f):.0f}€"
+            'amount': float(faktura.iznos_f)
         })
-    
-    # 4. VIZUALIZACIJA TROŠKOVA (poslednih 6 meseci)
-    troskovi_po_mesecima = []
-    for i in range(6):
-        mesec = date.today().replace(day=1) - timedelta(days=30*i)
-        sledeci_mesec = (mesec.replace(day=28) + timedelta(days=4)).replace(day=1)
-        
-        troskovi_mesec = Faktura.objects.filter(
-            datum_prijema_f__gte=mesec,
-            datum_prijema_f__lt=sledeci_mesec,
-            status_f='isplacena'
-        ).aggregate(total=Sum('iznos_f'))['total'] or Decimal('0.00')
-        
-        troskovi_po_mesecima.append({
-            'mesec': mesec.strftime('%m/%Y'),
-            'iznos': float(troskovi_mesec)
-        })
-    
-    troskovi_po_mesecima.reverse()
+
+    # 4. VIZUALIZACIJA TROŠKOVA (tekući prozor od 6 meseci)
+    chart_window = get_cost_window(offset=0, limit=6)
     
     dashboard_data = {
         'pregled_finansija': pregled_finansija,
         'profitabilnost_dobavljaca': dobavljaci_profitabilnost,
         'nadolazece_isplate': nadolazece_isplate,
-        'vizualizacija_troskova': troskovi_po_mesecima
+        'vizualizacija_troskova': chart_window['vizualizacija_troskova'],
+        'chart_window': {
+            'offset': chart_window['offset'],
+            'window_start': chart_window['window_start'],
+            'window_end': chart_window['window_end'],
+        }
     }
     
     return Response(dashboard_data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@allowed_users(['finansijski_analiticar', 'nabavni_menadzer'])
+def dashboard_finansijski_analiticar_troskovi(request):
+    """
+    API endpoint za dohvat troškova po mesecima u prozorima.
+    Query params:
+    - offset: broj prozora unazad (0 = trenutni prozor)
+    - limit: broj meseci po prozoru (default 6)
+    """
+    try:
+        offset = int(request.GET.get('offset', 0))
+        limit = int(request.GET.get('limit', 6))
+    except (TypeError, ValueError):
+        return Response({'error': 'Neispravni parametri offset/limit.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if offset < 0:
+        return Response({'error': 'Offset ne može biti negativan.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if limit < 1 or limit > 24:
+        return Response({'error': 'Limit mora biti između 1 i 24.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(get_cost_window(offset=offset, limit=limit), status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1143,6 +1215,7 @@ def check_contract_violations():
     """
     violations = []
     danas = date.today()
+    from .models import Ugovor
     
     try:
         # 1. PROVERA: Aktivni ugovori koji su istekli

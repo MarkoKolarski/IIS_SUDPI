@@ -14,12 +14,58 @@ const DashboardFA = () => {
     profitabilnost_dobavljaca: [],
     nadolazece_isplate: [],
     vizualizacija_troskova: [],
+    chart_window: {
+      offset: 0,
+      window_start: "",
+      window_end: "",
+    },
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [chartOffset, setChartOffset] = useState(0);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [chartError, setChartError] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  const fetchChartWindow = async (nextOffset) => {
+    try {
+      setChartLoading(true);
+      setChartError(null);
+
+      const response = await dashboardAPI.getFinansijskiAnaliticarCostsTrend(
+        nextOffset,
+        6
+      );
+
+      setDashboardData((prev) => ({
+        ...prev,
+        vizualizacija_troskova: response.data.vizualizacija_troskova || [],
+        chart_window: {
+          offset: response.data.offset ?? nextOffset,
+          window_start: response.data.window_start || "",
+          window_end: response.data.window_end || "",
+        },
+      }));
+      setChartOffset(response.data.offset ?? nextOffset);
+    } catch (chartFetchError) {
+      console.error("Greška pri dohvatanju podataka za grafikon:", chartFetchError);
+      setChartError("Neuspešno učitavanje grafikona. Pokušajte ponovo.");
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
+  const handleOlderMonths = () => {
+    if (chartLoading) return;
+    fetchChartWindow(chartOffset + 1);
+  };
+
+  const handleNewerMonths = () => {
+    if (chartLoading || chartOffset === 0) return;
+    fetchChartWindow(chartOffset - 1);
   };
 
   useEffect(() => {
@@ -28,6 +74,8 @@ const DashboardFA = () => {
         setLoading(true);
         const response = await dashboardAPI.getFinansijskiAnalitičarData();
         setDashboardData(response.data);
+        setChartOffset(response.data?.chart_window?.offset || 0);
+        setChartError(null);
         setError(null);
       } catch (error) {
         console.error("Greška pri dohvatanju dashboard podataka:", error);
@@ -39,6 +87,11 @@ const DashboardFA = () => {
 
     fetchDashboardData();
   }, []);
+
+  const chartMaxValue = Math.max(
+    1,
+    ...dashboardData.vizualizacija_troskova.map((item) => item.iznos || 0)
+  );
 
   return (
     <div
@@ -151,7 +204,7 @@ const DashboardFA = () => {
                               {payment.supplier}
                             </div>
                             <div className={`${styles.tableCol} ${styles.amountCol}`}>
-                              {parseFloat(payment.amount).toLocaleString(
+                              {Number(payment.amount || 0).toLocaleString(
                                 "sr-Latn-RS"
                               )}{" "}
                               RSD
@@ -168,12 +221,38 @@ const DashboardFA = () => {
 
               {/* Card 4: Vizualizacija troškova */}
               <div className={styles.dashboardCard}>
-                <div className={styles.cardHeader}>
+                <div className={`${styles.cardHeader} ${styles.cardHeaderWithControls}`}>
                   <h3>Vizualizacija troškova (poslednih 6 meseci)</h3>
+                  <div className={styles.chartControls}>
+                    <button
+                      type="button"
+                      className={styles.chartNavButton}
+                      onClick={handleOlderMonths}
+                      disabled={chartLoading}
+                      aria-label="Prikaži starijih 6 meseci"
+                      title="Prikaži starijih 6 meseci"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.chartNavButton}
+                      onClick={handleNewerMonths}
+                      disabled={chartLoading || chartOffset === 0}
+                      aria-label="Prikaži novijih 6 meseci"
+                      title="Prikaži novijih 6 meseci"
+                    >
+                      →
+                    </button>
+                  </div>
                 </div>
-                <div className={styles.cardContent}>
+                <div className={`${styles.cardContent} ${styles.chartCardContent}`}>
                   <div className={styles.chartPlaceholder}>
-                    {dashboardData.vizualizacija_troskova.length > 0 ? (
+                    {chartLoading ? (
+                      <div className={styles.chartInfo}>Učitavanje grafikona...</div>
+                    ) : chartError ? (
+                      <div className={styles.chartError}>{chartError}</div>
+                    ) : dashboardData.vizualizacija_troskova.length > 0 ? (
                       <div className={styles.chartData}>
                         {dashboardData.vizualizacija_troskova.map(
                           (item, index) => (
@@ -184,12 +263,7 @@ const DashboardFA = () => {
                                 style={{
                                   height: `${Math.max(
                                     10,
-                                    (item.iznos /
-                                      Math.max(
-                                        ...dashboardData.vizualizacija_troskova.map(
-                                          (i) => i.iznos
-                                        )
-                                      )) *
+                                    (item.iznos / chartMaxValue) *
                                       100 || 10
                                   )}px`,
                                   backgroundColor: "#3b82f6",
@@ -205,6 +279,10 @@ const DashboardFA = () => {
                     ) : (
                       <div className={styles.noData}>Nema podataka o troškovima</div>
                     )}
+                  </div>
+                  <div className={styles.chartWindowLabel}>
+                    Period: {dashboardData.chart_window?.window_start || "-"} -{" "}
+                    {dashboardData.chart_window?.window_end || "-"}
                   </div>
                 </div>
               </div>

@@ -4,6 +4,7 @@ from . import views_mv
 from . import views_sbp
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
 from .views import (LoginView, index, register, api_login, dashboard_finansijski_analiticar, invoice_list, 
+                    dashboard_finansijski_analiticar_troskovi,
                     invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, 
                     penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, 
                     preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, 
@@ -32,6 +33,7 @@ urlpatterns = [
     path('api/login/', api_login, name='api-login'),  # API endpoint za JWT login
     path('register/', register, name='register'),
     path('dashboard-fa/', dashboard_finansijski_analiticar, name='dashboard_finansijski_analiticar'),
+    path('dashboard-fa/costs-trend/', dashboard_finansijski_analiticar_troskovi, name='dashboard_finansijski_analiticar_troskovi'),
     path('invoices/', invoice_list, name='invoice_list'),
     path('invoices/filter-options/', invoice_filter_options, name='invoice_filter_options'),
     path('invoices/<int:invoice_id>/', invoice_detail, name='invoice_detail'),
