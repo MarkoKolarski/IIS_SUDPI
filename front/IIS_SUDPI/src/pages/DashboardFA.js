@@ -27,6 +27,7 @@ const DashboardFA = () => {
   const [chartOffset, setChartOffset] = useState(0);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState(null);
+  const [expandedCard, setExpandedCard] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
@@ -70,6 +71,10 @@ const DashboardFA = () => {
     fetchChartWindow(chartOffset - 1);
   };
 
+  const toggleCardExpansion = (cardKey) => {
+    setExpandedCard((prev) => (prev === cardKey ? null : cardKey));
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -90,10 +95,34 @@ const DashboardFA = () => {
     fetchDashboardData();
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setExpandedCard(null);
+      }
+    };
+
+    if (expandedCard) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", onKeyDown);
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [expandedCard]);
+
   const chartMaxValue = Math.max(
     1,
     ...dashboardData.vizualizacija_troskova.map((item) => item.iznos || 0)
   );
+
+  const getProfitabilityValue = (value) => {
+    const parsed = Number(String(value || "0").replace("%", ""));
+    if (Number.isNaN(parsed)) return 0;
+    return Math.max(0, Math.min(100, parsed));
+  };
 
   return (
     <div
@@ -118,13 +147,48 @@ const DashboardFA = () => {
 
         {!loading && !error && (
           <div className={styles.dashboardContent}>
-            <div className={styles.dashboardGrid}>
+            {expandedCard && (
+              <button
+                type="button"
+                className={styles.expandedOverlay}
+                aria-label="Zatvori fokus prikaz"
+                onClick={() => setExpandedCard(null)}
+              />
+            )}
+            <div
+              className={`${styles.dashboardGrid} ${
+                expandedCard ? styles.dashboardGridHasExpanded : ""
+              }`}
+            >
               {/* Card 1: Pregled finansija */}
-              <div className={styles.dashboardCard}>
-                <div className={styles.cardHeader}>
+              <div
+                className={`${styles.dashboardCard} ${
+                  expandedCard === "overview" ? styles.expandedCard : ""
+                } ${
+                  expandedCard === "overview" ? styles.expandedOverviewCard : ""
+                }`}
+              >
+                <div className={`${styles.cardHeader} ${styles.cardHeaderWithControls}`}>
                   <h3>Pregled finansija</h3>
+                  <button
+                    type="button"
+                    className={styles.cardExpandButton}
+                    onClick={() => toggleCardExpansion("overview")}
+                    aria-label={
+                      expandedCard === "overview"
+                        ? "Smanji pregled finansija"
+                        : "Proširi pregled finansija"
+                    }
+                    title={expandedCard === "overview" ? "Smanji" : "Proširi"}
+                  >
+                    {expandedCard === "overview" ? "✕" : "⤢"}
+                  </button>
                 </div>
-                <div className={styles.cardContent}>
+                <div
+                  className={`${styles.cardContent} ${
+                    expandedCard === "overview" ? styles.expandedOverviewContent : ""
+                  }`}
+                >
                   <div className={styles.financeOverviewItem}>
                     <span>Ukupno plaćeno:</span>
                     <strong>
@@ -171,14 +235,45 @@ const DashboardFA = () => {
               </div>
 
               {/* Card 2: Profitabilnost dobavljača */}
-              <div className={styles.dashboardCard}>
-                <div className={styles.cardHeader}>
+              <div
+                className={`${styles.dashboardCard} ${
+                  expandedCard === "profitability" ? styles.expandedCard : ""
+                } ${
+                  expandedCard === "profitability"
+                    ? styles.expandedProfitabilityCard
+                    : ""
+                }`}
+              >
+                <div className={`${styles.cardHeader} ${styles.cardHeaderWithControls}`}>
                   <h3>Profitabilnost dobavljača</h3>
+                  <button
+                    type="button"
+                    className={styles.cardExpandButton}
+                    onClick={() => toggleCardExpansion("profitability")}
+                    aria-label={
+                      expandedCard === "profitability"
+                        ? "Smanji profitabilnost dobavljača"
+                        : "Proširi profitabilnost dobavljača"
+                    }
+                    title={expandedCard === "profitability" ? "Smanji" : "Proširi"}
+                  >
+                    {expandedCard === "profitability" ? "✕" : "⤢"}
+                  </button>
                 </div>
-                <div className={styles.cardContent}>
+                <div
+                  className={`${styles.cardContent} ${
+                    expandedCard === "profitability"
+                      ? styles.expandedProfitabilityContent
+                      : ""
+                  }`}
+                >
                   {dashboardData.profitabilnost_dobavljaca.length > 0 ? (
                     <div
-                      className={styles.scrollablePanel}
+                      className={`${styles.scrollablePanel} ${
+                        expandedCard === "profitability"
+                          ? styles.expandedProfitabilityScroll
+                          : ""
+                      }`}
                       role="region"
                       aria-label="Lista profitabilnosti dobavljača"
                       tabIndex={0}
@@ -186,8 +281,22 @@ const DashboardFA = () => {
                       {dashboardData.profitabilnost_dobavljaca.map(
                         (supplier, index) => (
                           <div key={index} className={styles.supplierItem}>
-                            <span>{supplier.name}</span>
-                            <span>{supplier.profitability}</span>
+                            <span className={styles.supplierName}>{supplier.name}</span>
+                            <div className={styles.supplierMetricWrap}>
+                              <span>{supplier.profitability}</span>
+                              {expandedCard === "profitability" && (
+                                <div className={styles.supplierProgressTrack}>
+                                  <div
+                                    className={styles.supplierProgressFill}
+                                    style={{
+                                      width: `${getProfitabilityValue(
+                                        supplier.profitability
+                                      )}%`,
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )
                       )}
@@ -199,15 +308,42 @@ const DashboardFA = () => {
               </div>
 
               {/* Card 3: Nadolazeće isplate */}
-              <div className={styles.dashboardCard}>
-                <div className={styles.cardHeader}>
+              <div
+                className={`${styles.dashboardCard} ${
+                  expandedCard === "payments" ? styles.expandedCard : ""
+                } ${
+                  expandedCard === "payments" ? styles.expandedPaymentsCard : ""
+                }`}
+              >
+                <div className={`${styles.cardHeader} ${styles.cardHeaderWithControls}`}>
                   <h3>Nadolazeće isplate</h3>
+                  <button
+                    type="button"
+                    className={styles.cardExpandButton}
+                    onClick={() => toggleCardExpansion("payments")}
+                    aria-label={
+                      expandedCard === "payments"
+                        ? "Smanji nadolazeće isplate"
+                        : "Proširi nadolazeće isplate"
+                    }
+                    title={expandedCard === "payments" ? "Smanji" : "Proširi"}
+                  >
+                    {expandedCard === "payments" ? "✕" : "⤢"}
+                  </button>
                 </div>
-                <div className={styles.cardContent}>
+                <div
+                  className={`${styles.cardContent} ${
+                    expandedCard === "payments" ? styles.expandedPaymentsContent : ""
+                  }`}
+                >
                   <div className={styles.upcomingPaymentsTable}>
                     {dashboardData.nadolazece_isplate.length > 0 ? (
                       <div
-                        className={styles.scrollablePanel}
+                        className={`${styles.scrollablePanel} ${
+                          expandedCard === "payments"
+                            ? styles.expandedPaymentsScroll
+                            : ""
+                        }`}
                         role="region"
                         aria-label="Tabela nadolazećih isplata"
                         tabIndex={0}
@@ -234,9 +370,15 @@ const DashboardFA = () => {
               </div>
 
               {/* Card 4: Vizualizacija troškova */}
-              <div className={styles.dashboardCard}>
+              <div
+                className={`${styles.dashboardCard} ${
+                  expandedCard === "chart" ? styles.expandedCard : ""
+                } ${
+                  expandedCard === "chart" ? styles.expandedChartCard : ""
+                }`}
+              >
                 <div className={`${styles.cardHeader} ${styles.cardHeaderWithControls}`}>
-                  <h3>Vizualizacija troškova (poslednih 6 meseci)</h3>
+                  <h3>Vizualizacija troškova</h3>
                   <div className={styles.chartControls}>
                     <button
                       type="button"
@@ -258,16 +400,41 @@ const DashboardFA = () => {
                     >
                       →
                     </button>
+                    <button
+                      type="button"
+                      className={styles.cardExpandButton}
+                      onClick={() => toggleCardExpansion("chart")}
+                      aria-label={
+                        expandedCard === "chart"
+                          ? "Smanji vizualizaciju troškova"
+                          : "Proširi vizualizaciju troškova"
+                      }
+                      title={expandedCard === "chart" ? "Smanji" : "Proširi"}
+                    >
+                      {expandedCard === "chart" ? "✕" : "⤢"}
+                    </button>
                   </div>
                 </div>
-                <div className={`${styles.cardContent} ${styles.chartCardContent}`}>
-                  <div className={styles.chartPlaceholder}>
+                <div
+                  className={`${styles.cardContent} ${styles.chartCardContent} ${
+                    expandedCard === "chart" ? styles.expandedChartContent : ""
+                  }`}
+                >
+                  <div
+                    className={`${styles.chartPlaceholder} ${
+                      expandedCard === "chart" ? styles.expandedChartPlaceholder : ""
+                    }`}
+                  >
                     {chartLoading ? (
                       <div className={styles.chartInfo}>Učitavanje grafikona...</div>
                     ) : chartError ? (
                       <div className={styles.chartError}>{chartError}</div>
                     ) : dashboardData.vizualizacija_troskova.length > 0 ? (
-                      <div className={styles.chartData}>
+                      <div
+                        className={`${styles.chartData} ${
+                          expandedCard === "chart" ? styles.expandedChartData : ""
+                        }`}
+                      >
                         {dashboardData.vizualizacija_troskova.map(
                           (item, index) => (
                             <div key={index} className={styles.chartItem}>

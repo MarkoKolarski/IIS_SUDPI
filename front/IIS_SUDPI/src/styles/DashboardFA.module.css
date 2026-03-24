@@ -45,6 +45,12 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
+    position: relative;
+}
+
+.dashboardGridHasExpanded .dashboardCard:not(.expandedCard) {
+    opacity: 0.25;
+    pointer-events: none;
 }
 
 /* Card Styling */
@@ -57,6 +63,27 @@
     flex-direction: column;
     border: 1px solid #a7f3d0; /* Light green border */
     min-height: 360px;
+    position: relative;
+}
+
+.expandedCard {
+    position: fixed;
+    z-index: 40;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(1100px, calc(100vw - 48px));
+    height: min(86vh, 760px);
+    min-height: 520px;
+    box-shadow: 0 20px 50px rgba(6, 95, 70, 0.25);
+    animation: expandCardIn 0.16s ease-out;
+}
+
+.expandedOverviewCard,
+.expandedProfitabilityCard,
+.expandedPaymentsCard,
+.expandedChartCard {
+    border-color: #5eead4;
 }
 
 .cardHeader {
@@ -76,6 +103,24 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+}
+
+.cardExpandButton {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #99f6e4;
+    background-color: #0f766e;
+    color: #ffffff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    transition: background-color 0.2s ease;
+}
+
+.cardExpandButton:hover {
+    background-color: #115e59;
 }
 
 .chartControls {
@@ -107,9 +152,58 @@
     cursor: not-allowed;
 }
 
+.expandedOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    border: 0;
+    background: rgba(15, 23, 42, 0.18);
+    cursor: pointer;
+    animation: overlayFadeIn 0.12s ease-out;
+}
+
+@keyframes expandCardIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -48%) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 .cardContent {
     padding: 20px;
     flex-grow: 1;
+}
+
+.expandedOverviewContent {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 12px 20px;
+    align-content: start;
+}
+
+.expandedOverviewContent .financeOverviewItem {
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 0;
+    background: #f8fffd;
+}
+
+.expandedOverviewContent .financeOverviewItem:not(:last-child) {
+    border-bottom: 1px solid #a7f3d0;
 }
 
 .chartCardContent {
@@ -183,6 +277,48 @@
     gap: 12px;
 }
 
+.supplierName {
+    flex: 1;
+}
+
+.supplierMetricWrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 140px;
+    justify-content: flex-end;
+}
+
+.supplierProgressTrack {
+    width: 90px;
+    height: 6px;
+    background: #ccfbf1;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.supplierProgressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #14b8a6 0%, #0f766e 100%);
+}
+
+.expandedProfitabilityContent,
+.expandedPaymentsContent {
+    display: flex;
+    flex-direction: column;
+}
+
+.expandedProfitabilityScroll,
+.expandedPaymentsScroll {
+    max-height: none;
+    height: 100%;
+}
+
+.expandedProfitabilityCard .supplierItem {
+    align-items: center;
+    font-size: 17px;
+}
+
 .supplierItem span:first-child {
     flex: 1;
     min-width: 0;
@@ -214,6 +350,18 @@
     font-size: 16px;
 }
 
+.expandedPaymentsCard .tableRow {
+    padding: 14px 12px;
+    border: 1px solid #ccfbf1;
+    border-radius: 8px;
+    background: #f8fffd;
+    margin-bottom: 10px;
+}
+
+.expandedPaymentsCard .tableRow:not(:last-child) {
+    border-bottom: 1px solid #ccfbf1;
+}
+
 .tableRow:not(:last-child) {
     border-bottom: 1px solid #a7f3d0; /* Light green separator */
 }
@@ -243,6 +391,10 @@
     justify-content: center;
 }
 
+.expandedChartPlaceholder {
+    min-height: 420px;
+}
+
 /* Chart Data Display */
 .chartData {
     display: flex;
@@ -251,6 +403,11 @@
     height: 250px;
     width: 100%;
     padding: 20px;
+}
+
+.expandedChartData {
+    height: 390px;
+    padding: 26px 24px;
 }
 
 .chartItem {
@@ -272,6 +429,19 @@
     background-color: #14b8a6;
     border-radius: 2px;
     transition: all 0.3s ease;
+}
+
+.expandedChartCard .chartBar {
+    width: 42px;
+    border-radius: 4px;
+}
+
+.expandedChartCard .chartMonth {
+    font-size: 14px;
+}
+
+.expandedChartCard .chartAmount {
+    font-size: 12px;
 }
 
 .chartBar:hover {
@@ -360,6 +530,33 @@
 
     .dashboardCard {
         min-height: 320px;
+    }
+
+    .expandedCard {
+        width: calc(100vw - 20px);
+        height: 88vh;
+        min-height: 0;
+    }
+
+    .expandedOverviewContent {
+        grid-template-columns: 1fr;
+    }
+
+    .supplierMetricWrap {
+        min-width: 110px;
+    }
+
+    .expandedChartPlaceholder {
+        min-height: 300px;
+    }
+
+    .expandedChartData {
+        height: 280px;
+        padding: 18px 12px;
+    }
+
+    .expandedChartCard .chartBar {
+        width: 28px;
     }
 
     .scrollablePanel {

@@ -90,7 +90,7 @@ const Invoice = () => {
   };
 
   const handleSearch = () => {
-    setActiveSearch(searchQuery);
+    setActiveSearch(searchQuery.trim());
     setPagination((prev) => ({ ...prev, current_page: 1 }));
   };
 
@@ -229,30 +229,35 @@ const Invoice = () => {
                 </div>
               )}
             </div>
-          </div>
-
-          <div className={styles.searchAndFilters}>
-            <div className={styles.searchBox}>
-              <input
-                type="text"
-                placeholder="Pretraži fakture..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              />
-              <button onClick={handleSearch}>
-                <FaSearch />
-              </button>
-            </div>
-
-            {activeSearch && (
-              <div className={styles.activeFilters}>
-                <div className={styles.filterChip}>
-                  <span>Pretraga: "{activeSearch}"</span>
-                  <FaTimes className={styles.removeChipIcon} onClick={clearSearch} />
+            <div className={styles.searchInlineWrap}>
+              <div className={styles.searchControl}>
+                <label>Pretraga</label>
+                <div className={styles.searchBox}>
+                  <input
+                    type="text"
+                    placeholder="Pretraži fakture..."
+                    value={searchQuery}
+                    maxLength={80}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  />
+                  <button onClick={handleSearch}>
+                    <FaSearch />
+                  </button>
                 </div>
               </div>
-            )}
+              {activeSearch && (
+                <div className={styles.activeFilters}>
+                  <div className={styles.filterChip}>
+                    <span className={styles.filterChipLabel}>Pretraga:</span>
+                    <span className={styles.filterChipValue} title={activeSearch}>
+                      {activeSearch}
+                    </span>
+                    <FaTimes className={styles.removeChipIcon} onClick={clearSearch} />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </section>
 

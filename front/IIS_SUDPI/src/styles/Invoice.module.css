@@ -37,7 +37,8 @@
 .filterSection {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: flex-end;
+    flex-wrap: wrap;
     padding: 24px 32px;
     border-bottom: 1px solid #a7f3d0; /* Light green border */
     gap: 24px;
@@ -46,6 +47,8 @@
 .filterControls {
     display: flex;
     gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
 }
 
 .filterDropdown {
@@ -113,12 +116,25 @@
     border-bottom: none;
 }
 
-/* Search and Filters Section */
-.searchAndFilters {
+/* Search control */
+.searchControl {
     display: flex;
     flex-direction: column;
+    width: 300px;
+}
+
+.searchInlineWrap {
+    display: flex;
     align-items: flex-end;
     gap: 12px;
+    flex-wrap: wrap;
+}
+
+.searchControl label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #134e4a;
+    margin-bottom: 8px;
 }
 
 .searchBox {
@@ -128,15 +144,17 @@
     border: 1px solid #a7f3d0;
     border-radius: 6px;
     overflow: hidden;
+    height: 46px;
 }
 
 .searchBox input {
-    padding: 12px 16px;
+    padding: 0 14px;
     border: none;
     outline: none;
     font-size: 14px;
-    width: 250px;
+    width: 246px;
     color: #134e4a;
+    height: 100%;
 }
 
 .searchBox input::placeholder {
@@ -146,14 +164,26 @@
 .searchBox button {
     background-color: #14b8a6;
     border: none;
-    padding: 12px 16px;
+    width: 46px;
+    height: 46px;
     cursor: pointer;
     color: white;
     transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .searchBox button:hover {
     background-color: #0f766e;
+}
+
+.activeFilters {
+    margin-left: 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    max-width: 360px;
 }
 
 .activeFilters .filterChip {
@@ -165,13 +195,30 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    cursor: pointer;
+    width: min(100%, 420px);
+    cursor: default;
+}
+
+.filterChipLabel {
+    color: #065f46;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.filterChipValue {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #134e4a;
 }
 
 .removeChipIcon {
     font-size: 14px;
     color: #134e4a; /* Dark green */
     transition: color 0.2s;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 .filterChip:hover .removeChipIcon {
@@ -410,5 +457,26 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 16px;
+    }
+
+    .searchControl {
+        width: 100%;
+    }
+
+    .searchInlineWrap {
+        width: 100%;
+    }
+
+    .searchBox {
+        width: 100%;
+    }
+
+    .searchBox input {
+        width: 100%;
+    }
+
+    .activeFilters {
+        justify-content: flex-start;
+        max-width: 100%;
     }
 }

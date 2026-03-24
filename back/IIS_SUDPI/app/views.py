@@ -54,6 +54,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 import logging
 import uuid
+import re
+import unicodedata
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.urls import reverse_lazy
 from django.contrib.auth import login, authenticate
@@ -374,6 +376,69 @@ def dashboard_finansijski_analiticar_troskovi(request):
 
     return Response(get_cost_window(offset=offset, limit=limit), status=status.HTTP_200_OK)
 
+
+def _normalize_search_text(value):
+    normalized = unicodedata.normalize('NFKD', value or '')
+    return ''.join(ch for ch in normalized if not unicodedata.combining(ch)).lower().strip()
+
+
+def _parse_search_date(candidate):
+    """
+    Podržani oblici:
+    - dd.mm
+    - dd.mm.yyyy
+    - yyyy
+    """
+    raw = (candidate or '').strip()
+    if not raw:
+        return None
+
+    compact = re.sub(r'\s+', '', raw)
+    compact = compact.replace('/', '.').replace('-', '.')
+
+    if re.fullmatch(r'\d{4}', compact):
+        year = int(compact)
+        if 1900 <= year <= 2100:
+            return {'type': 'year', 'year': year}
+        return None
+
+    full_match = re.fullmatch(r'(\d{1,2})\.(\d{1,2})\.(\d{4})\.?', compact)
+    if full_match:
+        day, month, year = map(int, full_match.groups())
+        try:
+            return {'type': 'exact_date', 'date': date(year, month, day)}
+        except ValueError:
+            return None
+
+    day_month_match = re.fullmatch(r'(\d{1,2})\.(\d{1,2})\.?', compact)
+    if day_month_match:
+        day, month = map(int, day_month_match.groups())
+        current_year = date.today().year
+        try:
+            return {'type': 'exact_date', 'date': date(current_year, month, day)}
+        except ValueError:
+            return None
+
+    return None
+
+
+def _extract_status_codes(search_query):
+    normalized_query = _normalize_search_text(search_query)
+
+    status_aliases = {
+        'primljena': ['primljena', 'primljeno'],
+        'verifikovana': ['verifikovana', 'verifikovano', 'ceka verifikaciju', 'ceka'],
+        'isplacena': ['isplacena', 'placena', 'placeno'],
+        'odbijena': ['odbijena', 'odbijeno', 'odbij'],
+    }
+
+    matched_codes = []
+    for code, aliases in status_aliases.items():
+        if any(alias in normalized_query for alias in aliases):
+            matched_codes.append(code)
+
+    return matched_codes
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['finansijski_analiticar'])
@@ -423,11 +488,36 @@ def invoice_list(request):
     # Search funkcionalnost
     search_query = request.GET.get('search', '').strip()
     if search_query:
-        queryset = queryset.filter(
+        search_filters = (
             Q(sifra_f__icontains=search_query) |
             Q(ugovor__dobavljac__naziv__icontains=search_query) |
             Q(iznos_f__icontains=search_query)
         )
+
+        matched_status_codes = _extract_status_codes(search_query)
+        if matched_status_codes:
+            search_filters |= Q(status_f__in=matched_status_codes)
+
+        date_candidates = [search_query]
+        date_candidates.extend(token for token in search_query.split() if token)
+
+        for candidate in date_candidates:
+            parsed_date = _parse_search_date(candidate)
+            if not parsed_date:
+                continue
+
+            if parsed_date['type'] == 'year':
+                search_filters |= (
+                    Q(datum_prijema_f__year=parsed_date['year']) |
+                    Q(rok_placanja_f__year=parsed_date['year'])
+                )
+            elif parsed_date['type'] == 'exact_date':
+                search_filters |= (
+                    Q(datum_prijema_f=parsed_date['date']) |
+                    Q(rok_placanja_f=parsed_date['date'])
+                )
+
+        queryset = queryset.filter(search_filters)
     
     # Sortiranje po datumu prijema (najnovije prvo)
     queryset = queryset.order_by('-datum_prijema_f', '-sifra_f')
