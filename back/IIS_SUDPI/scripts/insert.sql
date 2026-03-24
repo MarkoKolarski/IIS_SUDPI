@@ -55,97 +55,97 @@ VALUES (4, 4);
 -- ============================================
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (1, 'Agro Invest DOO', 'salebecej1@gmail.com', '123456789', 'Pšenično brašno tip 500', 85.50, 5, 7.20, TO_DATE('2025-09-15', 'YYYY-MM-DD'), 1);
+VALUES (1, 'Agro Invest DOO', 'salebecej1@gmail.com', '123456789', 'Pšenično brašno tip 500', 85.50, 5, 7.20, TO_DATE('2026-09-15', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (2, 'Mlekoprodukt AD', 'salebecej1@gmail.com', '987654321', 'UHT mleko 3.2%', 125.00, 3, 9.50, TO_DATE('2025-09-20', 'YYYY-MM-DD'), 1);
+VALUES (2, 'Mlekoprodukt AD', 'salebecej1@gmail.com', '987654321', 'UHT mleko 3.2%', 125.00, 3, 9.50, TO_DATE('2026-09-20', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (3, 'Voće Srbija DOO', 'salebecej1@gmail.com', '456789123', 'Jabuke Idared', 65.00, 2, 8.80, TO_DATE('2025-09-10', 'YYYY-MM-DD'), 1);
+VALUES (3, 'Voće Srbija DOO', 'salebecej1@gmail.com', '456789123', 'Jabuke Idared', 65.00, 2, 8.80, TO_DATE('2026-09-10', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (4, 'Hemija Sever DOO', 'salebecej1@gmail.com', '789123456', 'Natrijum benzoat', 450.00, 7, 9.10, TO_DATE('2025-08-25', 'YYYY-MM-DD'), 1);
+VALUES (4, 'Hemija Sever DOO', 'salebecej1@gmail.com', '789123456', 'Natrijum benzoat', 450.00, 7, 9.10, TO_DATE('2026-08-25', 'YYYY-MM-DD'), 1);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (5, 'Šećerana Crvenka', 'salebecej1@gmail.com', '321654987', 'Kristal šećer', 95.00, 4, 9.00, TO_DATE('2025-09-18', 'YYYY-MM-DD'), 1);
+VALUES (5, 'Šećerana Crvenka', 'salebecej1@gmail.com', '321654987', 'Kristal šećer', 95.00, 4, 9.00, TO_DATE('2026-09-18', 'YYYY-MM-DD'), 1);
 
 -- ============================================
 -- 4. UGOVOR
 -- ============================================
 
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (1, TO_DATE('2025-01-10', 'YYYY-MM-DD'), TO_DATE('2026-01-10', 'YYYY-MM-DD'), 'aktivan', 
+VALUES (1, TO_DATE('2026-01-10', 'YYYY-MM-DD'), TO_DATE('2027-01-10', 'YYYY-MM-DD'), 'aktivan', 
 'Isporuka brašna u količini min 1000kg mesečno. Cena fiksna za prvih 6 meseci. Rok plaćanja 30 dana.', 1);
 
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (2, TO_DATE('2025-02-15', 'YYYY-MM-DD'), TO_DATE('2026-02-15', 'YYYY-MM-DD'), 'aktivan',
+VALUES (2, TO_DATE('2026-02-15', 'YYYY-MM-DD'), TO_DATE('2027-02-15', 'YYYY-MM-DD'), 'aktivan',
 'Isporuka UHT mleka 2x nedeljno. Minimalna količina 500L po isporuci. Rok plaćanja 15 dana.', 2);
 
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (3, TO_DATE('2024-10-01', 'YYYY-MM-DD'), TO_DATE('2025-10-01', 'YYYY-MM-DD'), 'aktivan',
+VALUES (3, TO_DATE('2025-10-01', 'YYYY-MM-DD'), TO_DATE('2026-10-01', 'YYYY-MM-DD'), 'aktivan',
 'Sezonska isporuka voća. Kvalitet mora biti I klasa. Rok plaćanja 45 dana.', 3);
 
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (4, TO_DATE('2024-05-20', 'YYYY-MM-DD'), TO_DATE('2025-05-20', 'YYYY-MM-DD'), 'istekao',
+VALUES (4, TO_DATE('2025-05-20', 'YYYY-MM-DD'), TO_DATE('2026-05-20', 'YYYY-MM-DD'), 'istekao',
 'Isporuka hemikalija sa sertifikatima. Plaćanje avansno 50%.', 4);
 
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (5, TO_DATE('2025-03-01', 'YYYY-MM-DD'), TO_DATE('2025-09-01', 'YYYY-MM-DD'), 'otkazan',
+VALUES (5, TO_DATE('2026-03-01', 'YYYY-MM-DD'), TO_DATE('2026-09-01', 'YYYY-MM-DD'), 'otkazan',
 'Isporuka šećera - ugovor raskinut zbog kašnjenja u isporuci.', 5);
 
 -- Dodatni ugovor za Agro Invest (integralno brašno)
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (6, TO_DATE('2024-08-01', 'YYYY-MM-DD'), TO_DATE('2025-08-01', 'YYYY-MM-DD'), 'aktivan',
+VALUES (6, TO_DATE('2025-08-01', 'YYYY-MM-DD'), TO_DATE('2026-08-01', 'YYYY-MM-DD'), 'aktivan',
 'Prošireni ugovor za isporuku integralnog brašna. Minimalna količina 200kg mesečno. Rok plaćanja 30 dana.', 1);
 
 -- Dodatni ugovor za Mlekoprodukt (pavlaka i mlečni derivati)
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (7, TO_DATE('2025-01-20', 'YYYY-MM-DD'), TO_DATE('2026-01-20', 'YYYY-MM-DD'), 'aktivan',
+VALUES (7, TO_DATE('2026-01-20', 'YYYY-MM-DD'), TO_DATE('2027-01-20', 'YYYY-MM-DD'), 'aktivan',
 'Dodatni ugovor za isporuku pavlake i drugih mlečnih derivata. Isporuka 1x nedeljno. Rok plaćanja 15 dana.', 2);
 
 -- Obnovljeni ugovor za Voće Srbija (pokriva avg-sept 2025)
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (8, TO_DATE('2025-06-01', 'YYYY-MM-DD'), TO_DATE('2026-06-01', 'YYYY-MM-DD'), 'aktivan',
+VALUES (8, TO_DATE('2026-06-01', 'YYYY-MM-DD'), TO_DATE('2027-06-01', 'YYYY-MM-DD'), 'aktivan',
 'Obnovljeni sezonski ugovor za isporuku voća - leto/jesen 2025. Povećane količine. Kvalitet I klasa. Rok plaćanja 45 dana.', 3);
 
 -- Glavni godišnji ugovor za Šećerana Crvenka (mart-jun 2025)
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (9, TO_DATE('2025-01-15', 'YYYY-MM-DD'), TO_DATE('2026-01-15', 'YYYY-MM-DD'), 'aktivan',
+VALUES (9, TO_DATE('2026-01-15', 'YYYY-MM-DD'), TO_DATE('2027-01-15', 'YYYY-MM-DD'), 'aktivan',
 'Godišnji ugovor za isporuku kristal šećera. Mesečne isporuke 1000-2000kg. Cena fiksna. Rok plaćanja 30 dana.', 5);
 
 -- Obnovljeni ugovor za Hemija Sever (nakon isteklog)
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (10, TO_DATE('2025-06-01', 'YYYY-MM-DD'), TO_DATE('2026-06-01', 'YYYY-MM-DD'), 'aktivan',
+VALUES (10, TO_DATE('2026-06-01', 'YYYY-MM-DD'), TO_DATE('2027-06-01', 'YYYY-MM-DD'), 'aktivan',
 'Obnovljeni ugovor za isporuku hemikalija i aditiva. Svi proizvodi sa sertifikatima. Rok plaćanja 30 dana.', 4);
 
 -- Dodatni ugovor za Agro Invest (treći ugovor - za veće količine) - BEZ PENALA
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (11, TO_DATE('2024-06-15', 'YYYY-MM-DD'), TO_DATE('2025-06-15', 'YYYY-MM-DD'), 'aktivan',
+VALUES (11, TO_DATE('2025-06-15', 'YYYY-MM-DD'), TO_DATE('2026-06-15', 'YYYY-MM-DD'), 'aktivan',
 'Specijalni ugovor za industrijske količine brašna. Isporuka 2x mesečno. Rok plaćanja 30 dana.', 1);
 
 -- Dodatni ugovor za Agro Invest (četvrti ugovor - sezonski) - BEZ PENALA
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (12, TO_DATE('2025-04-01', 'YYYY-MM-DD'), TO_DATE('2025-12-31', 'YYYY-MM-DD'), 'aktivan',
+VALUES (12, TO_DATE('2026-04-01', 'YYYY-MM-DD'), TO_DATE('2026-12-31', 'YYYY-MM-DD'), 'aktivan',
 'Sezonski ugovor za prolećnu/letnju sezonu. Povećane količine. Rok plaćanja 30 dana.', 1);
 
 -- Dodatni ugovor za Voće Srbija (treći ugovor - zimska sezona) - BEZ PENALA
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (13, TO_DATE('2024-12-01', 'YYYY-MM-DD'), TO_DATE('2025-11-30', 'YYYY-MM-DD'), 'aktivan',
+VALUES (13, TO_DATE('2025-12-01', 'YYYY-MM-DD'), TO_DATE('2026-11-30', 'YYYY-MM-DD'), 'aktivan',
 'Zimski ugovor za isporuku konzerviranog voća. Rok plaćanja 45 dana.', 3);
 
 -- Dodatni ugovor za Šećerana Crvenka (treći ugovor - specijalni) - BEZ PENALA
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (14, TO_DATE('2025-02-01', 'YYYY-MM-DD'), TO_DATE('2026-02-01', 'YYYY-MM-DD'), 'aktivan',
+VALUES (14, TO_DATE('2026-02-01', 'YYYY-MM-DD'), TO_DATE('2027-02-01', 'YYYY-MM-DD'), 'aktivan',
 'Specijalni ugovor za fin šećer u prahu. Mesečne isporuke. Rok plaćanja 30 dana.', 5);
 
 -- Dodatni ugovor za Šećerana Crvenka (četvrti ugovor - industrijski) - BEZ PENALA
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (15, TO_DATE('2025-07-01', 'YYYY-MM-DD'), TO_DATE('2026-07-01', 'YYYY-MM-DD'), 'aktivan',
+VALUES (15, TO_DATE('2026-07-01', 'YYYY-MM-DD'), TO_DATE('2027-07-01', 'YYYY-MM-DD'), 'aktivan',
 'Industrijski ugovor za velike količine šećera. Kvartalne isporuke. Rok plaćanja 30 dana.', 5);
 
 -- Dodatni ugovor za Šećerana Crvenka (peti ugovor - rezervni) - BEZ PENALA
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (16, TO_DATE('2024-11-01', 'YYYY-MM-DD'), TO_DATE('2025-10-31', 'YYYY-MM-DD'), 'aktivan',
+VALUES (16, TO_DATE('2025-11-01', 'YYYY-MM-DD'), TO_DATE('2026-10-31', 'YYYY-MM-DD'), 'aktivan',
 'Rezervni ugovor za hitne isporuke šećera. Po potrebi. Rok plaćanja 15 dana.', 5);
 
 -- ============================================
@@ -154,24 +154,24 @@ VALUES (16, TO_DATE('2024-11-01', 'YYYY-MM-DD'), TO_DATE('2025-10-31', 'YYYY-MM-
 
 -- AGRO INVEST - 4 PENALA na 3 od 4 ugovora (75% stopa kršenja - CRVENO)
 INSERT INTO penal (sifra_p, razlog_p, iznos_p, datum_p, ugovor_id)
-VALUES (1, 'Nedostajuća dokumentacija - sertifikat kvaliteta', 8500.00, TO_DATE('2025-08-15', 'YYYY-MM-DD'), 1);
+VALUES (1, 'Nedostajuća dokumentacija - sertifikat kvaliteta', 8500.00, TO_DATE('2025-11-15', 'YYYY-MM-DD'), 1);
 
 INSERT INTO penal (sifra_p, razlog_p, iznos_p, datum_p, ugovor_id)
-VALUES (2, 'Isporučena količina manja od ugovorene (850kg umesto 1000kg)', 12000.00, TO_DATE('2025-09-05', 'YYYY-MM-DD'), 1);
+VALUES (2, 'Isporučena količina manja od ugovorene (850kg umesto 1000kg)', 12000.00, TO_DATE('2026-03-05', 'YYYY-MM-DD'), 1);
 
 INSERT INTO penal (sifra_p, razlog_p, iznos_p, datum_p, ugovor_id)
-VALUES (3, 'Kašnjenje u isporuci od 3 dana', 9000.00, TO_DATE('2025-07-20', 'YYYY-MM-DD'), 6);
+VALUES (3, 'Kašnjenje u isporuci od 3 dana', 9000.00, TO_DATE('2026-02-20', 'YYYY-MM-DD'), 6);
 
 INSERT INTO penal (sifra_p, razlog_p, iznos_p, datum_p, ugovor_id)
-VALUES (4, 'Kvalitet brašna ispod standarda - vraćena pošiljka', 15500.00, TO_DATE('2025-05-25', 'YYYY-MM-DD'), 12);
+VALUES (4, 'Kvalitet brašna ispod standarda - vraćena pošiljka', 15500.00, TO_DATE('2026-01-25', 'YYYY-MM-DD'), 12);
 
 -- VOĆE SRBIJA - 1 PENAL na 1 od 3 ugovora (33% stopa kršenja - ŽUTO/UPOZORENJE)  
 INSERT INTO penal (sifra_p, razlog_p, iznos_p, datum_p, ugovor_id)
-VALUES (5, 'Kašnjenje u isporuci od 2 dana', 7500.00, TO_DATE('2025-07-10', 'YYYY-MM-DD'), 3);
+VALUES (5, 'Kašnjenje u isporuci od 2 dana', 7500.00, TO_DATE('2026-03-10', 'YYYY-MM-DD'), 3);
 
 -- ŠEĆERANA CRVENKA - 1 PENAL na 1 od 5 ugovora (20% stopa kršenja - ZELENO/DOBRO)
 INSERT INTO penal (sifra_p, razlog_p, iznos_p, datum_p, ugovor_id)
-VALUES (6, 'Ekstremno kašnjenje u isporuci od 14 dana + nekompletna dokumentacija', 25000.00, TO_DATE('2025-06-20', 'YYYY-MM-DD'), 5);
+VALUES (6, 'Ekstremno kašnjenje u isporuci od 14 dana + nekompletna dokumentacija', 25000.00, TO_DATE('2025-12-20', 'YYYY-MM-DD'), 5);
 
 -- ============================================
 -- 6. KATEGORIJA PROIZVODA
@@ -222,73 +222,73 @@ VALUES (7, 'Kristal šećer', 'Rafinirani beli kristal šećer', 5);
 -- ============================================
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (1, 85500.00, TO_DATE('2025-09-01', 'YYYY-MM-DD'), TO_DATE('2025-10-01', 'YYYY-MM-DD'), 'verifikovana', NULL, 1);
+VALUES (1, 85500.00, TO_DATE('2026-03-05', 'YYYY-MM-DD'), TO_DATE('2026-04-05', 'YYYY-MM-DD'), 'verifikovana', NULL, 1);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (2, 62500.00, TO_DATE('2025-09-10', 'YYYY-MM-DD'), TO_DATE('2025-09-25', 'YYYY-MM-DD'), 'isplacena', NULL, 2);
+VALUES (2, 62500.00, TO_DATE('2026-03-02', 'YYYY-MM-DD'), TO_DATE('2026-03-17', 'YYYY-MM-DD'), 'isplacena', NULL, 2);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (3, 32500.00, TO_DATE('2025-09-15', 'YYYY-MM-DD'), TO_DATE('2025-10-30', 'YYYY-MM-DD'), 'primljena', 'Čeka se verifikacija kvaliteta isporučene robe', 3);
+VALUES (3, 32500.00, TO_DATE('2026-03-18', 'YYYY-MM-DD'), TO_DATE('2026-03-29', 'YYYY-MM-DD'), 'primljena', 'Čeka se verifikacija kvaliteta isporučene robe', 3);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (4, 22500.00, TO_DATE('2025-08-20', 'YYYY-MM-DD'), TO_DATE('2025-09-20', 'YYYY-MM-DD'), 'verifikovana', NULL, 4);
+VALUES (4, 22500.00, TO_DATE('2026-02-10', 'YYYY-MM-DD'), TO_DATE('2026-03-12', 'YYYY-MM-DD'), 'verifikovana', NULL, 4);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (5, 47500.00, TO_DATE('2025-09-20', 'YYYY-MM-DD'), TO_DATE('2025-10-05', 'YYYY-MM-DD'), 'primljena', 'Neslaganje između fakturisane i isporučene količine', 5);
+VALUES (5, 47500.00, TO_DATE('2026-03-22', 'YYYY-MM-DD'), TO_DATE('2026-04-18', 'YYYY-MM-DD'), 'primljena', 'Neslaganje između fakturisane i isporučene količine', 5);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (6, 125000.00, TO_DATE('2025-09-05', 'YYYY-MM-DD'), TO_DATE('2025-09-20', 'YYYY-MM-DD'), 'isplacena', NULL, 2);
+VALUES (6, 125000.00, TO_DATE('2026-02-25', 'YYYY-MM-DD'), TO_DATE('2026-03-15', 'YYYY-MM-DD'), 'isplacena', NULL, 2);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (7, 15750.00, TO_DATE('2025-07-10', 'YYYY-MM-DD'), TO_DATE('2025-08-10', 'YYYY-MM-DD'), 'odbijena', 'Neusaglašenost sa ugovorom - penalizovana isporuka', 3);
+VALUES (7, 15750.00, TO_DATE('2026-01-20', 'YYYY-MM-DD'), TO_DATE('2026-02-20', 'YYYY-MM-DD'), 'odbijena', 'Neusaglašenost sa ugovorom - penalizovana isporuka', 3);
 
 -- Dodatne fakture za Voće Srbija DOO (ugovor_id = 8)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (8, 39000.00, TO_DATE('2025-08-05', 'YYYY-MM-DD'), TO_DATE('2025-09-19', 'YYYY-MM-DD'), 'isplacena', NULL, 8);
+VALUES (8, 39000.00, TO_DATE('2026-01-08', 'YYYY-MM-DD'), TO_DATE('2026-02-19', 'YYYY-MM-DD'), 'isplacena', NULL, 8);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (9, 45500.00, TO_DATE('2025-08-20', 'YYYY-MM-DD'), TO_DATE('2025-10-04', 'YYYY-MM-DD'), 'isplacena', NULL, 8);
+VALUES (9, 45500.00, TO_DATE('2025-12-20', 'YYYY-MM-DD'), TO_DATE('2026-02-04', 'YYYY-MM-DD'), 'isplacena', NULL, 8);
 
 -- Dodatne fakture za Šećerana Crvenka (ugovor_id = 9)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (10, 95000.00, TO_DATE('2025-03-15', 'YYYY-MM-DD'), TO_DATE('2025-04-14', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
+VALUES (10, 95000.00, TO_DATE('2025-10-15', 'YYYY-MM-DD'), TO_DATE('2025-11-14', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (11, 142500.00, TO_DATE('2025-04-10', 'YYYY-MM-DD'), TO_DATE('2025-05-10', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
+VALUES (11, 142500.00, TO_DATE('2025-11-10', 'YYYY-MM-DD'), TO_DATE('2025-12-10', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (12, 190000.00, TO_DATE('2025-05-05', 'YYYY-MM-DD'), TO_DATE('2025-06-04', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
+VALUES (12, 190000.00, TO_DATE('2025-12-05', 'YYYY-MM-DD'), TO_DATE('2026-01-04', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (13, 118750.00, TO_DATE('2025-06-12', 'YYYY-MM-DD'), TO_DATE('2025-07-12', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
+VALUES (13, 118750.00, TO_DATE('2026-01-12', 'YYYY-MM-DD'), TO_DATE('2026-02-12', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
 
 -- Dodatne fakture za Agro Invest (novi ugovori 11 i 12)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (14, 95000.00, TO_DATE('2025-05-15', 'YYYY-MM-DD'), TO_DATE('2025-06-14', 'YYYY-MM-DD'), 'isplacena', NULL, 11);
+VALUES (14, 95000.00, TO_DATE('2026-02-10', 'YYYY-MM-DD'), TO_DATE('2026-03-12', 'YYYY-MM-DD'), 'isplacena', NULL, 11);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (15, 110000.00, TO_DATE('2025-06-05', 'YYYY-MM-DD'), TO_DATE('2025-07-05', 'YYYY-MM-DD'), 'isplacena', NULL, 11);
+VALUES (15, 110000.00, TO_DATE('2026-03-04', 'YYYY-MM-DD'), TO_DATE('2026-04-03', 'YYYY-MM-DD'), 'isplacena', NULL, 11);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (16, 87500.00, TO_DATE('2025-07-12', 'YYYY-MM-DD'), TO_DATE('2025-08-11', 'YYYY-MM-DD'), 'isplacena', NULL, 6);
+VALUES (16, 87500.00, TO_DATE('2026-03-16', 'YYYY-MM-DD'), TO_DATE('2026-04-15', 'YYYY-MM-DD'), 'isplacena', NULL, 6);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (17, 102000.00, TO_DATE('2025-08-22', 'YYYY-MM-DD'), TO_DATE('2025-09-21', 'YYYY-MM-DD'), 'isplacena', NULL, 12);
+VALUES (17, 102000.00, TO_DATE('2026-02-22', 'YYYY-MM-DD'), TO_DATE('2026-03-24', 'YYYY-MM-DD'), 'isplacena', NULL, 12);
 
 -- Dodatne fakture za nove ugovore
 -- Faktura za Voće Srbija DOO (ugovor 13 - zimski)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (18, 52000.00, TO_DATE('2025-01-15', 'YYYY-MM-DD'), TO_DATE('2025-03-01', 'YYYY-MM-DD'), 'isplacena', NULL, 13);
+VALUES (18, 52000.00, TO_DATE('2026-01-15', 'YYYY-MM-DD'), TO_DATE('2026-03-01', 'YYYY-MM-DD'), 'isplacena', NULL, 13);
 
 -- Fakture za Šećerana Crvenka (novi ugovori 14,15,16)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (19, 76000.00, TO_DATE('2025-03-10', 'YYYY-MM-DD'), TO_DATE('2025-04-09', 'YYYY-MM-DD'), 'isplacena', NULL, 14);
+VALUES (19, 76000.00, TO_DATE('2026-03-10', 'YYYY-MM-DD'), TO_DATE('2026-04-09', 'YYYY-MM-DD'), 'isplacena', NULL, 14);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (20, 285000.00, TO_DATE('2025-08-15', 'YYYY-MM-DD'), TO_DATE('2025-09-14', 'YYYY-MM-DD'), 'isplacena', NULL, 15);
+VALUES (20, 285000.00, TO_DATE('2025-12-15', 'YYYY-MM-DD'), TO_DATE('2026-01-14', 'YYYY-MM-DD'), 'isplacena', NULL, 15);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (21, 47500.00, TO_DATE('2025-01-20', 'YYYY-MM-DD'), TO_DATE('2025-02-04', 'YYYY-MM-DD'), 'isplacena', NULL, 16);
+VALUES (21, 47500.00, TO_DATE('2026-02-03', 'YYYY-MM-DD'), TO_DATE('2026-02-18', 'YYYY-MM-DD'), 'isplacena', NULL, 16);
 
 -- ============================================
 -- 9. STAVKA FAKTURE
@@ -386,65 +386,65 @@ VALUES (22, 'Kristal šećer', 500, 95.00, 'Rezervna hitna isporuka', 21, 7);
 -- ============================================
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (1, TO_TIMESTAMP('2025-09-12 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-001', 'uspesna', 2);
+VALUES (1, TO_TIMESTAMP('2026-03-14 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-001', 'uspesna', 2);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (2, TO_TIMESTAMP('2025-09-22 14:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-002', 'uspesna', 6);
+VALUES (2, TO_TIMESTAMP('2026-03-10 14:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-002', 'uspesna', 6);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (3, TO_TIMESTAMP('2025-09-25 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-003', 'na_cekanju', 1);
+VALUES (3, TO_TIMESTAMP('2026-03-25 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-003', 'na_cekanju', 1);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (4, TO_TIMESTAMP('2025-09-20 16:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-004', 'na_cekanju', 4);
+VALUES (4, TO_TIMESTAMP('2026-03-13 16:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-004', 'na_cekanju', 4);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (5, TO_TIMESTAMP('2025-07-15 11:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-005', 'neuspesna', 7);
+VALUES (5, TO_TIMESTAMP('2026-02-01 11:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-005', 'neuspesna', 7);
 
 -- Transakcije za nove fakture Voće Srbija DOO
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (6, TO_TIMESTAMP('2025-09-10 13:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-006', 'uspesna', 8);
+VALUES (6, TO_TIMESTAMP('2026-01-20 13:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-006', 'uspesna', 8);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (7, TO_TIMESTAMP('2025-09-28 10:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-007', 'uspesna', 9);
+VALUES (7, TO_TIMESTAMP('2026-01-25 10:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-007', 'uspesna', 9);
 
 -- Transakcije za nove fakture Šećerana Crvenka
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (8, TO_TIMESTAMP('2025-04-12 09:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-008', 'uspesna', 10);
+VALUES (8, TO_TIMESTAMP('2025-10-28 09:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-008', 'uspesna', 10);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (9, TO_TIMESTAMP('2025-05-08 14:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-05-009', 'uspesna', 11);
+VALUES (9, TO_TIMESTAMP('2025-11-25 14:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-05-009', 'uspesna', 11);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (10, TO_TIMESTAMP('2025-06-02 11:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-010', 'uspesna', 12);
+VALUES (10, TO_TIMESTAMP('2025-12-22 11:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-010', 'uspesna', 12);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (11, TO_TIMESTAMP('2025-07-10 15:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-011', 'uspesna', 13);
+VALUES (11, TO_TIMESTAMP('2026-01-30 15:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-011', 'uspesna', 13);
 
 -- Transakcije za nove fakture Agro Invest
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (12, TO_TIMESTAMP('2025-06-10 11:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-012', 'uspesna', 14);
+VALUES (12, TO_TIMESTAMP('2026-02-28 11:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-012', 'uspesna', 14);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (13, TO_TIMESTAMP('2025-07-02 09:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-013', 'uspesna', 15);
+VALUES (13, TO_TIMESTAMP('2026-03-18 09:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-013', 'uspesna', 15);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (14, TO_TIMESTAMP('2025-08-08 14:55:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-08-014', 'uspesna', 16);
+VALUES (14, TO_TIMESTAMP('2026-03-24 14:55:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-08-014', 'uspesna', 16);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (15, TO_TIMESTAMP('2025-09-18 10:10:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-015', 'uspesna', 17);
+VALUES (15, TO_TIMESTAMP('2026-03-23 10:10:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-015', 'uspesna', 17);
 
 -- Transakcije za nove fakture
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (16, TO_TIMESTAMP('2025-02-28 14:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-016', 'uspesna', 18);
+VALUES (16, TO_TIMESTAMP('2026-02-20 14:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-016', 'uspesna', 18);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (17, TO_TIMESTAMP('2025-04-07 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-017', 'uspesna', 19);
+VALUES (17, TO_TIMESTAMP('2026-03-22 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-017', 'uspesna', 19);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (18, TO_TIMESTAMP('2025-09-12 16:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-018', 'uspesna', 20);
+VALUES (18, TO_TIMESTAMP('2026-01-08 16:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-018', 'uspesna', 20);
 
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (19, TO_TIMESTAMP('2025-02-03 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-019', 'uspesna', 21);
+VALUES (19, TO_TIMESTAMP('2026-02-16 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-019', 'uspesna', 21);
 
 -- ============================================
 -- 11. DASHBOARD
@@ -531,14 +531,14 @@ INSERT INTO notifikacija (sifra_n, poruka_n, datum_n, procitana_n, link_n, koris
 VALUES (12, 'Novi penal: Voće Srbija - kvalitet II umesto I klase. Iznos: 8,500 RSD', SYSTIMESTAMP - 35, 1, NULL, 3);
 
 INSERT INTO dobavljac (sifra_d, naziv, email, PIB_d, ime_sirovine, cena, rok_isporuke, ocena, datum_ocenjivanja, izabran)
-VALUES (6, 'SIMULACIJA Šećerana Crvenka', 'salebecej1@gmail.com', '32165498721', 'Kristal šećer', 95.00, 4, 9.00, TO_DATE('2025-09-18', 'YYYY-MM-DD'), 1);
+VALUES (6, 'SIMULACIJA Šećerana Crvenka', 'salebecej1@gmail.com', '32165498721', 'Kristal šećer', 95.00, 4, 9.00, TO_DATE('2026-09-18', 'YYYY-MM-DD'), 1);
 
 INSERT INTO ugovor (sifra_u, datum_potpisa_u, datum_isteka_u, status_u, uslovi_u, dobavljac_id)
-VALUES (17, TO_DATE('2025-01-10', 'YYYY-MM-DD'), TO_DATE('2026-01-10', 'YYYY-MM-DD'), 'aktivan', 
+VALUES (17, TO_DATE('2026-01-10', 'YYYY-MM-DD'), TO_DATE('2027-01-10', 'YYYY-MM-DD'), 'aktivan', 
 'Isporuka brašna u količini min 1000kg mesečno. Cena fiksna za prvih 6 meseci. Rok plaćanja 30 dana.', 6);
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (22, 85500.00, TO_DATE('2025-09-01', 'YYYY-MM-DD'), TO_DATE('2025-10-01', 'YYYY-MM-DD'), 'verifikovana', NULL, 17);
+VALUES (22, 85500.00, TO_DATE('2026-03-01', 'YYYY-MM-DD'), TO_DATE('2026-04-01', 'YYYY-MM-DD'), 'verifikovana', NULL, 17);
 
 INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed, opis_sf, faktura_id, proizvod_id)
 VALUES (23, 'Pšenično brašno T-500', 1500, 90.50, 'Mesečna isporuka - septembar 2025', 22, 1);
@@ -551,27 +551,27 @@ VALUES (24, 'Pšenično brašno T-500', 1000, 85.50, 'Mesečna isporuka - oktoba
 
 
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (23, 94050.00, TO_DATE('2025-10-03', 'YYYY-MM-DD'), TO_DATE('2025-11-02', 'YYYY-MM-DD'), 'isplacena', NULL, 1);
+VALUES (23, 94050.00, TO_DATE('2026-03-03', 'YYYY-MM-DD'), TO_DATE('2026-04-02', 'YYYY-MM-DD'), 'isplacena', NULL, 1);
 
 -- Faktura 24: Mlekoprodukt (ugovor 2)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (24, 80500.00, TO_DATE('2025-10-05', 'YYYY-MM-DD'), TO_DATE('2025-10-20', 'YYYY-MM-DD'), 'isplacena', NULL, 2);
+VALUES (24, 80500.00, TO_DATE('2026-03-05', 'YYYY-MM-DD'), TO_DATE('2026-03-20', 'YYYY-MM-DD'), 'isplacena', NULL, 2);
 
 -- Faktura 25: Voće Srbija (ugovor 8)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (25, 52000.00, TO_DATE('2025-10-08', 'YYYY-MM-DD'), TO_DATE('2025-11-22', 'YYYY-MM-DD'), 'isplacena', NULL, 8);
+VALUES (25, 52000.00, TO_DATE('2026-02-08', 'YYYY-MM-DD'), TO_DATE('2026-03-22', 'YYYY-MM-DD'), 'isplacena', NULL, 8);
 
 -- Faktura 26: Šećerana Crvenka (ugovor 9)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (26, 166250.00, TO_DATE('2025-10-10', 'YYYY-MM-DD'), TO_DATE('2025-11-09', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
+VALUES (26, 166250.00, TO_DATE('2026-01-10', 'YYYY-MM-DD'), TO_DATE('2026-02-09', 'YYYY-MM-DD'), 'isplacena', NULL, 9);
 
 -- Faktura 27: Agro Invest - integralno brašno (ugovor 6)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (27, 76000.00, TO_DATE('2025-10-12', 'YYYY-MM-DD'), TO_DATE('2025-11-11', 'YYYY-MM-DD'), 'isplacena', NULL, 6);
+VALUES (27, 76000.00, TO_DATE('2025-12-12', 'YYYY-MM-DD'), TO_DATE('2026-01-11', 'YYYY-MM-DD'), 'isplacena', NULL, 6);
 
 -- Faktura 28: Mlekoprodukt - pavlaka (ugovor 7)
 INSERT INTO faktura (sifra_f, iznos_f, datum_prijema_f, rok_placanja_f, status_f, razlog_cekanja_f, ugovor_id)
-VALUES (28, 36000.00, TO_DATE('2025-10-15', 'YYYY-MM-DD'), TO_DATE('2025-10-30', 'YYYY-MM-DD'), 'isplacena', NULL, 7);
+VALUES (28, 36000.00, TO_DATE('2026-04-15', 'YYYY-MM-DD'), TO_DATE('2026-04-30', 'YYYY-MM-DD'), 'isplacena', NULL, 7);
 
 -- ============================================
 -- STAVKE FAKTURE ZA OKTOBAR
@@ -610,27 +610,27 @@ VALUES (31, 'Pavlaka 20%', 200, 180.00, 'Specijalna isporuka pavlake - oktobar',
 
 -- Transakcija 20: Faktura 23 (Agro Invest)
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (20, TO_TIMESTAMP('2025-10-05 10:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-020', 'uspesna', 23);
+VALUES (20, TO_TIMESTAMP('2026-03-21 10:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-020', 'uspesna', 23);
 
 -- Transakcija 21: Faktura 24 (Mlekoprodukt)
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (21, TO_TIMESTAMP('2025-10-07 14:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-021', 'uspesna', 24);
+VALUES (21, TO_TIMESTAMP('2026-03-19 14:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-021', 'uspesna', 24);
 
 -- Transakcija 22: Faktura 25 (Voće Srbija)
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (22, TO_TIMESTAMP('2025-10-09 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-022', 'uspesna', 25);
+VALUES (22, TO_TIMESTAMP('2026-03-15 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-022', 'uspesna', 25);
 
 -- Transakcija 23: Faktura 26 (Šećerana Crvenka)
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (23, TO_TIMESTAMP('2025-10-11 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-023', 'uspesna', 26);
+VALUES (23, TO_TIMESTAMP('2026-02-06 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-023', 'uspesna', 26);
 
 -- Transakcija 24: Faktura 27 (Agro Invest - integralno)
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (24, TO_TIMESTAMP('2025-10-13 13:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-024', 'uspesna', 27);
+VALUES (24, TO_TIMESTAMP('2026-01-05 13:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-024', 'uspesna', 27);
 
 -- Transakcija 25: Faktura 28 (Mlekoprodukt - pavlaka)
 INSERT INTO transakcija (sifra_t, datum_t, potvrda_t, status_t, faktura_id)
-VALUES (25, TO_TIMESTAMP('2025-10-16 15:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-025', 'uspesna', 28);
+VALUES (25, TO_TIMESTAMP('2026-04-20 15:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-025', 'uspesna', 28);
 
 
 

@@ -169,42 +169,42 @@ PROMPT ============================================
 PROMPT ZAVRŠETAK TESTIRANJA
 PROMPT ============================================
 
-DROP INDEX IDX_FAKTURA_STATUS_ROK;
+-- DROP INDEX IDX_FAKTURA_STATUS_ROK;
 
 --------------------------------------
 
 CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F);
 
 
-DECLARE
-    v_ugovor_id UGOVOR.SIFRA_U%TYPE;
-BEGIN
-    SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR FETCH FIRST 1 ROWS ONLY;
+-- DECLARE
+--     v_ugovor_id UGOVOR.SIFRA_U%TYPE;
+-- BEGIN
+--     SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR FETCH FIRST 1 ROWS ONLY;
 
-    DBMS_OUTPUT.PUT_LINE('Pocinje generisanje 500,000 faktura...');
-    FOR i IN 1..500000 LOOP
-        INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
-        VALUES (
-            FAKTURA_SEQ.NEXTVAL,
-            TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2),
-            SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 365)),
-            -- Većina faktura ima ROK U BUDUĆNOSTI
-            CASE 
-                WHEN DBMS_RANDOM.VALUE(0, 100) < 10 THEN 
-                    -- Samo 10% faktura ima prošao rok (starije od danas)
-                    SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 90))
-                ELSE 
-                    -- 90% faktura ima rok u budućnosti (sledeća 2-6 meseci)
-                    SYSDATE + TRUNC(DBMS_RANDOM.VALUE(60, 180))
-            END,
-            CASE TRUNC(DBMS_RANDOM.VALUE(0, 100) / 50)
-                WHEN 0 THEN 'primljena'      -- 25% primljene (ne-plaćene)
-                WHEN 1 THEN 'verifikovana'   -- 25% verifikovane (ne-plaćene)
-                ELSE 'isplacena'              -- 50% isplaćene
-            END,
-            v_ugovor_id
-        );
-    END LOOP;
+--     DBMS_OUTPUT.PUT_LINE('Pocinje generisanje 500,000 faktura...');
+--     FOR i IN 1..500000 LOOP
+--         INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
+--         VALUES (
+--             FAKTURA_SEQ.NEXTVAL,
+--             TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2),
+--             SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 365)),
+--             -- Većina faktura ima ROK U BUDUĆNOSTI
+--             CASE 
+--                 WHEN DBMS_RANDOM.VALUE(0, 100) < 10 THEN 
+--                     -- Samo 10% faktura ima prošao rok (starije od danas)
+--                     SYSDATE - TRUNC(DBMS_RANDOM.VALUE(1, 90))
+--                 ELSE 
+--                     -- 90% faktura ima rok u budućnosti (sledeća 2-6 meseci)
+--                     SYSDATE + TRUNC(DBMS_RANDOM.VALUE(60, 180))
+--             END,
+--             CASE TRUNC(DBMS_RANDOM.VALUE(0, 100) / 50)
+--                 WHEN 0 THEN 'primljena'      -- 25% primljene (ne-plaćene)
+--                 WHEN 1 THEN 'verifikovana'   -- 25% verifikovane (ne-plaćene)
+--                 ELSE 'isplacena'              -- 50% isplaćene
+--             END,
+--             v_ugovor_id
+--         );
+--     END LOOP;
     COMMIT;
     DBMS_OUTPUT.PUT_LINE('Generisanje zavrseno.');
 EXCEPTION
