@@ -100,6 +100,46 @@ const Invoice = () => {
     setPagination((prev) => ({ ...prev, current_page: 1 }));
   };
 
+  const handlePageChange = (nextPage) => {
+    if (
+      nextPage < 1 ||
+      nextPage > pagination.num_pages ||
+      nextPage === pagination.current_page
+    ) {
+      return;
+    }
+
+    setPagination((prev) => ({
+      ...prev,
+      current_page: nextPage,
+    }));
+  };
+
+  const getVisiblePages = (currentPage, totalPages, siblingCount = 1) => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const pages = [1];
+    const start = Math.max(2, currentPage - siblingCount);
+    const end = Math.min(totalPages - 1, currentPage + siblingCount);
+
+    if (start > 2) {
+      pages.push("ellipsis-left");
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    if (end < totalPages - 1) {
+      pages.push("ellipsis-right");
+    }
+
+    pages.push(totalPages);
+    return pages;
+  };
+
   const toggleDropdown = (dropdownType) => {
     setDropdownOpen((prev) => ({
       ...prev,
@@ -149,6 +189,11 @@ const Invoice = () => {
   useEffect(() => {
     loadInvoices();
   }, [loadInvoices]);
+
+  const visiblePages = getVisiblePages(
+    pagination.current_page,
+    pagination.num_pages
+  );
 
   return (
     <div
@@ -338,29 +383,45 @@ const Invoice = () => {
             {!loading && invoices.length > 0 && pagination.num_pages > 1 && (
               <div className={styles.pagination}>
                 <button
-                  onClick={() =>
-                    setPagination((prev) => ({
-                      ...prev,
-                      current_page: prev.current_page - 1,
-                    }))
-                  }
+                  onClick={() => handlePageChange(pagination.current_page - 1)}
                   disabled={!pagination.has_previous}
-                  className={styles.paginationBtn}
+                  className={`${styles.paginationBtn} ${styles.paginationNavBtn}`}
                 >
                   Prethodna
                 </button>
-                <span className={styles.paginationInfo}>
-                  Stranica {pagination.current_page} od {pagination.num_pages}
-                </span>
+
+                <div className={styles.paginationPageList}>
+                  {visiblePages.map((page, index) =>
+                    typeof page === "string" ? (
+                      <span
+                        key={`${page}-${index}`}
+                        className={styles.paginationEllipsis}
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`${styles.paginationBtn} ${styles.paginationPageBtn} ${
+                          page === pagination.current_page
+                            ? styles.paginationPageBtnActive
+                            : ""
+                        }`}
+                        aria-current={
+                          page === pagination.current_page ? "page" : undefined
+                        }
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+
                 <button
-                  onClick={() =>
-                    setPagination((prev) => ({
-                      ...prev,
-                      current_page: prev.current_page + 1,
-                    }))
-                  }
+                  onClick={() => handlePageChange(pagination.current_page + 1)}
                   disabled={!pagination.has_next}
-                  className={styles.paginationBtn}
+                  className={`${styles.paginationBtn} ${styles.paginationNavBtn}`}
                 >
                   Sledeća
                 </button>
