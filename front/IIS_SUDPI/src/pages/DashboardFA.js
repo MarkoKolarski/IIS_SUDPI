@@ -205,11 +205,6 @@ const DashboardFA = () => {
                 </div>
                 <div className={styles.cardContent}>
                   <div className={styles.upcomingPaymentsTable}>
-                    <div className={styles.tableHeaderRow}>
-                      <div className={`${styles.tableCol} ${styles.idCol}`}>ID</div>
-                      <div className={`${styles.tableCol} ${styles.supplierCol}`}>Dobavljač</div>
-                      <div className={`${styles.tableCol} ${styles.amountCol}`}>Iznos</div>
-                    </div>
                     {dashboardData.nadolazece_isplate.length > 0 ? (
                       <div
                         className={styles.scrollablePanel}
@@ -219,7 +214,6 @@ const DashboardFA = () => {
                       >
                         {dashboardData.nadolazece_isplate.map((payment) => (
                           <div key={payment.id} className={styles.tableRow}>
-                            <div className={`${styles.tableCol} ${styles.idCol}`}>{payment.id}</div>
                             <div className={`${styles.tableCol} ${styles.supplierCol}`}>
                               {payment.supplier}
                             </div>

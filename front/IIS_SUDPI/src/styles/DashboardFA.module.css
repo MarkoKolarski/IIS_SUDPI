@@ -208,20 +208,10 @@
     height: 100%;
 }
 
-.tableHeaderRow, .tableRow {
+.tableRow {
     display: flex;
     padding: 15px 0;
     font-size: 16px;
-}
-
-.tableHeaderRow {
-    font-weight: 700;
-    color: #065f46; /* Darker green for header */
-    border-bottom: 2px solid #14b8a6; /* Main green border */
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background-color: #ffffff;
 }
 
 .tableRow:not(:last-child) {
@@ -237,8 +227,7 @@
     padding-right: 10px;
 }
 
-.idCol { width: 25%; }
-.supplierCol { width: 45%; }
+.supplierCol { width: 70%; }
 .amountCol { width: 30%; text-align: right; }
 
 
@@ -377,7 +366,7 @@
         max-height: 240px;
     }
 
-    .tableHeaderRow, .tableRow {
+    .tableRow {
         font-size: 14px;
     }
 
