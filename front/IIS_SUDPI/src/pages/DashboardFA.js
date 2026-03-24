@@ -10,6 +10,8 @@ const DashboardFA = () => {
       ukupno_placeno: 0,
       na_cekanju: 0,
       prosecno_vreme_placanja: 0,
+      broj_faktura_na_cekanju: 0,
+      udeo_na_cekanju: 0,
     },
     profitabilnost_dobavljaca: [],
     nadolazece_isplate: [],
@@ -145,6 +147,24 @@ const DashboardFA = () => {
                     <span>Prosečno vreme plaćanja:</span>
                     <strong>
                       {dashboardData.pregled_finansija.prosecno_vreme_placanja}d
+                    </strong>
+                  </div>
+                  <div className={styles.financeOverviewItem}>
+                    <span>Broj faktura na čekanju:</span>
+                    <strong>
+                      {dashboardData.pregled_finansija.broj_faktura_na_cekanju}
+                    </strong>
+                  </div>
+                  <div className={styles.financeOverviewItem}>
+                    <span>Udeo sredstava na čekanju:</span>
+                    <strong>
+                      {Number(
+                        dashboardData.pregled_finansija.udeo_na_cekanju || 0
+                      ).toLocaleString("sr-Latn-RS", {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })}
+                      %
                     </strong>
                   </div>
                 </div>

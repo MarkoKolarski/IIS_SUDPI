@@ -20,14 +20,14 @@
 /* Header Section */
 .dashboardHeader {
     background-color: #14b8a6; /* Main green from login page */
-    padding: 24px;
+    padding: 28px;
     text-align: center;
     width: 100%;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .dashboardHeader h1 {
-    font-size: 30px;
+    font-size: 34px;
     font-weight: 700;
     color: #ffffff; /* White text on green background */
     margin: 0;

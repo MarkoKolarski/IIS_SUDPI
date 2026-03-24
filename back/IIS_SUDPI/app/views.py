@@ -258,6 +258,10 @@ def dashboard_finansijski_analiticar(request):
     ).aggregate(
         total=Sum('iznos_f')
     )['total'] or Decimal('0.00')
+
+    broj_faktura_na_cekanju = Faktura.objects.filter(
+        status_f__in=['primljena', 'verifikovana']
+    ).count()
     
     isplacene_fakture = Faktura.objects.filter(
         status_f='isplacena',
@@ -278,7 +282,14 @@ def dashboard_finansijski_analiticar(request):
     pregled_finansija = {
         'ukupno_placeno': float(ukupno_placeno),
         'na_cekanju': float(na_cekanju),
-        'prosecno_vreme_placanja': prosecno_vreme
+        'prosecno_vreme_placanja': prosecno_vreme,
+        'broj_faktura_na_cekanju': broj_faktura_na_cekanju,
+        'udeo_na_cekanju': round(
+            (float(na_cekanju) / float(ukupno_placeno + na_cekanju) * 100)
+            if (ukupno_placeno + na_cekanju) > 0
+            else 0,
+            1
+        ),
     }
     
     # 2. PROFITABILNOST DOBAVLJAČA
