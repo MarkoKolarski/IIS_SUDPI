@@ -62,8 +62,8 @@ class FakturaSerializer(serializers.ModelSerializer):
     def get_status_display(self, obj):
         """Vraća čitljiv naziv statusa"""
         status_mapping = {
-            'primljena': 'Primljeno',
-            'verifikovana': 'Čeka verifikaciju',
+            'primljena': 'Čeka verifikaciju',
+            'verifikovana': 'Čeka isplatu',
             'isplacena': 'Plaćeno',
             'odbijena': 'Odbačeno'
         }
@@ -116,8 +116,8 @@ class FakturaDetailSerializer(serializers.ModelSerializer):
     def get_status_display(self, obj):
         """Vraća čitljiv naziv statusa"""
         status_mapping = {
-            'primljena': 'Primljeno',
-            'verifikovana': 'Čeka verifikaciju',
+            'primljena': 'Čeka verifikaciju',
+            'verifikovana': 'Čeka isplatu',
             'isplacena': 'Plaćeno',
             'odbijena': 'Odbačeno'
         }

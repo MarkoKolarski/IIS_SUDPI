@@ -79,6 +79,13 @@ const InvoiceDetails = () => {
     invoice?.status_f === "primljena" || invoice?.status_f === "verifikovana";
   const hasTransaction = Boolean(invoice?.transakcija);
 
+  const handleRejectAction = () => {
+    const reason = prompt("Unesite razlog odbacivanja:");
+    if (reason) {
+      handleInvoiceAction("reject", reason);
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -272,22 +279,29 @@ const InvoiceDetails = () => {
                     <p className={styles.notificationQuestion}>
                       {invoice.status_f === "primljena"
                         ? "Da li želite da verifikujete fakturu?"
-                        : "Da li želite da odobrite isplatu?"}
+                        : "Da li želite da izvršite plaćanje (simulacija)?"}
                     </p>
                     <div className={styles.notificationActions}>
-                      <button
-                        className={`${styles.notificationBtn} ${styles.confirm}`}
-                        onClick={() => handleInvoiceAction("approve")}
-                        disabled={actionLoading}
-                      >
-                        {actionLoading ? "Procesiranje..." : "Odobri"}
-                      </button>
+                      {invoice.status_f === "primljena" ? (
+                        <button
+                          className={`${styles.notificationBtn} ${styles.confirm}`}
+                          onClick={() => handleInvoiceAction("approve")}
+                          disabled={actionLoading}
+                        >
+                          {actionLoading ? "Procesiranje..." : "Verifikuj"}
+                        </button>
+                      ) : (
+                        <button
+                          className={`${styles.notificationBtn} ${styles.confirm}`}
+                          onClick={openPaymentSimulation}
+                          disabled={actionLoading}
+                        >
+                          Izvrši plaćanje
+                        </button>
+                      )}
                       <button
                         className={`${styles.notificationBtn} ${styles.decline}`}
-                        onClick={() => {
-                          const reason = prompt("Unesite razlog odbacivanja:");
-                          if (reason) handleInvoiceAction("reject", reason);
-                        }}
+                        onClick={handleRejectAction}
                         disabled={actionLoading}
                       >
                         Odbaci
@@ -305,15 +319,6 @@ const InvoiceDetails = () => {
             <button className={styles.backBtn} onClick={() => navigate("/invoice")}>
               ← Nazad na listu faktura
             </button>
-            {invoice.status_f === "verifikovana" ? (
-              <button className={styles.simulatePaymentBtn} onClick={openPaymentSimulation}>
-                Simulacija plaćanja
-              </button>
-            ) : (
-              <button className={styles.simulatePaymentBtn} disabled>
-                Simulacija plaćanja nije dostupna
-              </button>
-            )}
           </div>
         </div>
       </main>

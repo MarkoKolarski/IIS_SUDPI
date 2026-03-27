@@ -551,8 +551,8 @@ def invoice_filter_options(request):
     # Dostupni statusi faktura
     statusi = [
         {'value': 'svi', 'label': 'Svi statusi'},
-        {'value': 'primljena', 'label': 'Primljeno'},
-        {'value': 'verifikovana', 'label': 'Čeka verifikaciju'},
+        {'value': 'primljena', 'label': 'Čeka verifikaciju'},
+        {'value': 'verifikovana', 'label': 'Čeka isplatu'},
         {'value': 'isplacena', 'label': 'Plaćeno'},
         {'value': 'odbijena', 'label': 'Odbačeno'},
     ]
@@ -608,33 +608,59 @@ def invoice_action(request, invoice_id):
     API endpoint za akcije nad fakturom (potpis, odbacivanje)
     """
     try:
-        faktura = get_object_or_404(Faktura, sifra_f=invoice_id)
+        faktura = get_object_or_404(Faktura.objects.select_related('transakcija'), sifra_f=invoice_id)
         action = request.data.get('action')
-        
+
         if action == 'approve':
             if faktura.status_f == 'primljena':
                 faktura.status_f = 'verifikovana'
                 faktura.razlog_cekanja_f = None
-            elif faktura.status_f == 'verifikovana':
-                faktura.status_f = 'isplacena'
-            faktura.save()
-            
+                faktura.save()
+
+                return Response({
+                    'message': 'Faktura je uspešno verifikovana.',
+                    'new_status': faktura.status_f
+                }, status=status.HTTP_200_OK)
+
+            if faktura.status_f == 'verifikovana':
+                return Response({
+                    'detail': 'Za izvršenje isplate koristite simulaciju plaćanja.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             return Response({
-                'message': 'Faktura je uspešno odobrena.',
-                'new_status': faktura.status_f
-            }, status=status.HTTP_200_OK)
-            
+                'detail': f'Akcija approve nije dozvoljena za status {faktura.status_f}.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         elif action == 'reject':
-            reason = request.data.get('reason', '')
-            faktura.status_f = 'odbijena'
-            faktura.razlog_cekanja_f = reason
-            faktura.save()
-            
+            reason = (request.data.get('reason') or '').strip()
+            if not reason:
+                return Response({
+                    'detail': 'Razlog odbacivanja je obavezan.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if faktura.status_f == 'isplacena':
+                return Response({
+                    'detail': 'Nije moguće odbaciti već isplaćenu fakturu.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            with transaction.atomic():
+                faktura.status_f = 'odbijena'
+                faktura.razlog_cekanja_f = reason
+                faktura.save()
+
+                transaction_status = None
+                if hasattr(faktura, 'transakcija') and faktura.transakcija:
+                    if faktura.transakcija.status_t != 'uspesna':
+                        faktura.transakcija.status_t = 'neuspesna'
+                        faktura.transakcija.save(update_fields=['status_t'])
+                    transaction_status = faktura.transakcija.status_t
+
             return Response({
                 'message': 'Faktura je odbijena.',
-                'new_status': faktura.status_f
+                'new_status': faktura.status_f,
+                'transaction_status': transaction_status
             }, status=status.HTTP_200_OK)
-            
+
         else:
             return Response({'detail': 'Nevalidna akcija.'}, status=status.HTTP_400_BAD_REQUEST)
             

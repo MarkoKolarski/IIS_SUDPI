@@ -452,19 +452,19 @@
     text-align: center;
 }
 
-.statusWaiting {
+.statusAwaitingVerification {
     background-color: #fef3c7;
     color: #92400e;
+}
+
+.statusAwaitingPayment {
+    background-color: #dbeafe;
+    color: #1e3a8a;
 }
 
 .statusPaid {
     background-color: #d1fae5; /* Light green background */
     color: #065f46; /* Dark green text */
-}
-
-.statusReceived {
-    background-color: #a7f3d0; /* Medium green background */
-    color: #134e4a; /* Dark green text */
 }
 
 .statusRejected {

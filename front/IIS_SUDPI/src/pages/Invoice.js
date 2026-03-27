@@ -158,11 +158,11 @@ const Invoice = () => {
   const getStatusClassName = (status) => {
     switch (status) {
       case "Čeka verifikaciju":
-        return "statusWaiting";
+        return "statusAwaitingVerification";
+      case "Čeka isplatu":
+        return "statusAwaitingPayment";
       case "Plaćeno":
         return "statusPaid";
-      case "Primljeno":
-        return "statusReceived";
       case "Odbačeno":
         return "statusRejected";
       default:
