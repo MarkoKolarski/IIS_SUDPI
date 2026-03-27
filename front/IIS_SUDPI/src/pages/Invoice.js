@@ -19,6 +19,7 @@ const Invoice = () => {
     dobavljac: "svi",
     datum: "svi",
   });
+  const [actionableOnly, setActionableOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [pagination, setPagination] = useState({
@@ -59,6 +60,10 @@ const Invoice = () => {
         page_size: 10,
       });
 
+      if (actionableOnly) {
+        params.append("actionable_only", "1");
+      }
+
       if (activeSearch) {
         params.append("search", activeSearch);
       }
@@ -78,7 +83,7 @@ const Invoice = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, activeSearch, pagination.current_page]);
+  }, [filters, activeSearch, pagination.current_page, actionableOnly]);
 
   const handleFilterChange = (filterType, value) => {
     setFilters((prev) => ({
@@ -97,6 +102,11 @@ const Invoice = () => {
   const clearSearch = () => {
     setSearchQuery("");
     setActiveSearch("");
+    setPagination((prev) => ({ ...prev, current_page: 1 }));
+  };
+
+  const toggleActionableOnly = () => {
+    setActionableOnly((prev) => !prev);
     setPagination((prev) => ({ ...prev, current_page: 1 }));
   };
 
@@ -212,6 +222,16 @@ const Invoice = () => {
 
         <section className={styles.filterSection}>
           <div className={styles.filterControls}>
+            <div className={styles.actionableToggleWrap}>
+              <label className={styles.actionableToggleLabel}>
+                <input
+                  type="checkbox"
+                  checked={actionableOnly}
+                  onChange={toggleActionableOnly}
+                />
+                <span>Samo fakture za radnju</span>
+              </label>
+            </div>
             <div className={styles.filterDropdown}>
               <label>Status</label>
               <button onClick={() => toggleDropdown("status")}>

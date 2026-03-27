@@ -453,6 +453,10 @@ def invoice_list(request):
     status_filter = request.GET.get('status')
     if status_filter and status_filter != 'svi':
         queryset = queryset.filter(status_f=status_filter)
+
+    actionable_only = request.GET.get('actionable_only')
+    if actionable_only in ('1', 'true', 'True'):
+        queryset = queryset.filter(status_f__in=['primljena', 'verifikovana'])
     
     # Filtering po dobavljaču
     dobavljac_filter = request.GET.get('dobavljac')

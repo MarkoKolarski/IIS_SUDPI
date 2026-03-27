@@ -13,6 +13,7 @@ const InvoiceDetails = () => {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [expandedCard, setExpandedCard] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
@@ -71,6 +72,24 @@ const InvoiceDetails = () => {
   useEffect(() => {
     loadInvoiceDetails();
   }, [loadInvoiceDetails]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setExpandedCard(null);
+      }
+    };
+
+    if (expandedCard) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", onKeyDown);
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [expandedCard]);
 
   const hasProcessSteps =
     Array.isArray(invoice?.process_steps) && invoice.process_steps.length > 0;
@@ -138,6 +157,14 @@ const InvoiceDetails = () => {
         </header>
 
         <div className={styles.invoiceDetailsContent}>
+          {expandedCard && (
+            <button
+              type="button"
+              className={styles.expandedOverlay}
+              aria-label="Zatvori fokus prikaz"
+              onClick={() => setExpandedCard(null)}
+            />
+          )}
           <section className={styles.invoiceSummaryCard}>
             <div className={styles.invoiceSummaryHeader}>
               <h2>Faktura ID: {invoice.sifra_f}</h2>
@@ -204,42 +231,98 @@ const InvoiceDetails = () => {
           </section>
 
           <section className={styles.bottomCards}>
-            <div className={styles.itemsCard}>
-              <div className={styles.cardHeader}>
+            <div
+              className={`${styles.itemsCard} ${
+                expandedCard === "items" ? styles.expandedCard : ""
+              } ${expandedCard === "items" ? styles.expandedItemsCard : ""}`}
+            >
+              <div className={`${styles.cardHeader} ${styles.cardHeaderWithControls}`}>
                 <h3>Stavke fakture</h3>
+                <button
+                  type="button"
+                  className={styles.cardExpandButton}
+                  onClick={() =>
+                    setExpandedCard((prev) => (prev === "items" ? null : "items"))
+                  }
+                  aria-label={
+                    expandedCard === "items"
+                      ? "Smanji stavke fakture"
+                      : "Proširi stavke fakture"
+                  }
+                  title={expandedCard === "items" ? "Smanji" : "Proširi"}
+                >
+                  {expandedCard === "items" ? "✕" : "⤢"}
+                </button>
               </div>
               <div className={styles.cardBody}>
-                {hasItems ? (
-                  invoice.stavke.map((stavka) => (
-                    <div key={stavka.sifra_sf} className={styles.invoiceItem}>
-                      <p>
-                        <strong>{stavka.naziv_sf}</strong>
-                      </p>
-                      <p>
-                        Količina: {stavka.kolicina_sf} | Cena po jedinici:{" "}
-                        {formatAmount(stavka.cena_po_jed)}
-                      </p>
-                      {stavka.opis_sf && <p>Opis: {stavka.opis_sf}</p>}
-                    </div>
-                  ))
-                ) : (
-                  <div className={styles.noData}>Nema stavki fakture</div>
-                )}
+                <div
+                  className={`${styles.scrollablePanel} ${
+                    expandedCard === "items" ? styles.expandedScrollablePanel : ""
+                  }`}
+                  role="region"
+                  aria-label="Lista stavki fakture"
+                  tabIndex={0}
+                >
+                  {hasItems ? (
+                    invoice.stavke.map((stavka) => (
+                      <div key={stavka.sifra_sf} className={styles.invoiceItem}>
+                        <p>
+                          <strong>{stavka.naziv_sf}</strong>
+                        </p>
+                        <p>
+                          Količina: {stavka.kolicina_sf} | Cena po jedinici:{" "}
+                          {formatAmount(stavka.cena_po_jed)}
+                        </p>
+                        {stavka.opis_sf && <p>Opis: {stavka.opis_sf}</p>}
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.noData}>Nema stavki fakture</div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className={styles.discrepancyCard}>
-              <div className={styles.cardHeader}>
+            <div
+              className={`${styles.discrepancyCard} ${
+                expandedCard === "reason" ? styles.expandedCard : ""
+              } ${expandedCard === "reason" ? styles.expandedReasonCard : ""}`}
+            >
+              <div className={`${styles.cardHeader} ${styles.cardHeaderWithControls}`}>
                 <h3>Razlog čekanja</h3>
+                <button
+                  type="button"
+                  className={styles.cardExpandButton}
+                  onClick={() =>
+                    setExpandedCard((prev) => (prev === "reason" ? null : "reason"))
+                  }
+                  aria-label={
+                    expandedCard === "reason"
+                      ? "Smanji razlog čekanja"
+                      : "Proširi razlog čekanja"
+                  }
+                  title={expandedCard === "reason" ? "Smanji" : "Proširi"}
+                >
+                  {expandedCard === "reason" ? "✕" : "⤢"}
+                </button>
               </div>
               <div className={styles.cardBody}>
-                {invoice.razlog_cekanja_f ? (
-                  <p>
-                    <strong>Razlog:</strong> {invoice.razlog_cekanja_f}
-                  </p>
-                ) : (
-                  <div className={styles.noData}>Nema razloga čekanja za ovu fakturu</div>
-                )}
+                <div
+                  className={`${styles.scrollablePanel} ${
+                    expandedCard === "reason" ? styles.expandedScrollablePanel : ""
+                  }`}
+                  role="region"
+                  aria-label="Razlog čekanja fakture"
+                  tabIndex={0}
+                >
+                  {invoice.razlog_cekanja_f ? (
+                    <p>
+                      <strong>Razlog:</strong> {invoice.razlog_cekanja_f}
+                    </p>
+                  ) : (
+                    <div className={styles.noData}>Nema razloga čekanja za ovu fakturu</div>
+                  )}
+                </div>
               </div>
             </div>
 

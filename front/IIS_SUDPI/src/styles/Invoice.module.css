@@ -51,6 +51,34 @@
     align-items: flex-end;
 }
 
+.actionableToggleWrap {
+    display: flex;
+    align-items: flex-end;
+    min-height: 74px;
+}
+
+.actionableToggleLabel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #134e4a;
+    background: #ffffff;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    height: 46px;
+    padding: 0 14px;
+    white-space: nowrap;
+}
+
+.actionableToggleLabel input {
+    width: 16px;
+    height: 16px;
+    accent-color: #14b8a6;
+    cursor: pointer;
+}
+
 .filterDropdown {
     display: flex;
     flex-direction: column;
@@ -491,6 +519,16 @@
 
     .searchControl {
         width: 100%;
+    }
+
+    .actionableToggleWrap {
+        width: 100%;
+        min-height: auto;
+    }
+
+    .actionableToggleLabel {
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .searchInlineWrap {
