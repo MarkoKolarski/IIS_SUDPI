@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import MainSideBar from "../components/MainSideBar";
 import styles from "../styles/Penalties.module.css";
 import axiosInstance from "../axiosInstance";
+import { FaChevronDown, FaShieldAlt } from "react-icons/fa";
 
 const Penalties = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -16,6 +17,10 @@ const Penalties = () => {
   });
   const [checkingViolations, setCheckingViolations] = useState(false);
   const [violationMessage, setViolationMessage] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState({
+    dobavljac: false,
+    status: false,
+  });
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
@@ -82,6 +87,23 @@ const Penalties = () => {
       ...prev,
       [filterName]: value,
     }));
+    setDropdownOpen((prev) => ({
+      ...prev,
+      [filterName]: false,
+    }));
+  };
+
+  const toggleDropdown = (dropdownType) => {
+    setDropdownOpen((prev) => ({
+      ...prev,
+      [dropdownType]: !prev[dropdownType],
+    }));
+  };
+
+  const getSelectedLabel = (filterType, value) => {
+    const options = filterOptions[filterType] || [];
+    const selected = options.find((option) => option.value === value);
+    return selected ? selected.label : "Svi";
   };
 
   // Handler za automatsku proveru kršenja i kreiranje penala
@@ -164,32 +186,44 @@ const Penalties = () => {
 
         <section className={styles.penaltiesFilterSection}>
           <div className={styles.filterDropdown}>
-            <label htmlFor="dobavljac-filter">Dobavljač</label>
-            <select
-              id="dobavljac-filter"
-              value={selectedFilters.dobavljac}
-              onChange={(e) => handleFilterChange("dobavljac", e.target.value)}
-            >
-              {filterOptions.dobavljaci?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <label>Dobavljač</label>
+            <button type="button" onClick={() => toggleDropdown("dobavljac")}>
+              <span>{getSelectedLabel("dobavljaci", selectedFilters.dobavljac)}</span>
+              <FaChevronDown />
+            </button>
+            {dropdownOpen.dobavljac && (
+              <div className={styles.dropdownMenu}>
+                {(filterOptions.dobavljaci || []).map((option) => (
+                  <div
+                    key={option.value}
+                    className={styles.dropdownItem}
+                    onClick={() => handleFilterChange("dobavljac", option.value)}
+                  >
+                    {option.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className={styles.filterDropdown}>
-            <label htmlFor="status-filter">Status</label>
-            <select
-              id="status-filter"
-              value={selectedFilters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-            >
-              {filterOptions.statusi?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <label>Status</label>
+            <button type="button" onClick={() => toggleDropdown("status")}>
+              <span>{getSelectedLabel("statusi", selectedFilters.status)}</span>
+              <FaChevronDown />
+            </button>
+            {dropdownOpen.status && (
+              <div className={styles.dropdownMenu}>
+                {(filterOptions.statusi || []).map((option) => (
+                  <div
+                    key={option.value}
+                    className={styles.dropdownItem}
+                    onClick={() => handleFilterChange("status", option.value)}
+                  >
+                    {option.label}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className={styles.filterDropdown} style={{ marginLeft: 'auto' }}>
             <label>&nbsp;</label>
@@ -205,7 +239,7 @@ const Penalties = () => {
                 </>
               ) : (
                 <>
-                  <span>🔍</span>
+                  <FaShieldAlt className={styles.buttonIcon} aria-hidden="true" />
                   Proveri kršenja ugovora
                 </>
               )}

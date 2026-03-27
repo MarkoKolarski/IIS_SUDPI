@@ -48,6 +48,7 @@
     display: flex;
     flex-direction: column;
     min-width: 200px;
+    position: relative;
 }
 
 .filterDropdown label {
@@ -57,8 +58,7 @@
     margin-bottom: 8px;
 }
 
-.filterDropdown button,
-.filterDropdown select {
+.filterDropdown button {
     background-color: #14b8a6; /* Main green */
     color: white;
     border: none;
@@ -71,21 +71,42 @@
     justify-content: space-between;
     align-items: center;
     transition: background-color 0.2s;
+    width: 100%;
 }
 
-.filterDropdown button:hover,
-.filterDropdown select:hover {
+.filterDropdown button:hover {
     background-color: #0f766e; /* Darker green on hover */
 }
 
-.filterDropdown select {
-    width: 100%;
-    appearance: none;
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-.filterDropdown select option {
-    background-color: white;
+.dropdownItem {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f9ff;
+    transition: background-color 0.2s;
+    font-size: 14px;
     color: #134e4a;
+}
+
+.dropdownItem:hover {
+    background-color: #d1fae5;
+}
+
+.dropdownItem:last-child {
+    border-bottom: none;
 }
 
 /* Check Violations Button */
@@ -119,8 +140,9 @@
     cursor: not-allowed;
 }
 
-.checkViolationsBtn span:first-child {
-    font-size: 18px;
+.buttonIcon {
+    font-size: 16px;
+    flex-shrink: 0;
 }
 
 /* Spinner Animation */
@@ -390,6 +412,20 @@
 }
 
 @media (max-width: 768px) {
+    .penaltiesFilterSection {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filterDropdown {
+        min-width: 0;
+    }
+
+    .checkViolationsBtn {
+        width: 100%;
+        min-width: 0;
+    }
+
     .analysisCardsWrapper {
         flex-direction: column;
     }

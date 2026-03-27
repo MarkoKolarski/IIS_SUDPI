@@ -3,6 +3,7 @@ import MainSideBar from "../components/MainSideBar";
 import styles from "../styles/Reports.module.css";
 import axiosInstance from "../axiosInstance";
 import { FaChevronDown } from "react-icons/fa";
+import { FaFilePdf } from "react-icons/fa";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
@@ -536,7 +537,7 @@ const Reports = () => {
           <div className={styles.filterActions}>
             <label htmlFor="pdf-download">&nbsp;</label>
             <button className={styles.downloadPdfBtn} onClick={downloadPDF}>
-              <span className={styles.pdfIcon}>📄</span>
+              <FaFilePdf className={styles.buttonIcon} aria-hidden="true" />
               Preuzmi PDF
             </button>
           </div>
