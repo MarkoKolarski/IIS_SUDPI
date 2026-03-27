@@ -204,21 +204,6 @@ const InvoiceDetails = () => {
           </section>
 
           <section className={styles.bottomCards}>
-            <div className={styles.discrepancyCard}>
-              <div className={styles.cardHeader}>
-                <h3>Razlog čekanja</h3>
-              </div>
-              <div className={styles.cardBody}>
-                {invoice.razlog_cekanja_f ? (
-                  <p>
-                    <strong>Razlog:</strong> {invoice.razlog_cekanja_f}
-                  </p>
-                ) : (
-                  <div className={styles.noData}>Nema razloga čekanja za ovu fakturu</div>
-                )}
-              </div>
-            </div>
-
             <div className={styles.itemsCard}>
               <div className={styles.cardHeader}>
                 <h3>Stavke fakture</h3>
@@ -239,6 +224,21 @@ const InvoiceDetails = () => {
                   ))
                 ) : (
                   <div className={styles.noData}>Nema stavki fakture</div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.discrepancyCard}>
+              <div className={styles.cardHeader}>
+                <h3>Razlog čekanja</h3>
+              </div>
+              <div className={styles.cardBody}>
+                {invoice.razlog_cekanja_f ? (
+                  <p>
+                    <strong>Razlog:</strong> {invoice.razlog_cekanja_f}
+                  </p>
+                ) : (
+                  <div className={styles.noData}>Nema razloga čekanja za ovu fakturu</div>
                 )}
               </div>
             </div>

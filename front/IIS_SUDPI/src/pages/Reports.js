@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import MainSideBar from "../components/MainSideBar";
 import styles from "../styles/Reports.module.css";
 import axiosInstance from "../axiosInstance";
+import { FaChevronDown } from "react-icons/fa";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
@@ -30,6 +31,11 @@ const Reports = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState({
+    status: false,
+    period: false,
+    group_by: false,
+  });
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
@@ -71,6 +77,23 @@ const Reports = () => {
       ...prevFilters,
       [filterType]: value,
     }));
+    setDropdownOpen((prev) => ({
+      ...prev,
+      [filterType]: false,
+    }));
+  };
+
+  const toggleDropdown = (dropdownType) => {
+    setDropdownOpen((prev) => ({
+      ...prev,
+      [dropdownType]: !prev[dropdownType],
+    }));
+  };
+
+  const getSelectedLabel = (filterType, value) => {
+    const options = filterOptions[filterType] || [];
+    const selected = options.find((option) => option.value === value);
+    return selected ? selected.label : "Svi";
   };
 
   const formatNumber = (number) => {
@@ -448,46 +471,64 @@ const Reports = () => {
         <section className={styles.reportsFilterSection}>
           <div className={styles.filterControls}>
             <div className={styles.filterDropdown}>
-              <label htmlFor="status-filter">Status</label>
-              <select
-                id="status-filter"
-                value={filters.status}
-                onChange={(e) => handleFilterChange("status", e.target.value)}
-              >
-                {(filterOptions.statusi || []).map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
+              <label>Status</label>
+              <button type="button" onClick={() => toggleDropdown("status")}>
+                <span>{getSelectedLabel("statusi", filters.status)}</span>
+                <FaChevronDown />
+              </button>
+              {dropdownOpen.status && (
+                <div className={styles.dropdownMenu}>
+                  {(filterOptions.statusi || []).map((status) => (
+                    <div
+                      key={status.value}
+                      className={styles.dropdownItem}
+                      onClick={() => handleFilterChange("status", status.value)}
+                    >
+                      {status.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className={styles.filterDropdown}>
-              <label htmlFor="period-filter">Period</label>
-              <select
-                id="period-filter"
-                value={filters.period}
-                onChange={(e) => handleFilterChange("period", e.target.value)}
-              >
-                {(filterOptions.periodi || []).map((period) => (
-                  <option key={period.value} value={period.value}>
-                    {period.label}
-                  </option>
-                ))}
-              </select>
+              <label>Period</label>
+              <button type="button" onClick={() => toggleDropdown("period")}>
+                <span>{getSelectedLabel("periodi", filters.period)}</span>
+                <FaChevronDown />
+              </button>
+              {dropdownOpen.period && (
+                <div className={styles.dropdownMenu}>
+                  {(filterOptions.periodi || []).map((period) => (
+                    <div
+                      key={period.value}
+                      className={styles.dropdownItem}
+                      onClick={() => handleFilterChange("period", period.value)}
+                    >
+                      {period.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className={styles.filterDropdown}>
-              <label htmlFor="group-by-filter">Grupiši po</label>
-              <select
-                id="group-by-filter"
-                value={filters.group_by}
-                onChange={(e) => handleFilterChange("group_by", e.target.value)}
-              >
-                {(filterOptions.grupiranje || []).map((group) => (
-                  <option key={group.value} value={group.value}>
-                    {group.label}
-                  </option>
-                ))}
-              </select>
+              <label>Grupiši po</label>
+              <button type="button" onClick={() => toggleDropdown("group_by")}>
+                <span>{getSelectedLabel("grupiranje", filters.group_by)}</span>
+                <FaChevronDown />
+              </button>
+              {dropdownOpen.group_by && (
+                <div className={styles.dropdownMenu}>
+                  {(filterOptions.grupiranje || []).map((group) => (
+                    <div
+                      key={group.value}
+                      className={styles.dropdownItem}
+                      onClick={() => handleFilterChange("group_by", group.value)}
+                    >
+                      {group.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
-from django.db.models import Sum, Q, Count, Avg, Max
+from django.db.models import Sum, Q, Count, Avg, Max, Case, When, Value, IntegerField
 from django.db.models.functions import TruncMonth
 from decimal import Decimal
 from datetime import timedelta, date
@@ -426,8 +426,8 @@ def _extract_status_codes(search_query):
     normalized_query = _normalize_search_text(search_query)
 
     status_aliases = {
-        'primljena': ['primljena', 'primljeno'],
-        'verifikovana': ['verifikovana', 'verifikovano', 'ceka verifikaciju', 'ceka'],
+        'primljena': ['primljena', 'primljeno', 'ceka verifikaciju'],
+        'verifikovana': ['verifikovana', 'verifikovano', 'ceka isplatu'],
         'isplacena': ['isplacena', 'placena', 'placeno'],
         'odbijena': ['odbijena', 'odbijeno', 'odbij'],
     }
@@ -519,8 +519,17 @@ def invoice_list(request):
 
         queryset = queryset.filter(search_filters)
     
-    # Sortiranje po datumu prijema (najnovije prvo)
-    queryset = queryset.order_by('-datum_prijema_f', '-sifra_f')
+    # Sortiranje po prioritetu statusa, zatim po datumu prijema (najnovije prvo)
+    queryset = queryset.annotate(
+        status_sort_order=Case(
+            When(status_f='primljena', then=Value(0)),
+            When(status_f='verifikovana', then=Value(1)),
+            When(status_f='odbijena', then=Value(2)),
+            When(status_f='isplacena', then=Value(3)),
+            default=Value(99),
+            output_field=IntegerField(),
+        )
+    ).order_by('status_sort_order', '-datum_prijema_f', '-sifra_f')
     
     # Paginacija
     page_size = int(request.GET.get('page_size', 10))

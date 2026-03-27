@@ -89,6 +89,7 @@
 .filterDropdown {
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .filterDropdown label {
@@ -98,15 +99,14 @@
     margin-bottom: 8px;
 }
 
-.filterDropdown button,
-.filterDropdown select {
+.filterDropdown button {
     background-color: #14b8a6; /* Main green */
     color: white;
     border: none;
     border-radius: 6px;
     padding: 0 16px;
     height: 46px;
-    width: 140px;
+    width: 160px;
     font-size: 15px;
     cursor: pointer;
     display: flex;
@@ -115,24 +115,39 @@
     transition: background-color 0.2s;
 }
 
-.filterDropdown button:hover,
-.filterDropdown select:hover {
+.filterDropdown button:hover {
     background-color: #0f766e; /* Darker green on hover */
 }
 
-.filterDropdown select {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>');
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 16px;
-    padding-right: 32px;
+.dropdownMenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-#group-by-filter {
-    width: 160px;
+.dropdownItem {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f9ff;
+    transition: background-color 0.2s;
+    font-size: 14px;
+    color: #134e4a;
+}
+
+.dropdownItem:hover {
+    background-color: #d1fae5;
+}
+
+.dropdownItem:last-child {
+    border-bottom: none;
 }
 
 .generateReportBtn {
@@ -419,7 +434,6 @@
         width: 100%;
     }
     .filterDropdown button,
-    .filterDropdown select,
     .downloadPdfBtn {
         width: 100%;
     }
