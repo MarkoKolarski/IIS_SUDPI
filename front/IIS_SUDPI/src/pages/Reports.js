@@ -110,6 +110,14 @@ const Reports = () => {
     return `${sign}${profit.toFixed(1)}%`;
   };
 
+  // PDF-safe format (ASCII only) to avoid broken glyphs with built-in jsPDF fonts.
+  const formatProfitabilityForPdf = (profit) => {
+    const numericProfit = Number(profit) || 0;
+    const sign = numericProfit >= 0 ? "+" : "-";
+    const absolute = Math.abs(numericProfit).toFixed(1);
+    return `${sign}${absolute}%`;
+  };
+
   const downloadPDF = async () => {
     try {
       // Prikaži loading indikator
@@ -269,10 +277,10 @@ const Reports = () => {
       pdf.setDrawColor(20, 184, 166);
       
       const colWidths = {
-        name: 75,
-        quantity: 35,
+        name: 70,
+        quantity: 30,
         cost: 45,
-        profit: 30
+        profit: 35
       };
       
       let xPos = margin;
@@ -287,7 +295,7 @@ const Reports = () => {
       pdf.text(encodeText(groupLabel.toUpperCase()), xPos + 3, yPosition + 7);
       xPos += colWidths.name;
       
-      pdf.text(encodeText('KOLIČINA'), xPos + 3, yPosition + 7);
+      pdf.text(encodeText('KOLIČINA (kom)'), xPos + 3, yPosition + 7);
       xPos += colWidths.quantity;
       
       pdf.text(encodeText('UKUPAN TROŠAK'), xPos + 3, yPosition + 7);
@@ -315,7 +323,7 @@ const Reports = () => {
           xPos = margin;
           pdf.text(encodeText(groupLabel.toUpperCase()), xPos + 3, yPosition + 7);
           xPos += colWidths.name;
-          pdf.text(encodeText('KOLIČINA'), xPos + 3, yPosition + 7);
+          pdf.text(encodeText('KOLIČINA (kom)'), xPos + 3, yPosition + 7);
           xPos += colWidths.quantity;
           pdf.text(encodeText('UKUPAN TROŠAK'), xPos + 3, yPosition + 7);
           xPos += colWidths.cost;
@@ -350,19 +358,39 @@ const Reports = () => {
         pdf.text(encodeText(displayName), xPos + 3, yPosition + 5);
         xPos += colWidths.name;
         
-        pdf.text(formatNumber(row.quantity), xPos + 3, yPosition + 5);
+        pdf.text(
+          formatNumber(row.quantity),
+          xPos + colWidths.quantity - 3,
+          yPosition + 5,
+          { align: 'right' }
+        );
         xPos += colWidths.quantity;
         
-        pdf.text(encodeText(formatCurrency(row.total_cost)), xPos + 3, yPosition + 5);
+        pdf.text(
+          encodeText(formatCurrency(row.total_cost)),
+          xPos + colWidths.cost - 3,
+          yPosition + 5,
+          { align: 'right' }
+        );
         xPos += colWidths.cost;
         
-        // Profitabilnost sa bojom i strelicom
+        // Profitabilnost sa bojom (bez nepouzdanih unicode simbola u PDF-u)
         if (row.profitability >= 0) {
           pdf.setTextColor(0, 150, 0);
-          pdf.text('▲ ' + formatProfitability(row.profitability), xPos + 3, yPosition + 5);
+          pdf.text(
+            formatProfitabilityForPdf(row.profitability),
+            xPos + colWidths.profit - 3,
+            yPosition + 5,
+            { align: 'right' }
+          );
         } else {
           pdf.setTextColor(200, 0, 0);
-          pdf.text('▼ ' + formatProfitability(row.profitability), xPos + 3, yPosition + 5);
+          pdf.text(
+            formatProfitabilityForPdf(row.profitability),
+            xPos + colWidths.profit - 3,
+            yPosition + 5,
+            { align: 'right' }
+          );
         }
         
         yPosition += rowHeight;
@@ -390,13 +418,28 @@ const Reports = () => {
         pdf.text('UKUPNO:', xPos + 3, yPosition + 7);
         xPos += colWidths.name;
         
-        pdf.text(`${formatNumber(reportsData.total_quantity)} kom`, xPos + 3, yPosition + 7);
+        pdf.text(
+          `${formatNumber(reportsData.total_quantity)}`,
+          xPos + colWidths.quantity - 3,
+          yPosition + 7,
+          { align: 'right' }
+        );
         xPos += colWidths.quantity;
         
-        pdf.text(encodeText(formatCurrency(reportsData.total_cost)), xPos + 3, yPosition + 7);
+        pdf.text(
+          encodeText(formatCurrency(reportsData.total_cost)),
+          xPos + colWidths.cost - 3,
+          yPosition + 7,
+          { align: 'right' }
+        );
         xPos += colWidths.cost;
         
-        pdf.text(formatProfitability(reportsData.total_profitability), xPos + 3, yPosition + 7);
+        pdf.text(
+          formatProfitabilityForPdf(reportsData.total_profitability),
+          xPos + colWidths.profit - 3,
+          yPosition + 7,
+          { align: 'right' }
+        );
         
         yPosition += summaryHeight + 5;
       }
@@ -413,11 +456,6 @@ const Reports = () => {
           pageWidth / 2, 
           pageHeight - 10, 
           { align: 'center' }
-        );
-        pdf.text(
-          encodeText('Sistem za upravljanje nabavkom'), 
-          margin, 
-          pageHeight - 10
         );
       }
 
@@ -645,7 +683,7 @@ const Reports = () => {
                       ? "Dobavljač"
                       : "Kategorija"}
                   </div>
-                  <div className={`${styles.tableCol} ${styles.colKolicina}`}>Količina</div>
+                  <div className={`${styles.tableCol} ${styles.colKolicina}`}>Količina (kom)</div>
                   <div className={`${styles.tableCol} ${styles.colTrosak}`}>Ukupan trošak</div>
                   <div className={`${styles.tableCol} ${styles.colProfit}`}>Profitabilnost</div>
                 </div>
@@ -682,7 +720,7 @@ const Reports = () => {
                     <div className={`${styles.tableRow} ${styles.summaryRow}`}>
                       <div className={`${styles.tableCol} ${styles.colProizvod}`}>UKUPNO:</div>
                       <div className={`${styles.tableCol} ${styles.colKolicina}`}>
-                        {formatNumber(reportsData.total_quantity)} kom
+                        {formatNumber(reportsData.total_quantity)}
                       </div>
                       <div className={`${styles.tableCol} ${styles.colTrosak}`}>
                         {formatCurrency(reportsData.total_cost)}
