@@ -194,6 +194,9 @@ const Reports = () => {
       const statusLabel = filterOptions.statusi.find(s => s.value === filters.status)?.label || filters.status;
       const periodLabel = filterOptions.periodi.find(p => p.value === filters.period)?.label || filters.period;
       const groupLabel = filterOptions.grupiranje.find(g => g.value === filters.group_by)?.label || filters.group_by;
+      const pdfGroupHeaderLabel = filters.group_by === 'proizvodu'
+        ? 'PROIZVOD'
+        : encodeText(groupLabel.toUpperCase());
       
       pdf.setFillColor(236, 253, 245); // Svetlo zelena
       pdf.setDrawColor(167, 243, 208);
@@ -275,6 +278,10 @@ const Reports = () => {
       // Header tabele
       pdf.setFillColor(20, 184, 166);
       pdf.setDrawColor(20, 184, 166);
+
+      const drawCenteredHeaderText = (text, startX, width) => {
+        pdf.text(encodeText(text), startX + width / 2, yPosition + 7, { align: 'center' });
+      };
       
       const colWidths = {
         name: 70,
@@ -292,16 +299,16 @@ const Reports = () => {
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(255, 255, 255);
       
-      pdf.text(encodeText(groupLabel.toUpperCase()), xPos + 3, yPosition + 7);
+      drawCenteredHeaderText(pdfGroupHeaderLabel, xPos, colWidths.name);
       xPos += colWidths.name;
       
-      pdf.text(encodeText('KOLIČINA (kom)'), xPos + 3, yPosition + 7);
+      drawCenteredHeaderText('KOLIČINA', xPos, colWidths.quantity);
       xPos += colWidths.quantity;
       
-      pdf.text(encodeText('UKUPAN TROŠAK'), xPos + 3, yPosition + 7);
+      drawCenteredHeaderText('UKUPAN TROŠAK', xPos, colWidths.cost);
       xPos += colWidths.cost;
       
-      pdf.text('PROFIT', xPos + 3, yPosition + 7);
+      drawCenteredHeaderText('PROFIT', xPos, colWidths.profit);
       
       yPosition += headerHeight + 2;
 
@@ -321,13 +328,13 @@ const Reports = () => {
           pdf.setTextColor(255, 255, 255);
           
           xPos = margin;
-          pdf.text(encodeText(groupLabel.toUpperCase()), xPos + 3, yPosition + 7);
+          drawCenteredHeaderText(pdfGroupHeaderLabel, xPos, colWidths.name);
           xPos += colWidths.name;
-          pdf.text(encodeText('KOLIČINA (kom)'), xPos + 3, yPosition + 7);
+          drawCenteredHeaderText('KOLIČINA', xPos, colWidths.quantity);
           xPos += colWidths.quantity;
-          pdf.text(encodeText('UKUPAN TROŠAK'), xPos + 3, yPosition + 7);
+          drawCenteredHeaderText('UKUPAN TROŠAK', xPos, colWidths.cost);
           xPos += colWidths.cost;
-          pdf.text('PROFIT', xPos + 3, yPosition + 7);
+          drawCenteredHeaderText('PROFIT', xPos, colWidths.profit);
           
           yPosition += headerHeight + 2;
           pdf.setFont('helvetica', 'normal');
@@ -419,7 +426,7 @@ const Reports = () => {
         xPos += colWidths.name;
         
         pdf.text(
-          `${formatNumber(reportsData.total_quantity)}`,
+          `${formatNumber(reportsData.total_quantity)} kom`,
           xPos + colWidths.quantity - 3,
           yPosition + 7,
           { align: 'right' }
@@ -683,7 +690,7 @@ const Reports = () => {
                       ? "Dobavljač"
                       : "Kategorija"}
                   </div>
-                  <div className={`${styles.tableCol} ${styles.colKolicina}`}>Količina (kom)</div>
+                  <div className={`${styles.tableCol} ${styles.colKolicina}`}>Količina</div>
                   <div className={`${styles.tableCol} ${styles.colTrosak}`}>Ukupan trošak</div>
                   <div className={`${styles.tableCol} ${styles.colProfit}`}>Profitabilnost</div>
                 </div>
@@ -720,7 +727,7 @@ const Reports = () => {
                     <div className={`${styles.tableRow} ${styles.summaryRow}`}>
                       <div className={`${styles.tableCol} ${styles.colProizvod}`}>UKUPNO:</div>
                       <div className={`${styles.tableCol} ${styles.colKolicina}`}>
-                        {formatNumber(reportsData.total_quantity)}
+                        {formatNumber(reportsData.total_quantity)} kom
                       </div>
                       <div className={`${styles.tableCol} ${styles.colTrosak}`}>
                         {formatCurrency(reportsData.total_cost)}
