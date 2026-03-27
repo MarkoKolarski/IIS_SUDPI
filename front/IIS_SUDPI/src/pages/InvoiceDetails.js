@@ -24,7 +24,6 @@ const InvoiceDetails = () => {
 
   const closePaymentSimulation = () => {
     setIsPaymentModalOpen(false);
-    // Osveži podatke fakture nakon zatvaranja simulacije
     loadInvoiceDetails();
   };
 
@@ -46,17 +45,12 @@ const InvoiceDetails = () => {
   const handleInvoiceAction = async (action, reason = "") => {
     setActionLoading(true);
     try {
-      const response = await axiosInstance.post(
-        `/invoices/${invoiceId}/action/`,
-        {
-          action: action,
-          reason: reason,
-        }
-      );
+      const response = await axiosInstance.post(`/invoices/${invoiceId}/action/`, {
+        action,
+        reason,
+      });
 
-      // Refresh invoice data after action
       await loadInvoiceDetails();
-
       alert(response.data.message);
     } catch (error) {
       console.error("Greška pri izvršavanju akcije:", error);
@@ -77,6 +71,13 @@ const InvoiceDetails = () => {
   useEffect(() => {
     loadInvoiceDetails();
   }, [loadInvoiceDetails]);
+
+  const hasProcessSteps =
+    Array.isArray(invoice?.process_steps) && invoice.process_steps.length > 0;
+  const hasItems = Array.isArray(invoice?.stavke) && invoice.stavke.length > 0;
+  const canApproveReject =
+    invoice?.status_f === "primljena" || invoice?.status_f === "verifikovana";
+  const hasTransaction = Boolean(invoice?.transakcija);
 
   if (loading) {
     return (
@@ -141,9 +142,7 @@ const InvoiceDetails = () => {
               </div>
               <div className={styles.summaryCol}>
                 <span className={styles.summaryLabel}>Iznos:</span>
-                <span className={styles.summaryValue}>
-                  {formatAmount(invoice.iznos_f)}
-                </span>
+                <span className={styles.summaryValue}>{formatAmount(invoice.iznos_f)}</span>
               </div>
             </div>
             <div className={`${styles.invoiceSummaryRow} ${styles.rowMedium}`}>
@@ -165,14 +164,12 @@ const InvoiceDetails = () => {
                 <span className={styles.summaryLabel}>Status:</span>
                 <span className={styles.summaryValue}>{invoice.status_display}</span>
               </div>
-              {invoice.ugovor && (
-                <div className={styles.summaryCol}>
-                  <span className={styles.summaryLabel}>Ugovor ID:</span>
-                  <span className={styles.summaryValue}>
-                    {invoice.ugovor.sifra_u}
-                  </span>
-                </div>
-              )}
+              <div className={styles.summaryCol}>
+                <span className={styles.summaryLabel}>Ugovor ID:</span>
+                <span className={styles.summaryValue}>
+                  {invoice.ugovor?.sifra_u || "Nema ugovora"}
+                </span>
+              </div>
             </div>
           </section>
 
@@ -181,7 +178,7 @@ const InvoiceDetails = () => {
               <h3>Vizuelni tok procesa</h3>
             </div>
             <div className={styles.processFlowBody}>
-              {invoice.process_steps &&
+              {hasProcessSteps ? (
                 invoice.process_steps.map((step, index) => (
                   <React.Fragment key={step.number}>
                     <div className={`${styles.processStep} ${styles[step.status]}`}>
@@ -192,31 +189,36 @@ const InvoiceDetails = () => {
                       <div className={styles.stepConnector} aria-hidden="true" />
                     )}
                   </React.Fragment>
-                ))}
+                ))
+              ) : (
+                <div className={styles.noData}>Nema podataka o koracima procesa</div>
+              )}
             </div>
           </section>
 
           <section className={styles.bottomCards}>
-            {invoice.razlog_cekanja_f && (
-              <div className={styles.discrepancyCard}>
-                <div className={styles.cardHeader}>
-                  <h3>Razlog čekanja</h3>
-                </div>
-                <div className={styles.cardBody}>
+            <div className={styles.discrepancyCard}>
+              <div className={styles.cardHeader}>
+                <h3>Razlog čekanja</h3>
+              </div>
+              <div className={styles.cardBody}>
+                {invoice.razlog_cekanja_f ? (
                   <p>
                     <strong>Razlog:</strong> {invoice.razlog_cekanja_f}
                   </p>
-                </div>
+                ) : (
+                  <div className={styles.noData}>Nema razloga čekanja za ovu fakturu</div>
+                )}
               </div>
-            )}
+            </div>
 
-            {invoice.stavke && invoice.stavke.length > 0 && (
-              <div className={styles.itemsCard}>
-                <div className={styles.cardHeader}>
-                  <h3>Stavke fakture</h3>
-                </div>
-                <div className={styles.cardBody}>
-                  {invoice.stavke.map((stavka) => (
+            <div className={styles.itemsCard}>
+              <div className={styles.cardHeader}>
+                <h3>Stavke fakture</h3>
+              </div>
+              <div className={styles.cardBody}>
+                {hasItems ? (
+                  invoice.stavke.map((stavka) => (
                     <div key={stavka.sifra_sf} className={styles.invoiceItem}>
                       <p>
                         <strong>{stavka.naziv_sf}</strong>
@@ -227,84 +229,92 @@ const InvoiceDetails = () => {
                       </p>
                       {stavka.opis_sf && <p>Opis: {stavka.opis_sf}</p>}
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <div className={styles.noData}>Nema stavki fakture</div>
+                )}
               </div>
-            )}
+            </div>
 
-            {(invoice.status_f === "primljena" ||
-              invoice.status_f === "verifikovana") && (
-              <div className={styles.notificationCard}>
-                <div className={styles.cardHeader}>
-                  <h3>Akcije</h3>
-                </div>
-                <div className={styles.cardBody}>
-                  <p className={styles.notificationQuestion}>
-                    {invoice.status_f === "primljena"
-                      ? "Da li želite da verifikujete fakturu?"
-                      : "Da li želite da odobrite isplatu?"}
-                  </p>
-                  <div className={styles.notificationActions}>
-                    <button
-                      className={`${styles.notificationBtn} ${styles.confirm}`}
-                      onClick={() => handleInvoiceAction("approve")}
-                      disabled={actionLoading}
-                    >
-                      {actionLoading ? "Procesiranje..." : "Odobri"}
-                    </button>
-                    <button
-                      className={`${styles.notificationBtn} ${styles.decline}`}
-                      onClick={() => {
-                        const reason = prompt("Unesite razlog odbacivanja:");
-                        if (reason) handleInvoiceAction("reject", reason);
-                      }}
-                      disabled={actionLoading}
-                    >
-                      Odbaci
-                    </button>
-                  </div>
-                </div>
+            <div className={styles.transactionCard}>
+              <div className={styles.cardHeader}>
+                <h3>Transakcija</h3>
               </div>
-            )}
+              <div className={styles.cardBody}>
+                {hasTransaction ? (
+                  <>
+                    <p>
+                      <strong>ID transakcije:</strong> {invoice.transakcija.sifra_t}
+                    </p>
+                    <p>
+                      <strong>Datum:</strong> {formatDate(invoice.transakcija.datum_t)}
+                    </p>
+                    <p>
+                      <strong>Potvrda:</strong> {invoice.transakcija.potvrda_t}
+                    </p>
+                    <p>
+                      <strong>Status:</strong> {invoice.transakcija.status_t}
+                    </p>
+                  </>
+                ) : (
+                  <div className={styles.noData}>Nema transakcije za ovu fakturu</div>
+                )}
+              </div>
+            </div>
 
-            {invoice.transakcija && (
-              <div className={styles.transactionCard}>
-                <div className={styles.cardHeader}>
-                  <h3>Transakcija</h3>
-                </div>
-                <div className={styles.cardBody}>
-                  <p>
-                    <strong>ID transakcije:</strong>{" "}
-                    {invoice.transakcija.sifra_t}
-                  </p>
-                  <p>
-                    <strong>Datum:</strong>{" "}
-                    {formatDate(invoice.transakcija.datum_t)}
-                  </p>
-                  <p>
-                    <strong>Potvrda:</strong> {invoice.transakcija.potvrda_t}
-                  </p>
-                  <p>
-                    <strong>Status:</strong> {invoice.transakcija.status_t}
-                  </p>
-                </div>
+            <div className={styles.notificationCard}>
+              <div className={styles.cardHeader}>
+                <h3>Akcije</h3>
               </div>
-            )}
+              <div className={styles.cardBody}>
+                {canApproveReject ? (
+                  <>
+                    <p className={styles.notificationQuestion}>
+                      {invoice.status_f === "primljena"
+                        ? "Da li želite da verifikujete fakturu?"
+                        : "Da li želite da odobrite isplatu?"}
+                    </p>
+                    <div className={styles.notificationActions}>
+                      <button
+                        className={`${styles.notificationBtn} ${styles.confirm}`}
+                        onClick={() => handleInvoiceAction("approve")}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? "Procesiranje..." : "Odobri"}
+                      </button>
+                      <button
+                        className={`${styles.notificationBtn} ${styles.decline}`}
+                        onClick={() => {
+                          const reason = prompt("Unesite razlog odbacivanja:");
+                          if (reason) handleInvoiceAction("reject", reason);
+                        }}
+                        disabled={actionLoading}
+                      >
+                        Odbaci
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className={styles.noData}>Za trenutni status nema dostupnih akcija</div>
+                )}
+              </div>
+            </div>
           </section>
-        </div>
 
-        <div className={styles.actionButtons}>
-          <button className={styles.backBtn} onClick={() => navigate("/invoice")}>
-            ← Nazad na listu faktura
-          </button>
-          {invoice.status_f === "verifikovana" && (
-            <button
-              className={styles.simulatePaymentBtn}
-              onClick={openPaymentSimulation}
-            >
-              Simulacija plaćanja
+          <div className={styles.actionButtons}>
+            <button className={styles.backBtn} onClick={() => navigate("/invoice")}>
+              ← Nazad na listu faktura
             </button>
-          )}
+            {invoice.status_f === "verifikovana" ? (
+              <button className={styles.simulatePaymentBtn} onClick={openPaymentSimulation}>
+                Simulacija plaćanja
+              </button>
+            ) : (
+              <button className={styles.simulatePaymentBtn} disabled>
+                Simulacija plaćanja nije dostupna
+              </button>
+            )}
+          </div>
         </div>
       </main>
 

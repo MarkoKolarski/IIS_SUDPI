@@ -13,7 +13,7 @@
     background-color: #f0fdfa;
     min-height: 100vh;
     position: relative;
-    padding-bottom: 140px;
+    padding-bottom: 32px;
 }
 
 .invoiceDetailsWrapper.sidebarCollapsed .invoiceDetailsMain {
@@ -35,22 +35,24 @@
 }
 
 .invoiceDetailsContent {
-    max-width: 1280px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 36px 32px 48px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 36px;
 }
 
 /* Invoice Summary Card */
 .invoiceSummaryCard {
     width: 100%;
-    max-width: 960px;
+    max-width: 1600px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
     overflow: hidden;
+    border: 1px solid #a7f3d0;
+    background-color: #ffffff;
 }
 
 .invoiceSummaryHeader {
@@ -108,10 +110,12 @@
 /* Process Flow */
 .processFlow {
     width: 100%;
-    max-width: 600px;
+    max-width: 1600px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
     overflow: hidden;
+    border: 1px solid #a7f3d0;
+    background-color: #ffffff;
 }
 
 .processFlowHeader {
@@ -134,6 +138,7 @@
     gap: 18px;
     padding: 28px 32px;
     background-color: #ecfdf5;
+    min-height: 130px;
 }
 
 .processStep {
@@ -191,9 +196,9 @@
 /* Bottom Cards */
 .bottomCards {
     width: 100%;
-    max-width: 960px;
+    max-width: 1600px;
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px;
 }
 
@@ -228,6 +233,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 190px;
 }
 
 .discrepancyCard .cardBody {
@@ -238,8 +244,8 @@
 
 .notificationCard .cardBody {
     gap: 20px;
-    align-items: center;
-    text-align: center;
+    align-items: stretch;
+    text-align: left;
 }
 
 .notificationQuestion {
@@ -252,7 +258,8 @@
 .notificationActions {
     display: flex;
     gap: 16px;
-    justify-content: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
 }
 
 .notificationBtn {
@@ -278,14 +285,21 @@
     transform: translateY(0);
 }
 
+.notificationBtn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 /* Simulation Button */
 .simulatePaymentBtn {
     background-color: #14b8a6;
     color: #ffffff;
     border: none;
     border-radius: 8px;
-    padding: 16px 36px;
-    font-size: 18px;
+    padding: 14px 24px;
+    font-size: 16px;
     font-weight: 600;
     box-shadow: 0 4px 8px rgba(20, 184, 166, 0.3);
     cursor: pointer;
@@ -302,6 +316,13 @@
     transform: translateY(0);
 }
 
+.simulatePaymentBtn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
     .invoiceDetailsMain {
@@ -313,7 +334,9 @@
     }
 
     .invoiceSummaryCard,
-    .bottomCards {
+    .processFlow,
+    .bottomCards,
+    .actionButtons {
         max-width: 100%;
     }
 }
@@ -325,10 +348,6 @@
 
     .bottomCards {
         grid-template-columns: 1fr;
-    }
-
-    .simulatePaymentBtn {
-        right: 24px;
     }
 }
 
@@ -343,7 +362,7 @@
 
     .invoiceDetailsContent {
         padding: 24px 20px 80px;
-        align-items: stretch;
+        gap: 20px;
     }
 
     .invoiceSummaryRow {
@@ -378,21 +397,21 @@
     }
 
     .simulatePaymentBtn {
-        position: static;
-        margin: 0 0 32px;
-        align-self: center;
+        margin: 0;
         width: 100%;
-        max-width: 320px;
+        max-width: none;
     }
 
     .actionButtons {
-        bottom: 16px;
-        right: 16px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
     }
 
     .backBtn {
         padding: 14px 20px;
         font-size: 15px;
+        width: 100%;
     }
 }
 
@@ -420,12 +439,12 @@
 
 /* Action Buttons */
 .actionButtons {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
+    width: 100%;
+    max-width: 1600px;
     display: flex;
+    justify-content: flex-end;
     gap: 16px;
-    z-index: 1000;
+    margin-top: 8px;
 }
 
 .backBtn {
@@ -447,6 +466,14 @@
     box-shadow: 0 6px 12px rgba(20, 184, 166, 0.4);
 }
 
+.noData {
+    text-align: center;
+    color: #6b7280;
+    font-style: italic;
+    margin: auto;
+    width: 100%;
+}
+
 /* Loading and Error Messages */
 .loadingMessage,
 .errorMessage {
@@ -464,7 +491,6 @@
 .itemsCard,
 .transactionCard {
     width: 100%;
-    max-width: 460px;
     border-radius: 8px;
     background-color: #ffffff;
     border: 1px solid #a7f3d0;
