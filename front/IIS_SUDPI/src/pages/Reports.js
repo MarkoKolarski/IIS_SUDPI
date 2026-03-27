@@ -37,6 +37,12 @@ const Reports = () => {
     period: false,
     group_by: false,
   });
+  const [expandedCard, setExpandedCard] = useState(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pagination, setPagination] = useState({
+    current_page: 1,
+    page_size: 10,
+  });
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
@@ -64,6 +70,7 @@ const Reports = () => {
         `/reports/?${params.toString()}`
       );
       setReportsData(response.data);
+      setPagination((prev) => ({ ...prev, current_page: 1 }));
       setError(null);
     } catch (err) {
       console.error("Error fetching reports data:", err);
@@ -82,6 +89,50 @@ const Reports = () => {
       ...prev,
       [filterType]: false,
     }));
+    setPagination((prev) => ({ ...prev, current_page: 1 }));
+  };
+
+  const handlePageChange = (nextPage) => {
+    const totalItems = reportsData.data?.length || 0;
+    const numPages = Math.ceil(totalItems / pagination.page_size) || 1;
+    
+    if (
+      nextPage < 1 ||
+      nextPage > numPages ||
+      nextPage === pagination.current_page
+    ) {
+      return;
+    }
+
+    setPagination((prev) => ({
+      ...prev,
+      current_page: nextPage,
+    }));
+  };
+
+  const getVisiblePages = (currentPage, totalPages, siblingCount = 1) => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const pages = [1];
+    const start = Math.max(2, currentPage - siblingCount);
+    const end = Math.min(totalPages - 1, currentPage + siblingCount);
+
+    if (start > 2) {
+      pages.push("ellipsis-left");
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    if (end < totalPages - 1) {
+      pages.push("ellipsis-right");
+    }
+
+    pages.push(totalPages);
+    return pages;
   };
 
   const toggleDropdown = (dropdownType) => {
@@ -118,6 +169,16 @@ const Reports = () => {
     return `${sign}${absolute}%`;
   };
 
+  const getGroupColumnLabel = (groupBy, uppercase = false) => {
+    const labelMap = {
+      proizvodu: uppercase ? "PROIZVOD" : "Proizvod",
+      dobavljacu: uppercase ? "DOBAVLJAČ" : "Dobavljač",
+      kategoriji: uppercase ? "KATEGORIJA" : "Kategorija",
+    };
+
+    return labelMap[groupBy] || (uppercase ? "PROIZVOD" : "Proizvod");
+  };
+
   const downloadPDF = async () => {
     try {
       // Prikaži loading indikator
@@ -139,7 +200,9 @@ const Reports = () => {
       loadingDiv.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
       document.body.appendChild(loadingDiv);
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      setExpandedCard(null);
+      setIsGeneratingPdf(true); // Toggle unpaginated/unconstrained view
+      await new Promise(resolve => setTimeout(resolve, 500)); // Wait for render
 
       const pdf = new jsPDF({
         orientation: 'p',
@@ -194,9 +257,7 @@ const Reports = () => {
       const statusLabel = filterOptions.statusi.find(s => s.value === filters.status)?.label || filters.status;
       const periodLabel = filterOptions.periodi.find(p => p.value === filters.period)?.label || filters.period;
       const groupLabel = filterOptions.grupiranje.find(g => g.value === filters.group_by)?.label || filters.group_by;
-      const pdfGroupHeaderLabel = filters.group_by === 'proizvodu'
-        ? 'PROIZVOD'
-        : encodeText(groupLabel.toUpperCase());
+      const pdfGroupHeaderLabel = encodeText(getGroupColumnLabel(filters.group_by, true));
       
       pdf.setFillColor(236, 253, 245); // Svetlo zelena
       pdf.setDrawColor(167, 243, 208);
@@ -279,8 +340,12 @@ const Reports = () => {
       pdf.setFillColor(20, 184, 166);
       pdf.setDrawColor(20, 184, 166);
 
-      const drawCenteredHeaderText = (text, startX, width) => {
-        pdf.text(encodeText(text), startX + width / 2, yPosition + 7, { align: 'center' });
+      const drawAlignedHeaderText = (text, startX, width, align = 'left') => {
+        if (align === 'right') {
+          pdf.text(encodeText(text), startX + width - 3, yPosition + 7, { align: 'right' });
+        } else {
+          pdf.text(encodeText(text), startX + 3, yPosition + 7);
+        }
       };
       
       const colWidths = {
@@ -299,16 +364,16 @@ const Reports = () => {
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(255, 255, 255);
       
-      drawCenteredHeaderText(pdfGroupHeaderLabel, xPos, colWidths.name);
+      drawAlignedHeaderText(pdfGroupHeaderLabel, xPos, colWidths.name, 'left');
       xPos += colWidths.name;
       
-      drawCenteredHeaderText('KOLIČINA', xPos, colWidths.quantity);
+      drawAlignedHeaderText('KOLIČINA', xPos, colWidths.quantity, 'right');
       xPos += colWidths.quantity;
       
-      drawCenteredHeaderText('UKUPAN TROŠAK', xPos, colWidths.cost);
+      drawAlignedHeaderText('UKUPAN TROŠAK', xPos, colWidths.cost, 'right');
       xPos += colWidths.cost;
       
-      drawCenteredHeaderText('PROFIT', xPos, colWidths.profit);
+      drawAlignedHeaderText('PROFIT', xPos, colWidths.profit, 'right');
       
       yPosition += headerHeight + 2;
 
@@ -328,13 +393,13 @@ const Reports = () => {
           pdf.setTextColor(255, 255, 255);
           
           xPos = margin;
-          drawCenteredHeaderText(pdfGroupHeaderLabel, xPos, colWidths.name);
+          drawAlignedHeaderText(pdfGroupHeaderLabel, xPos, colWidths.name, 'left');
           xPos += colWidths.name;
-          drawCenteredHeaderText('KOLIČINA', xPos, colWidths.quantity);
+          drawAlignedHeaderText('KOLIČINA', xPos, colWidths.quantity, 'right');
           xPos += colWidths.quantity;
-          drawCenteredHeaderText('UKUPAN TROŠAK', xPos, colWidths.cost);
+          drawAlignedHeaderText('UKUPAN TROŠAK', xPos, colWidths.cost, 'right');
           xPos += colWidths.cost;
-          drawCenteredHeaderText('PROFIT', xPos, colWidths.profit);
+          drawAlignedHeaderText('PROFIT', xPos, colWidths.profit, 'right');
           
           yPosition += headerHeight + 2;
           pdf.setFont('helvetica', 'normal');
@@ -478,6 +543,8 @@ const Reports = () => {
       if (loadingDiv) {
         document.body.removeChild(loadingDiv);
       }
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -488,6 +555,38 @@ const Reports = () => {
   useEffect(() => {
     fetchReportsData();
   }, [fetchReportsData]);
+
+  // Handle outside click for expanded card
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setExpandedCard(null);
+      }
+    };
+
+    if (expandedCard && !isGeneratingPdf) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [expandedCard, isGeneratingPdf]);
+
+  const totalItems = reportsData.data?.length || 0;
+  const numPages = Math.ceil(totalItems / pagination.page_size) || 1;
+  const totalCost = Number(reportsData.total_cost) || 0;
+  
+  const paginatedData = isGeneratingPdf 
+    ? (reportsData.data || []) 
+    : (reportsData.data || []).slice(
+        (pagination.current_page - 1) * pagination.page_size,
+        pagination.current_page * pagination.page_size
+      );
+
+  const visiblePages = getVisiblePages(pagination.current_page, numPages);
 
   // Emergency fallback if there are critical errors
   if (error === "CRITICAL_ERROR") {
@@ -503,7 +602,7 @@ const Reports = () => {
     <div
       className={`${styles.reportsWrapper} ${
         isSidebarCollapsed ? styles.sidebarCollapsed : ""
-      }`}
+      } ${isGeneratingPdf ? styles.pdfMode : ""}`}
     >
       <MainSideBar
         isCollapsed={isSidebarCollapsed}
@@ -588,19 +687,56 @@ const Reports = () => {
           </div>
         </section>
 
-        <section className={styles.chartSection}>
-          <div className={styles.chartCard}>
+        <section
+          className={`${styles.chartSection} ${
+            expandedCard ? styles.chartSectionHasExpanded : ""
+          } ${isGeneratingPdf ? styles.chartSectionPdfMode : ""}`}
+        >
+          {expandedCard && !isGeneratingPdf && (
+            <div
+              className={styles.expandedOverlay}
+              onClick={() => setExpandedCard(null)}
+            ></div>
+          )}
+          <div
+            className={`${styles.chartCard} ${
+              expandedCard === "profitability"
+                ? `${styles.expandedCard} ${styles.expandedProfitabilityCard}`
+                : ""
+            }`}
+          >
             <div className={styles.chartCardHeader}>
-              <h2>
-                Profitabilnost po{" "}
-                {filters.group_by === "proizvodu"
-                  ? "proizvodu"
-                  : filters.group_by === "dobavljacu"
-                  ? "dobavljaču"
-                  : "kategoriji"}
-              </h2>
+              <div className={styles.cardHeaderWithControls}>
+                <h2>
+                  Profitabilnost po{" "}
+                  {filters.group_by === "proizvodu"
+                    ? "proizvodu"
+                    : filters.group_by === "dobavljacu"
+                    ? "dobavljaču"
+                    : "kategoriji"}
+                </h2>
+                {!isGeneratingPdf && (
+                  <button
+                    type="button"
+                    className={styles.cardExpandButton}
+                    onClick={() => setExpandedCard(expandedCard === "profitability" ? null : "profitability")}
+                    aria-label={
+                      expandedCard === "profitability"
+                        ? "Smanji profitabilnost"
+                        : "Proširi profitabilnost"
+                    }
+                    title={expandedCard === "profitability" ? "Smanji" : "Proširi"}
+                  >
+                    {expandedCard === "profitability" ? "✕" : "⤢"}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className={styles.chartCardBody}>
+            <div
+              className={`${styles.chartCardBody} ${
+                expandedCard === "profitability" ? styles.expandedChartCardBody : ""
+              }`}
+            >
               {loading ? (
                 <div className={styles.loading}>Učitava...</div>
               ) : (
@@ -610,9 +746,20 @@ const Reports = () => {
                       Ukupna profitabilnost:{" "}
                       {formatProfitability(reportsData.total_profitability)}
                     </h3>
-                    {(reportsData.chart_data?.profitability || [])
-                      .slice(0, 5)
-                      .map((item, index) => (
+                    <div
+                      className={`${styles.chartScrollableList} ${
+                        expandedCard === "profitability"
+                          ? styles.expandedChartScrollableList
+                          : ""
+                      } ${isGeneratingPdf ? styles.pdfChartScrollableList : ""}`}
+                      role="region"
+                      aria-label="Lista profitabilnosti"
+                      tabIndex={0}
+                    >
+                      {(isGeneratingPdf || expandedCard === "profitability"
+                        ? reportsData.chart_data?.profitability || []
+                        : (reportsData.chart_data?.profitability || []).slice(0, 5)
+                      ).map((item, index) => (
                         <div key={index} className={styles.chartItem}>
                           <span>
                             {item.name}: {formatProfitability(item.value)}
@@ -623,23 +770,47 @@ const Reports = () => {
                           ></div>
                         </div>
                       ))}
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
-          <div className={styles.chartCard}>
+          <div
+            className={`${styles.chartCard} ${
+              expandedCard === "costs"
+                ? `${styles.expandedCard} ${styles.expandedCostsCard}`
+                : ""
+            }`}
+          >
             <div className={styles.chartCardHeader}>
-              <h2>
-                Troškovi po{" "}
-                {filters.group_by === "proizvodu"
-                  ? "proizvodu"
-                  : filters.group_by === "dobavljacu"
-                  ? "dobavljaču"
-                  : "kategoriji"}
-              </h2>
+              <div className={styles.cardHeaderWithControls}>
+                <h2>
+                  Troškovi po{" "}
+                  {filters.group_by === "proizvodu"
+                    ? "proizvodu"
+                    : filters.group_by === "dobavljacu"
+                    ? "dobavljaču"
+                    : "kategoriji"}
+                </h2>
+                {!isGeneratingPdf && (
+                  <button
+                    type="button"
+                    className={styles.cardExpandButton}
+                    onClick={() => setExpandedCard(expandedCard === "costs" ? null : "costs")}
+                    aria-label={expandedCard === "costs" ? "Smanji troškove" : "Proširi troškove"}
+                    title={expandedCard === "costs" ? "Smanji" : "Proširi"}
+                  >
+                    {expandedCard === "costs" ? "✕" : "⤢"}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className={styles.chartCardBody}>
+            <div
+              className={`${styles.chartCardBody} ${
+                expandedCard === "costs" ? styles.expandedChartCardBody : ""
+              }`}
+            >
               {loading ? (
                 <div className={styles.loading}>Učitava...</div>
               ) : (
@@ -648,9 +819,18 @@ const Reports = () => {
                     <h3>
                       Ukupni troškovi: {formatCurrency(reportsData.total_cost)}
                     </h3>
-                    {(reportsData.chart_data?.costs || [])
-                      .slice(0, 5)
-                      .map((item, index) => (
+                    <div
+                      className={`${styles.chartScrollableList} ${
+                        expandedCard === "costs" ? styles.expandedChartScrollableList : ""
+                      } ${isGeneratingPdf ? styles.pdfChartScrollableList : ""}`}
+                      role="region"
+                      aria-label="Lista troškova"
+                      tabIndex={0}
+                    >
+                      {(isGeneratingPdf || expandedCard === "costs"
+                        ? reportsData.chart_data?.costs || []
+                        : (reportsData.chart_data?.costs || []).slice(0, 5)
+                      ).map((item, index) => (
                         <div key={index} className={styles.chartItem}>
                           <span>
                             {item.name}: {formatCurrency(item.value)}
@@ -659,12 +839,15 @@ const Reports = () => {
                             className={styles.chartBar}
                             style={{
                               width: `${
-                                (item.value / reportsData.total_cost) * 100
+                                totalCost > 0
+                                  ? Math.min(100, Math.max(0, (item.value / totalCost) * 100))
+                                  : 0
                               }%`,
                             }}
                           ></div>
                         </div>
                       ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -684,25 +867,29 @@ const Reports = () => {
               <div className={styles.tableContent}>
                 <div className={styles.reportsTableHeader}>
                   <div className={`${styles.tableCol} ${styles.colProizvod}`}>
-                    {filters.group_by === "proizvodu"
-                      ? "Proizvod"
-                      : filters.group_by === "dobavljacu"
-                      ? "Dobavljač"
-                      : "Kategorija"}
+                    {getGroupColumnLabel(filters.group_by)}
                   </div>
-                  <div className={`${styles.tableCol} ${styles.colKolicina}`}>Količina</div>
-                  <div className={`${styles.tableCol} ${styles.colTrosak}`}>Ukupan trošak</div>
-                  <div className={`${styles.tableCol} ${styles.colProfit}`}>Profitabilnost</div>
+                  <div className={`${styles.tableCol} ${styles.colKolicina}`}>
+                    Količina
+                  </div>
+                  <div className={`${styles.tableCol} ${styles.colTrosak}`}>
+                    Ukupan trošak
+                  </div>
+                  <div className={`${styles.tableCol} ${styles.colProfit}`}>
+                    Profitabilnost
+                  </div>
                 </div>
                 <div className={styles.reportsTableBody}>
-                  {(reportsData.data || []).map((row, index) => (
+                  {paginatedData.map((row, index) => (
                     <div
                       key={row.id || index}
-                      className={`table-row ${
+                      className={`${styles.tableRow} ${
                         index % 2 === 0 ? styles.rowDark : styles.rowLight
                       }`}
                     >
-                      <div className={`${styles.tableCol} ${styles.colProizvod}`}>{row.name}</div>
+                      <div className={`${styles.tableCol} ${styles.colProizvod}`}>
+                        {row.name}
+                      </div>
                       <div className={`${styles.tableCol} ${styles.colKolicina}`}>
                         {formatNumber(row.quantity)}
                       </div>
@@ -723,9 +910,12 @@ const Reports = () => {
                       </div>
                     </div>
                   ))}
+
                   {(reportsData.data || []).length > 0 && (
                     <div className={`${styles.tableRow} ${styles.summaryRow}`}>
-                      <div className={`${styles.tableCol} ${styles.colProizvod}`}>UKUPNO:</div>
+                      <div className={`${styles.tableCol} ${styles.colProizvod}`}>
+                        UKUPNO:
+                      </div>
                       <div className={`${styles.tableCol} ${styles.colKolicina}`}>
                         {formatNumber(reportsData.total_quantity)} kom
                       </div>
@@ -747,6 +937,55 @@ const Reports = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {!loading && (reportsData.data || []).length > 0 && numPages > 1 && !isGeneratingPdf && (
+              <div className={styles.pagination}>
+                <button
+                  onClick={() => handlePageChange(pagination.current_page - 1)}
+                  disabled={pagination.current_page === 1}
+                  className={`${styles.paginationBtn} ${styles.paginationNavBtn}`}
+                >
+                  Prethodna
+                </button>
+
+                <div className={styles.paginationPageList}>
+                  {visiblePages.map((page, index) =>
+                    typeof page === "string" ? (
+                      <span
+                        key={`${page}-${index}`}
+                        className={styles.paginationEllipsis}
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`${styles.paginationBtn} ${styles.paginationPageBtn} ${
+                          page === pagination.current_page
+                            ? styles.paginationPageBtnActive
+                            : ""
+                        }`}
+                        aria-current={
+                          page === pagination.current_page ? "page" : undefined
+                        }
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(pagination.current_page + 1)}
+                  disabled={pagination.current_page === numPages}
+                  className={`${styles.paginationBtn} ${styles.paginationNavBtn}`}
+                >
+                  Sledeća
+                </button>
               </div>
             )}
           </div>
