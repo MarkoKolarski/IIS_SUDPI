@@ -38,16 +38,16 @@
     padding: 24px 32px;
     border-bottom: 1px solid #a7f3d0; /* Light green border */
     display: flex;
-    gap: 20px;
+    gap: 24px;
     flex-wrap: wrap;
-    align-items: flex-end; /* Poravnanje na dno */
-    justify-content: flex-start; /* Flex-start za ostale elemente */
+    align-items: flex-end;
+    justify-content: flex-start;
 }
 
 .filterDropdown {
     display: flex;
     flex-direction: column;
-    min-width: 200px;
+    min-width: 160px;
     position: relative;
 }
 
@@ -58,7 +58,7 @@
     margin-bottom: 8px;
 }
 
-.filterDropdown button {
+.filterDropdown button:not(.checkViolationsBtn) {
     background-color: #14b8a6; /* Main green */
     color: white;
     border: none;
@@ -71,7 +71,7 @@
     justify-content: space-between;
     align-items: center;
     transition: background-color 0.2s;
-    width: 100%;
+    width: 160px;
 }
 
 .filterDropdown button:hover {
@@ -211,7 +211,7 @@
 }
 
 /* Table Section */
-.penaltiesTableSection {
+.tableSection {
     padding: 32px;
 }
 
@@ -242,41 +242,43 @@
     width: 100%;
 }
 
-.penaltiesTableHeader, .tableRow {
+.tableHeader, .tableRow {
     display: flex;
     width: 100%;
 }
 
-.penaltiesTableHeader {
+.tableHeader {
     background-color: #a7f3d0; /* Light green background */
     border-bottom: 1px solid #14b8a6; /* Main green border */
 }
 
-.penaltiesTableHeader .tableCol {
+.tableHeader .tableCol {
     padding: 14px 20px;
     font-size: 16px;
     font-weight: 500;
     color: #065f46; /* Dark green text */
 }
 
-.penaltiesTableBody .tableRow {
+.tableBody .tableRow {
     border-bottom: 1px solid #a7f3d0; /* Light green border */
     transition: background-color 0.2s;
 }
 
-.penaltiesTableBody .tableRow:hover {
+.tableBody .tableRow:hover {
     background-color: #d1fae5; /* Light green hover */
 }
 
-.penaltiesTableBody .rowDark {
+.tableBody .rowDark,
+.tableBody .rowEven {
     background-color: #ecfdf5; /* Very light green */
 }
 
-.penaltiesTableBody .rowLight {
+.tableBody .rowLight,
+.tableBody .rowOdd {
     background-color: #ffffff; /* White */
 }
 
-.penaltiesTableBody .tableCol {
+.tableBody .tableCol {
     padding: 16px 20px;
     font-size: 15px;
     color: #134e4a; /* Dark green text */
@@ -284,12 +286,83 @@
     align-items: center;
 }
 
-.colId { width: 8%; }
-.colDobavljac { width: 15%; }
-.colUgovor { width: 18%; }
-.colDatum { width: 20%; }
-.colIznos { width: 18%; justify-content: flex-end; }
-.colStatus { width: 21%; justify-content: flex-end; }
+.statusCol {
+}
+
+.loadingMessage,
+.noDataMessage {
+    padding: 40px 20px;
+    text-align: center;
+    font-size: 16px;
+    color: #6b7280;
+    background-color: #f9fafb;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-top: 1px solid #a7f3d0;
+}
+
+.paginationBtn {
+    background-color: #ffffff;
+    color: #0f766e;
+    border: 1px solid #99f6e4;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    min-width: 42px;
+    transition: all 0.2s;
+}
+
+.paginationBtn:hover:not(:disabled) {
+    background-color: #ccfbf1;
+    border-color: #2dd4bf;
+}
+
+.paginationBtn:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+}
+
+.paginationNavBtn {
+    min-width: 98px;
+}
+
+.paginationPageList {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.paginationPageBtn {
+    padding: 8px 12px;
+}
+
+.paginationPageBtnActive {
+    background-color: #14b8a6;
+    color: #ffffff;
+    border-color: #14b8a6;
+}
+
+.paginationPageBtnActive:hover {
+    background-color: #0f766e;
+    border-color: #0f766e;
+}
+
+.paginationEllipsis {
+    color: #0f766e;
+    font-weight: 700;
+    padding: 0 4px;
+}
 
 /* Status Badges */
 .statusBadge {

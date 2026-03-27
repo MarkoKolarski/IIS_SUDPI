@@ -11,6 +11,13 @@ const Penalties = () => {
   const [analysisData, setAnalysisData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    count: 0,
+    num_pages: 0,
+    current_page: 1,
+    has_next: false,
+    has_previous: false,
+  });
   const [selectedFilters, setSelectedFilters] = useState({
     dobavljac: "svi",
     status: "svi",
@@ -29,8 +36,11 @@ const Penalties = () => {
   // Fetch podataka o penalima
   const fetchPenalties = useCallback(async () => {
     try {
+      setError(null);
       setLoading(true);
       const params = new URLSearchParams();
+      params.append("page", pagination.current_page);
+      params.append("page_size", 10);
       if (selectedFilters.dobavljac !== "svi") {
         params.append("dobavljac", selectedFilters.dobavljac);
       }
@@ -42,13 +52,21 @@ const Penalties = () => {
         `penalties/?${params.toString()}`
       );
       setPenaltiesData(response.data.results || []);
+      setPagination({
+        count: response.data.count || 0,
+        num_pages: response.data.num_pages || 0,
+        current_page: response.data.current_page || 1,
+        has_next: Boolean(response.data.has_next),
+        has_previous: Boolean(response.data.has_previous),
+      });
     } catch (err) {
       console.error("Greška pri dohvatanju penala:", err);
       setError("Greška pri učitavanju podataka o penalima");
+      setPenaltiesData([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedFilters]);
+  }, [pagination.current_page, selectedFilters]);
 
   // Fetch opcija za filtere
   const fetchFilterOptions = async () => {
@@ -87,6 +105,7 @@ const Penalties = () => {
       ...prev,
       [filterName]: value,
     }));
+    setPagination((prev) => ({ ...prev, current_page: 1 }));
     setDropdownOpen((prev) => ({
       ...prev,
       [filterName]: false,
@@ -104,6 +123,46 @@ const Penalties = () => {
     const options = filterOptions[filterType] || [];
     const selected = options.find((option) => option.value === value);
     return selected ? selected.label : "Svi";
+  };
+
+  const handlePageChange = (nextPage) => {
+    if (
+      nextPage < 1 ||
+      nextPage > pagination.num_pages ||
+      nextPage === pagination.current_page
+    ) {
+      return;
+    }
+
+    setPagination((prev) => ({
+      ...prev,
+      current_page: nextPage,
+    }));
+  };
+
+  const getVisiblePages = (currentPage, totalPages, siblingCount = 1) => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const pages = [1];
+    const start = Math.max(2, currentPage - siblingCount);
+    const end = Math.min(totalPages - 1, currentPage + siblingCount);
+
+    if (start > 2) {
+      pages.push("ellipsis-left");
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    if (end < totalPages - 1) {
+      pages.push("ellipsis-right");
+    }
+
+    pages.push(totalPages);
+    return pages;
   };
 
   // Handler za automatsku proveru kršenja i kreiranje penala
@@ -168,6 +227,11 @@ const Penalties = () => {
         return <span className={styles.statusBadge}>{status}</span>;
     }
   };
+
+  const visiblePages = getVisiblePages(
+    pagination.current_page,
+    pagination.num_pages
+  );
 
   return (
     <div
@@ -253,83 +317,63 @@ const Penalties = () => {
           </div>
         )}
 
-        <section className={styles.penaltiesTableSection}>
+        <section className={styles.tableSection}>
           <div className={styles.tableContainer}>
             <div className={styles.tableTitleHeader}>
-              <h2>Pregled penala</h2>
+              <h2>Pregled penala ({pagination.count} ukupno)</h2>
             </div>
             <div className={styles.tableContent}>
-              <div className={styles.penaltiesTableHeader}>
-                <div className={`${styles.tableCol} ${styles.colId}`}>ID</div>
-                <div className={`${styles.tableCol} ${styles.colDobavljac}`}>Dobavljač</div>
-                <div className={`${styles.tableCol} ${styles.colUgovor}`}>Ugovor</div>
-                <div className={`${styles.tableCol} ${styles.colDatum}`}>Datum kršenja</div>
-                <div className={`${styles.tableCol} ${styles.colIznos}`}>Iznos</div>
-                <div className={`${styles.tableCol} ${styles.colStatus}`}>Status</div>
+              <div className={styles.tableHeader}>
+                <div className={styles.tableCol} style={{ width: "12%" }}>
+                  ID
+                </div>
+                <div className={styles.tableCol} style={{ width: "12%" }}>
+                  Dobavljač
+                </div>
+                <div className={styles.tableCol} style={{ width: "14%" }}>
+                  Ugovor
+                </div>
+                <div className={styles.tableCol} style={{ width: "20%" }}>
+                  Datum kršenja
+                </div>
+                <div className={styles.tableCol} style={{ width: "20%" }}>
+                  Iznos
+                </div>
+                <div className={`${styles.tableCol} ${styles.statusCol}`} style={{ width: "22%" }}>
+                  Status
+                </div>
               </div>
-              <div className={styles.penaltiesTableBody}>
+              <div className={styles.tableBody}>
                 {loading ? (
-                  <div className={styles.tableRow}>
-                    <div
-                      className={styles.tableCol}
-                      style={{
-                        textAlign: "center",
-                        padding: "20px",
-                        gridColumn: "1 / -1",
-                      }}
-                    >
-                      Učitavanje...
-                    </div>
-                  </div>
+                  <div className={styles.loadingMessage}>Učitavanje penala...</div>
                 ) : error ? (
-                  <div className={styles.tableRow}>
-                    <div
-                      className={styles.tableCol}
-                      style={{
-                        textAlign: "center",
-                        padding: "20px",
-                        gridColumn: "1 / -1",
-                        color: "red",
-                      }}
-                    >
-                      {error}
-                    </div>
-                  </div>
+                  <div className={styles.errorMessage}>{error}</div>
                 ) : penaltiesData.length === 0 ? (
-                  <div className={styles.tableRow}>
-                    <div
-                      className={styles.tableCol}
-                      style={{
-                        textAlign: "center",
-                        padding: "20px",
-                        gridColumn: "1 / -1",
-                      }}
-                    >
-                      Nema penala za prikaz
-                    </div>
-                  </div>
+                  <div className={styles.noDataMessage}>Nema penala za prikaz</div>
                 ) : (
                   penaltiesData.map((row, index) => (
                     <div
                       key={row.sifra_p}
-                      className={`table-row ${
-                        index % 2 === 0 ? styles.rowDark : styles.rowLight
+                      className={`${styles.tableRow} ${
+                        index % 2 === 0 ? styles.rowEven : styles.rowOdd
                       }`}
                     >
-                      <div className={`${styles.tableCol} ${styles.colId}`}>{row.sifra_p}</div>
-                      <div className={`${styles.tableCol} ${styles.colDobavljac}`}>
+                      <div className={styles.tableCol} style={{ width: "12%" }}>
+                        {row.sifra_p}
+                      </div>
+                      <div className={styles.tableCol} style={{ width: "12%" }}>
                         {row.dobavljac_naziv}
                       </div>
-                      <div className={`${styles.tableCol} ${styles.colUgovor}`}>
+                      <div className={styles.tableCol} style={{ width: "14%" }}>
                         {row.ugovor_sifra}
                       </div>
-                      <div className={`${styles.tableCol} ${styles.colDatum}`}>
+                      <div className={styles.tableCol} style={{ width: "20%" }}>
                         {formatDate(row.datum_p)}
                       </div>
-                      <div className={`${styles.tableCol} ${styles.colIznos}`}>
+                      <div className={styles.tableCol} style={{ width: "20%" }}>
                         {formatAmount(row.iznos_p)}
                       </div>
-                      <div className={`${styles.tableCol} ${styles.colStatus}`}>
+                      <div className={`${styles.tableCol} ${styles.statusCol}`} style={{ width: "22%" }}>
                         {getStatusBadge(row.status_display)}
                       </div>
                     </div>
@@ -337,6 +381,54 @@ const Penalties = () => {
                 )}
               </div>
             </div>
+
+            {!loading && penaltiesData.length > 0 && pagination.num_pages > 1 && (
+              <div className={styles.pagination}>
+                <button
+                  onClick={() => handlePageChange(pagination.current_page - 1)}
+                  disabled={!pagination.has_previous}
+                  className={`${styles.paginationBtn} ${styles.paginationNavBtn}`}
+                >
+                  Prethodna
+                </button>
+
+                <div className={styles.paginationPageList}>
+                  {visiblePages.map((page, index) =>
+                    typeof page === "string" ? (
+                      <span
+                        key={`${page}-${index}`}
+                        className={styles.paginationEllipsis}
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`${styles.paginationBtn} ${styles.paginationPageBtn} ${
+                          page === pagination.current_page
+                            ? styles.paginationPageBtnActive
+                            : ""
+                        }`}
+                        aria-current={
+                          page === pagination.current_page ? "page" : undefined
+                        }
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(pagination.current_page + 1)}
+                  disabled={!pagination.has_next}
+                  className={`${styles.paginationBtn} ${styles.paginationNavBtn}`}
+                >
+                  Sledeća
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
