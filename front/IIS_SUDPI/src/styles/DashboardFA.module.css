@@ -116,11 +116,16 @@
     font-size: 18px;
     font-weight: 700;
     line-height: 1;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.18s ease;
 }
 
 .cardExpandButton:hover {
     background-color: #115e59;
+    transform: translateY(-1px);
+}
+
+.cardExpandButton:active {
+    transform: translateY(0);
 }
 
 .chartControls {
@@ -140,11 +145,16 @@
     font-size: 18px;
     font-weight: 700;
     line-height: 1;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
+    transition: background-color 0.2s ease, opacity 0.2s ease, transform 0.18s ease;
 }
 
 .chartNavButton:hover:not(:disabled) {
     background-color: #115e59;
+    transform: translateY(-1px);
+}
+
+.chartNavButton:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .chartNavButton:disabled {
@@ -381,18 +391,114 @@
 
 /* Card 4: Chart Placeholder */
 .chartPlaceholder {
-    background-color: #d1fae5; /* Light green background for chart area */
-    border-radius: 4px;
+    position: relative;
+    isolation: isolate;
+    background: linear-gradient(180deg, #dcfce7 0%, #ecfeff 100%);
+    border-radius: 16px;
     min-height: 280px;
     width: 100%;
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.chartPlaceholderLoading {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 0 0 1px rgba(94, 234, 212, 0.45);
 }
 
 .expandedChartPlaceholder {
     min-height: 420px;
+}
+
+.chartLoadingOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(236, 253, 245, 0.72);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+    animation: loadingOverlayIn 0.18s ease-out;
+}
+
+.chartLoadingOverlayFromOlder {
+    animation-name: loadingOverlayFromRight;
+}
+
+.chartLoadingOverlayFromNewer {
+    animation-name: loadingOverlayFromLeft;
+}
+
+.chartLoadingPanel {
+    width: min(100%, 540px);
+    border: 1px solid rgba(20, 184, 166, 0.25);
+    border-radius: 18px;
+    padding: 20px 22px 18px;
+    background: rgba(248, 255, 253, 0.88);
+    box-shadow: 0 24px 50px rgba(15, 118, 110, 0.12);
+}
+
+.chartLoadingHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.chartLoadingSpinner {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(20, 184, 166, 0.18);
+    border-top-color: #14b8a6;
+    animation: spinnerRotate 0.8s linear infinite;
+}
+
+.chartLoadingTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #134e4a;
+}
+
+.chartLoadingSubtitle {
+    margin-top: 3px;
+    font-size: 13px;
+    color: #0f766e;
+}
+
+.chartLoadingBars {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    height: 180px;
+    padding-top: 4px;
+}
+
+.chartLoadingSkeletonBar {
+    flex: 1;
+    min-width: 18px;
+    border-radius: 14px 14px 6px 6px;
+    background: linear-gradient(180deg, #99f6e4 0%, #14b8a6 100%);
+    box-shadow: inset 0 -16px 18px rgba(15, 118, 110, 0.12);
+    position: relative;
+    overflow: hidden;
+    animation: skeletonPulse 1.15s ease-in-out infinite alternate;
+}
+
+.chartLoadingSkeletonBar::after {
+    content: "";
+    position: absolute;
+    inset: -40% 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.72) 50%, transparent 70%);
+    transform: translateX(-120%);
+    animation: skeletonShimmer 1.45s ease-in-out infinite;
 }
 
 /* Chart Data Display */
@@ -403,6 +509,23 @@
     height: 250px;
     width: 100%;
     padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.chartDataEnterFromOlder {
+    animation: chartEnterFromRight 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chartDataEnterFromNewer {
+    animation: chartEnterFromLeft 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chartDataDimmed {
+    opacity: 0.42;
+    filter: saturate(0.75) blur(0.35px);
+    transform: scale(0.992);
+    transition: opacity 0.2s ease, filter 0.2s ease, transform 0.2s ease;
 }
 
 .expandedChartData {
@@ -416,6 +539,11 @@
     align-items: center;
     gap: 8px;
     flex: 1;
+    min-width: 0;
+    opacity: 0;
+    transform: translateY(14px);
+    animation: chartItemRise 0.52s ease forwards;
+    animation-delay: calc(var(--item-index) * 70ms);
 }
 
 .chartMonth {
@@ -426,9 +554,12 @@
 
 .chartBar {
     width: 30px;
-    background-color: #14b8a6;
-    border-radius: 2px;
-    transition: all 0.3s ease;
+    background: linear-gradient(180deg, #38bdf8 0%, #3b82f6 56%, #2563eb 100%);
+    border-radius: 6px 6px 2px 2px;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.18);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+    transform-origin: bottom;
+    animation: chartBarGrow 0.56s cubic-bezier(0.2, 0.9, 0.2, 1) both;
 }
 
 .expandedChartCard .chartBar {
@@ -445,7 +576,8 @@
 }
 
 .chartBar:hover {
-    background-color: #0f766e;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.24);
 }
 
 .chartAmount {
@@ -466,11 +598,17 @@
 }
 
 .chartWindowLabel {
+    align-self: flex-end;
     text-align: right;
     font-size: 12px;
     color: #0f766e;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.3;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(236, 254, 255, 0.85);
+    border: 1px solid rgba(94, 234, 212, 0.5);
+    box-shadow: 0 8px 18px rgba(15, 118, 110, 0.08);
 }
 
 /* Loading and Error States */
@@ -573,5 +711,136 @@
 
     .chartWindowLabel {
         text-align: left;
+    }
+}
+
+@keyframes loadingOverlayIn {
+    from {
+        opacity: 0;
+        transform: scale(0.995);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes loadingOverlayFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(18px) scale(0.995);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes loadingOverlayFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-18px) scale(0.995);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes spinnerRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes skeletonPulse {
+    from {
+        filter: saturate(0.88) brightness(0.94);
+        transform: translateY(0);
+    }
+    to {
+        filter: saturate(1) brightness(1.05);
+        transform: translateY(-1px);
+    }
+}
+
+@keyframes skeletonShimmer {
+    from {
+        transform: translateX(-120%);
+    }
+    to {
+        transform: translateX(120%);
+    }
+}
+
+@keyframes chartEnterFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(14px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes chartEnterFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-14px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes chartItemRise {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes chartBarGrow {
+    from {
+        transform: scaleY(0.18);
+        opacity: 0.35;
+    }
+    to {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cardExpandButton,
+    .chartNavButton,
+    .chartLoadingOverlay,
+    .chartLoadingSkeletonBar,
+    .chartLoadingSkeletonBar::after,
+    .chartDataEnterFromOlder,
+    .chartDataEnterFromNewer,
+    .chartItem,
+    .chartBar,
+    .chartPlaceholder,
+    .expandedCard {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .chartLoadingSpinner {
+        animation: none !important;
+    }
+
+    .chartDataDimmed {
+        filter: none;
     }
 }

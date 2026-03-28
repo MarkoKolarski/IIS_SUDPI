@@ -28,14 +28,16 @@ const DashboardFA = () => {
   const [chartOffset, setChartOffset] = useState(0);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState(null);
+  const [chartTransitionDirection, setChartTransitionDirection] = useState("older");
   const [expandedCard, setExpandedCard] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  const fetchChartWindow = async (nextOffset) => {
+  const fetchChartWindow = async (nextOffset, direction = "older") => {
     try {
+      setChartTransitionDirection(direction);
       setChartLoading(true);
       setChartError(null);
 
@@ -64,12 +66,12 @@ const DashboardFA = () => {
 
   const handleOlderMonths = () => {
     if (chartLoading) return;
-    fetchChartWindow(chartOffset + 1);
+    fetchChartWindow(chartOffset + 1, "older");
   };
 
   const handleNewerMonths = () => {
     if (chartLoading || chartOffset === 0) return;
-    fetchChartWindow(chartOffset - 1);
+    fetchChartWindow(chartOffset - 1, "newer");
   };
 
   const toggleCardExpansion = (cardKey) => {
@@ -118,6 +120,13 @@ const DashboardFA = () => {
     1,
     ...dashboardData.vizualizacija_troskova.map((item) => item.iznos || 0)
   );
+
+  const chartDataKey = `${dashboardData.chart_window?.offset ?? 0}-${dashboardData.chart_window?.window_start || ""}-${dashboardData.chart_window?.window_end || ""}`;
+
+  const chartDataMotionClass =
+    chartTransitionDirection === "newer"
+      ? styles.chartDataEnterFromNewer
+      : styles.chartDataEnterFromOlder;
 
   const getProfitabilityValue = (value) => {
     const parsed = Number(String(value || "0").replace("%", ""));
@@ -425,21 +434,58 @@ const DashboardFA = () => {
                   <div
                     className={`${styles.chartPlaceholder} ${
                       expandedCard === "chart" ? styles.expandedChartPlaceholder : ""
-                    }`}
+                    } ${chartLoading ? styles.chartPlaceholderLoading : ""}`}
+                    aria-busy={chartLoading}
                   >
-                    {chartLoading ? (
-                      <div className={styles.chartInfo}>Učitavanje grafikona...</div>
-                    ) : chartError ? (
+                    {chartLoading && (
+                      <div
+                        className={`${styles.chartLoadingOverlay} ${
+                          chartTransitionDirection === "newer"
+                            ? styles.chartLoadingOverlayFromNewer
+                            : styles.chartLoadingOverlayFromOlder
+                        }`}
+                        aria-hidden="true"
+                      >
+                        <div className={styles.chartLoadingPanel}>
+                          <div className={styles.chartLoadingHeader}>
+                            <span className={styles.chartLoadingSpinner} />
+                            <div>
+                              <div className={styles.chartLoadingTitle}>
+                                Prebacivanje perioda
+                              </div>
+                              <div className={styles.chartLoadingSubtitle}>
+                                Učitavam novi period sa servera
+                              </div>
+                            </div>
+                          </div>
+                          <div className={styles.chartLoadingBars}>
+                            {[28, 52, 36, 68, 44, 60].map((height, index) => (
+                              <div
+                                key={index}
+                                className={styles.chartLoadingSkeletonBar}
+                                style={{ height: `${height}%` }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {chartError ? (
                       <div className={styles.chartError}>{chartError}</div>
                     ) : dashboardData.vizualizacija_troskova.length > 0 ? (
                       <div
+                        key={chartDataKey}
                         className={`${styles.chartData} ${
                           expandedCard === "chart" ? styles.expandedChartData : ""
-                        }`}
+                        } ${chartLoading ? styles.chartDataDimmed : ""} ${chartDataMotionClass}`}
                       >
                         {dashboardData.vizualizacija_troskova.map(
                           (item, index) => (
-                            <div key={index} className={styles.chartItem}>
+                            <div
+                              key={index}
+                              className={styles.chartItem}
+                              style={{ "--item-index": index }}
+                            >
                               <div className={styles.chartMonth}>{item.mesec}</div>
                               <div
                                 className={styles.chartBar}
