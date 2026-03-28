@@ -411,18 +411,19 @@
 }
 
 .analysisCardsWrapper {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
     background-color: #a7f3d0;
+    padding: 1px;
 }
 
 .analysisCard {
-    flex: 1;
+    min-width: 0;
     padding: 28px;
     background-color: #ffffff;
-}
-
-.analysisCard:first-child {
-    border-right: 1px solid #a7f3d0;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .analysisCard h3 {
@@ -438,6 +439,7 @@
     color: #134e4a;
     line-height: 1.6;
     margin: 0 0 12px 0;
+    word-break: break-word;
 }
 
 .analysisCard p strong {
@@ -500,10 +502,6 @@
     }
 
     .analysisCardsWrapper {
-        flex-direction: column;
-    }
-    .analysisCard:first-child {
-        border-right: none;
-        border-bottom: 1px solid #a7f3d0;
+        grid-template-columns: 1fr;
     }
 }
