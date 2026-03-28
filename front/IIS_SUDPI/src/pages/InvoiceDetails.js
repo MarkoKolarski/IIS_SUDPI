@@ -23,11 +23,6 @@ const InvoiceDetails = () => {
     setIsPaymentModalOpen(true);
   };
 
-  const closePaymentSimulation = () => {
-    setIsPaymentModalOpen(false);
-    loadInvoiceDetails();
-  };
-
   const loadInvoiceDetails = useCallback(async () => {
     setLoading(true);
     try {
@@ -42,6 +37,11 @@ const InvoiceDetails = () => {
       setLoading(false);
     }
   }, [invoiceId, navigate]);
+
+  const closePaymentSimulation = () => {
+    setIsPaymentModalOpen(false);
+    loadInvoiceDetails();
+  };
 
   const handleInvoiceAction = async (action, reason = "") => {
     setActionLoading(true);
@@ -165,6 +165,7 @@ const InvoiceDetails = () => {
               onClick={() => setExpandedCard(null)}
             />
           )}
+
           <section className={styles.invoiceSummaryCard}>
             <div className={styles.invoiceSummaryHeader}>
               <h2>Faktura ID: {invoice.sifra_f}</h2>
@@ -266,14 +267,33 @@ const InvoiceDetails = () => {
                   {hasItems ? (
                     invoice.stavke.map((stavka) => (
                       <div key={stavka.sifra_sf} className={styles.invoiceItem}>
-                        <p>
-                          <strong>{stavka.naziv_sf}</strong>
-                        </p>
-                        <p>
-                          Količina: {stavka.kolicina_sf} | Cena po jedinici:{" "}
-                          {formatAmount(stavka.cena_po_jed)}
-                        </p>
-                        {stavka.opis_sf && <p>Opis: {stavka.opis_sf}</p>}
+                        <div className={styles.invoiceItemHeader}>
+                          <p className={styles.invoiceItemTitle}>{stavka.naziv_sf}</p>
+                          <span className={styles.invoiceItemPrice}>
+                            {formatAmount(
+                              Number(stavka.kolicina_sf) * Number(stavka.cena_po_jed)
+                            )}
+                          </span>
+                        </div>
+                        <div className={styles.invoiceItemMeta}>
+                          <div>
+                            <span className={styles.invoiceItemMetaLabel}>Količina</span>
+                            <span className={styles.invoiceItemMetaValue}>
+                              {stavka.kolicina_sf}
+                            </span>
+                          </div>
+                          <div>
+                            <span className={styles.invoiceItemMetaLabel}>
+                              Cena po jedinici
+                            </span>
+                            <span className={styles.invoiceItemMetaValue}>
+                              {formatAmount(stavka.cena_po_jed)}
+                            </span>
+                          </div>
+                        </div>
+                        {stavka.opis_sf && (
+                          <p className={styles.invoiceItemDescription}>{stavka.opis_sf}</p>
+                        )}
                       </div>
                     ))
                   ) : (
@@ -315,13 +335,13 @@ const InvoiceDetails = () => {
                   aria-label="Razlog čekanja fakture"
                   tabIndex={0}
                 >
-                  {invoice.razlog_cekanja_f ? (
-                    <p>
-                      <strong>Razlog:</strong> {invoice.razlog_cekanja_f}
-                    </p>
-                  ) : (
-                    <div className={styles.noData}>Nema razloga čekanja za ovu fakturu</div>
-                  )}
+                  <div className={styles.reasonContent}>
+                    {invoice.razlog_cekanja_f ? (
+                      <p className={styles.reasonText}>{invoice.razlog_cekanja_f}</p>
+                    ) : (
+                      <div className={styles.noData}>Nema razloga čekanja za ovu fakturu</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -332,20 +352,26 @@ const InvoiceDetails = () => {
               </div>
               <div className={styles.cardBody}>
                 {hasTransaction ? (
-                  <>
-                    <p>
-                      <strong>ID transakcije:</strong> {invoice.transakcija.sifra_t}
-                    </p>
-                    <p>
-                      <strong>Datum:</strong> {formatDate(invoice.transakcija.datum_t)}
-                    </p>
-                    <p>
-                      <strong>Potvrda:</strong> {invoice.transakcija.potvrda_t}
-                    </p>
-                    <p>
-                      <strong>Status:</strong> {invoice.transakcija.status_t}
-                    </p>
-                  </>
+                  <div className={styles.transactionGrid}>
+                    <div className={styles.transactionField}>
+                      <span className={styles.transactionLabel}>ID transakcije</span>
+                      <span className={styles.transactionValue}>{invoice.transakcija.sifra_t}</span>
+                    </div>
+                    <div className={styles.transactionField}>
+                      <span className={styles.transactionLabel}>Datum</span>
+                      <span className={styles.transactionValue}>
+                        {formatDate(invoice.transakcija.datum_t)}
+                      </span>
+                    </div>
+                    <div className={styles.transactionField}>
+                      <span className={styles.transactionLabel}>Potvrda</span>
+                      <span className={styles.transactionValue}>{invoice.transakcija.potvrda_t}</span>
+                    </div>
+                    <div className={styles.transactionField}>
+                      <span className={styles.transactionLabel}>Status</span>
+                      <span className={styles.transactionValue}>{invoice.transakcija.status_t}</span>
+                    </div>
+                  </div>
                 ) : (
                   <div className={styles.noData}>Nema transakcije za ovu fakturu</div>
                 )}

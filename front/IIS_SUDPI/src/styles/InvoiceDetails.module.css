@@ -325,29 +325,39 @@
 }
 
 .discrepancyCard .cardBody {
-    justify-content: flex-start;
+    justify-content: center;
     color: #134e4a;
     line-height: 1.6;
+}
+
+.transactionCard .cardBody {
+    justify-content: center;
 }
 
 .notificationCard .cardBody {
-    gap: 20px;
+    gap: 24px;
     align-items: stretch;
-    text-align: left;
+    justify-content: space-between;
+    text-align: center;
+    min-height: 240px;
 }
 
 .notificationQuestion {
-    font-size: 16px;
+    font-size: 18px;
+    font-weight: 600;
     color: #134e4a;
     line-height: 1.6;
     margin: 0;
+    max-width: 44ch;
+    align-self: center;
 }
 
 .notificationActions {
     display: flex;
     gap: 16px;
-    justify-content: flex-start;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    width: 100%;
 }
 
 .notificationBtn {
@@ -355,18 +365,39 @@
     color: #ffffff;
     border: none;
     border-radius: 6px;
-    padding: 10px 18px;
-    min-width: 110px;
-    font-size: 15px;
+    padding: 12px 18px;
+    min-width: 0;
+    flex: 1;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.2s ease;
     box-shadow: 0 4px 10px rgba(20, 184, 166, 0.2);
 }
 
+.notificationBtn.confirm {
+    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+}
+
+.notificationBtn.decline {
+    background-color: #ffffff;
+    color: #0f766e;
+    border: 1px solid #99f6e4;
+    box-shadow: none;
+}
+
 .notificationBtn:hover {
     background-color: #0f766e;
     transform: translateY(-2px);
+}
+
+.notificationBtn.confirm:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+}
+
+.notificationBtn.decline:hover {
+    background-color: #ecfeff;
+    color: #0f766e;
 }
 
 .notificationBtn:active {
@@ -516,6 +547,24 @@
         font-size: 15px;
         width: 100%;
     }
+
+    .notificationCard .cardBody {
+        min-height: 0;
+    }
+
+    .notificationActions {
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+
+    .notificationBtn {
+        width: 100%;
+    }
+
+    .invoiceItemMeta,
+    .transactionGrid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 480px) {
@@ -537,6 +586,14 @@
 
     .cardBody {
         padding: 24px 20px;
+    }
+
+    .reasonText {
+        font-size: 17px;
+    }
+
+    .invoiceItemTitle {
+        font-size: 16px;
     }
 }
 
@@ -617,7 +674,7 @@
 
 .itemsCard .cardBody,
 .transactionCard .cardBody {
-    padding: 20px;
+    padding: 24px;
 }
 
 .itemsCard.expandedCard .cardBody,
@@ -626,12 +683,15 @@
 }
 
 .scrollablePanel {
-    max-height: 260px;
+    max-height: 320px;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 8px;
     scrollbar-gutter: stable;
     mask-image: linear-gradient(to bottom, black 0%, black 86%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .expandedScrollablePanel {
@@ -665,18 +725,126 @@
 }
 
 .invoiceItem {
-    padding: 12px 0;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 18px;
+    border: 1px solid #d1fae5;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fffd 100%);
+    box-shadow: 0 1px 4px rgba(20, 184, 166, 0.08);
 }
 
 .invoiceItem:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
-.invoiceItem p {
-    margin: 4px 0;
-    color: #374151;
+.invoiceItemHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.invoiceItemTitle {
+    margin: 0;
+    color: #134e4a;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.invoiceItemPrice {
+    flex: none;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #ccfbf1;
+    color: #0f766e;
     font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.invoiceItemMeta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 18px;
+    margin-bottom: 10px;
+}
+
+.invoiceItemMeta > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.invoiceItemMetaLabel {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #0f766e;
+}
+
+.invoiceItemMetaValue {
+    font-size: 15px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.invoiceItemDescription {
+    margin: 0;
+    color: #4b5563;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.reasonContent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+    text-align: center;
+}
+
+.reasonText {
+    margin: 0;
+    max-width: 48ch;
+    color: #134e4a;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.75;
+}
+
+.transactionGrid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.transactionField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #d1fae5;
+    box-shadow: 0 1px 3px rgba(20, 184, 166, 0.08);
+}
+
+.transactionLabel {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f766e;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.transactionValue {
+    font-size: 16px;
+    font-weight: 700;
+    color: #134e4a;
+    word-break: break-word;
 }
 
 /* Process Step Status Colors */
