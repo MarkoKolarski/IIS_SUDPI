@@ -756,10 +756,7 @@ const Reports = () => {
                       aria-label="Lista profitabilnosti"
                       tabIndex={0}
                     >
-                      {(isGeneratingPdf || expandedCard === "profitability"
-                        ? reportsData.chart_data?.profitability || []
-                        : (reportsData.chart_data?.profitability || []).slice(0, 5)
-                      ).map((item, index) => (
+                      {(reportsData.chart_data?.profitability || []).map((item, index) => (
                         <div key={index} className={styles.chartItem}>
                           <span>
                             {item.name}: {formatProfitability(item.value)}
@@ -827,10 +824,7 @@ const Reports = () => {
                       aria-label="Lista troškova"
                       tabIndex={0}
                     >
-                      {(isGeneratingPdf || expandedCard === "costs"
-                        ? reportsData.chart_data?.costs || []
-                        : (reportsData.chart_data?.costs || []).slice(0, 5)
-                      ).map((item, index) => (
+                      {(reportsData.chart_data?.costs || []).map((item, index) => (
                         <div key={index} className={styles.chartItem}>
                           <span>
                             {item.name}: {formatCurrency(item.value)}

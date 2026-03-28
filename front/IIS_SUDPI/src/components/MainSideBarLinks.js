@@ -88,11 +88,11 @@ export const sidebarLinks = {
       href: "/penalties",
       description: "Evidencija i obračun kašnjenja",
     },
-    {
-      title: "Procedure",
-      href: "/sbp-procedures",
-      description: "Upravljanje procedurama",
-    },
+    // {
+    //   title: "Procedure",
+    //   href: "/sbp-procedures",
+    //   description: "Upravljanje procedurama",
+    // },
   ],
   kontrolor_kvaliteta: [
     {
