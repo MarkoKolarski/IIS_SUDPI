@@ -7,6 +7,7 @@ import { FaFilePdf } from "react-icons/fa";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
+import PageTransition from "../components/PageTransition";
 
 const Reports = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -591,27 +592,30 @@ const Reports = () => {
   // Emergency fallback if there are critical errors
   if (error === "CRITICAL_ERROR") {
     return (
-      <div style={{ padding: "20px", color: "red" }}>
-        <h1>Greška u učitavanju stranice</h1>
-        <p>Molimo proverite konekciju ili kontaktirajte administratora.</p>
-      </div>
+      <PageTransition>
+        <div style={{ padding: "20px", color: "red" }}>
+          <h1>Greška u učitavanju stranice</h1>
+          <p>Molimo proverite konekciju ili kontaktirajte administratora.</p>
+        </div>
+      </PageTransition>
     );
   }
 
   return (
-    <div
-      className={`${styles.reportsWrapper} ${
-        isSidebarCollapsed ? styles.sidebarCollapsed : ""
-      } ${isGeneratingPdf ? styles.pdfMode : ""}`}
-    >
-      <MainSideBar
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-      />
-      <div className={styles.reportsMainContent}>
-        <header className={styles.reportsHeader}>
-          <h1>Izveštaji</h1>
-        </header>
+    <PageTransition>
+      <div
+        className={`${styles.reportsWrapper} ${
+          isSidebarCollapsed ? styles.sidebarCollapsed : ""
+        } ${isGeneratingPdf ? styles.pdfMode : ""}`}
+      >
+        <MainSideBar
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <div className={styles.reportsMainContent}>
+          <header className={styles.reportsHeader}>
+            <h1>Izveštaji</h1>
+          </header>
 
         <section className={styles.reportsFilterSection}>
           <div className={styles.filterControls}>
@@ -984,8 +988,9 @@ const Reports = () => {
             )}
           </div>
         </section>
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 };
 

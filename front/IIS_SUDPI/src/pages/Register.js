@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axiosInstance from "../axiosInstance";
 import "../styles/Register.css";
 import MainSideBar from "../components/MainSideBar"; // Importuj komponentu bočne trake
+import PageTransition from "../components/PageTransition";
 
 const Register = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -57,20 +58,21 @@ const Register = () => {
   };
 
   return (
-    <div
-      className={`register-wrapper ${
-        isSidebarCollapsed ? "sidebar-collapsed" : ""
-      }`}
-    >
-      {sessionStorage.getItem("user_type") === "administrator" && (
-        <MainSideBar
-          isCollapsed={isSidebarCollapsed}
-          toggleSidebar={toggleSidebar}
-        />
-      )}
-      <main className="register-main-content">
-        <div className="register-container">
-          <h2>Registracija</h2>
+    <PageTransition>
+      <div
+        className={`register-wrapper ${
+          isSidebarCollapsed ? "sidebar-collapsed" : ""
+        }`}
+      >
+        {sessionStorage.getItem("user_type") === "administrator" && (
+          <MainSideBar
+            isCollapsed={isSidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+          />
+        )}
+        <main className="register-main-content">
+          <div className="register-container">
+            <h2>Registracija</h2>
 
           {message && <p className="message success">{message}</p>}
 
@@ -140,9 +142,10 @@ const Register = () => {
           <p>
             Već imate nalog? <a href="/login">Prijavite se</a>
           </p>
-        </div>
-      </main>
-    </div>
+          </div>
+        </main>
+      </div>
+    </PageTransition>
   );
 };
 

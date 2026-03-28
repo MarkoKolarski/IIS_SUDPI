@@ -3,6 +3,7 @@ import axiosInstance from '../axiosInstance';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Login.css';
 import NavBar from '../components/NavBar';
+import PageTransition from '../components/PageTransition';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -50,10 +51,11 @@ const Login = () => {
     };
 
     return (
-        <>
-            <NavBar />
-            <div className="login-container">
-                <h2>Prijava</h2>
+        <PageTransition>
+            <>
+                <NavBar />
+                <div className="login-container">
+                    <h2>Prijava</h2>
                 
                 {message && <p className="message success">{message}</p>}
                 
@@ -81,9 +83,10 @@ const Login = () => {
                     {errors.password && <p className="error-message">{errors.password}</p>}
 
                     <button type="submit">Prijavi se</button>
-                </form>
-            </div>
-        </>
+                    </form>
+                </div>
+            </>
+        </PageTransition>
     );
 };
 

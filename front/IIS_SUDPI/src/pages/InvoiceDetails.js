@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import MainSideBar from "../components/MainSideBar";
 import PaymentSimulationModal from "../components/PaymentSimulationModal";
+import PageTransition from "../components/PageTransition";
 import styles from "../styles/InvoiceDetails.module.css";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
@@ -107,24 +108,46 @@ const InvoiceDetails = () => {
 
   if (loading) {
     return (
-      <div
-        className={`${styles.invoiceDetailsWrapper} ${
-          isSidebarCollapsed ? styles.sidebarCollapsed : ""
-        }`}
-      >
-        <MainSideBar
-          isCollapsed={isSidebarCollapsed}
-          toggleSidebar={toggleSidebar}
-        />
-        <main className={styles.invoiceDetailsMain}>
-          <div className={styles.loadingMessage}>Učitavanje detalja fakture...</div>
-        </main>
-      </div>
+      <PageTransition>
+        <div
+          className={`${styles.invoiceDetailsWrapper} ${
+            isSidebarCollapsed ? styles.sidebarCollapsed : ""
+          }`}
+        >
+          <MainSideBar
+            isCollapsed={isSidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+          />
+          <main className={styles.invoiceDetailsMain}>
+            <div className={styles.loadingMessage}>Učitavanje detalja fakture...</div>
+          </main>
+        </div>
+      </PageTransition>
     );
   }
 
   if (!invoice) {
     return (
+      <PageTransition>
+        <div
+          className={`${styles.invoiceDetailsWrapper} ${
+            isSidebarCollapsed ? styles.sidebarCollapsed : ""
+          }`}
+        >
+          <MainSideBar
+            isCollapsed={isSidebarCollapsed}
+            toggleSidebar={toggleSidebar}
+          />
+          <main className={styles.invoiceDetailsMain}>
+            <div className={styles.errorMessage}>Faktura nije pronađena.</div>
+          </main>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  return (
+    <PageTransition>
       <div
         className={`${styles.invoiceDetailsWrapper} ${
           isSidebarCollapsed ? styles.sidebarCollapsed : ""
@@ -135,26 +158,9 @@ const InvoiceDetails = () => {
           toggleSidebar={toggleSidebar}
         />
         <main className={styles.invoiceDetailsMain}>
-          <div className={styles.errorMessage}>Faktura nije pronađena.</div>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`${styles.invoiceDetailsWrapper} ${
-        isSidebarCollapsed ? styles.sidebarCollapsed : ""
-      }`}
-    >
-      <MainSideBar
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-      />
-      <main className={styles.invoiceDetailsMain}>
-        <header className={styles.invoiceDetailsHeader}>
-          <h1>Detalji fakture</h1>
-        </header>
+          <header className={styles.invoiceDetailsHeader}>
+            <h1>Detalji fakture</h1>
+          </header>
 
         <div className={styles.invoiceDetailsContent}>
           {expandedCard && (
@@ -432,14 +438,15 @@ const InvoiceDetails = () => {
             </button>
           </div>
         </div>
-      </main>
+        </main>
 
-      <PaymentSimulationModal
-        isOpen={isPaymentModalOpen}
-        onClose={closePaymentSimulation}
-        invoiceId={invoiceId}
-      />
-    </div>
+        <PaymentSimulationModal
+          isOpen={isPaymentModalOpen}
+          onClose={closePaymentSimulation}
+          invoiceId={invoiceId}
+        />
+      </div>
+    </PageTransition>
   );
 };
 

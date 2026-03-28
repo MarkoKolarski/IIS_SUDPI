@@ -3,6 +3,7 @@ import MainSideBar from "../components/MainSideBar";
 import styles from "../styles/Penalties.module.css";
 import axiosInstance from "../axiosInstance";
 import { FaChevronDown, FaShieldAlt } from "react-icons/fa";
+import PageTransition from "../components/PageTransition";
 
 const Penalties = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -234,19 +235,20 @@ const Penalties = () => {
   );
 
   return (
-    <div
-      className={`${styles.penaltiesWrapper} ${
-        isSidebarCollapsed ? styles.sidebarCollapsed : ""
-      }`}
-    >
-      <MainSideBar
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-      />
-      <div className={styles.penaltiesMainContent}>
-        <header className={styles.penaltiesHeader}>
-          <h1>Penali</h1>
-        </header>
+    <PageTransition>
+      <div
+        className={`${styles.penaltiesWrapper} ${
+          isSidebarCollapsed ? styles.sidebarCollapsed : ""
+        }`}
+      >
+        <MainSideBar
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <div className={styles.penaltiesMainContent}>
+          <header className={styles.penaltiesHeader}>
+            <h1>Penali</h1>
+          </header>
 
         <section className={styles.penaltiesFilterSection}>
           <div className={styles.filterDropdown}>
@@ -480,8 +482,9 @@ const Penalties = () => {
             </div>
           </div>
         </section>
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 };
 

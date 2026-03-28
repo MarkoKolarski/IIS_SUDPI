@@ -4,6 +4,7 @@ import styles from "../styles/Invoice.module.css";
 import { FaChevronDown, FaTimes, FaSearch } from "react-icons/fa";
 import axiosInstance from "../axiosInstance";
 import { useNavigate } from "react-router-dom";
+import PageTransition from "../components/PageTransition";
 
 const Invoice = () => {
   const navigate = useNavigate();
@@ -206,19 +207,20 @@ const Invoice = () => {
   );
 
   return (
-    <div
-      className={`${styles.invoiceWrapper} ${
-        isSidebarCollapsed ? styles.sidebarCollapsed : ""
-      }`}
-    >
-      <MainSideBar
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-      />
-      <main className={styles.invoiceMainContent}>
-        <header className={styles.invoiceHeader}>
-          <h1>Fakture</h1>
-        </header>
+    <PageTransition>
+      <div
+        className={`${styles.invoiceWrapper} ${
+          isSidebarCollapsed ? styles.sidebarCollapsed : ""
+        }`}
+      >
+        <MainSideBar
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <main className={styles.invoiceMainContent}>
+          <header className={styles.invoiceHeader}>
+            <h1>Fakture</h1>
+          </header>
 
         <section className={styles.filterSection}>
           <div className={styles.filterControls}>
@@ -449,8 +451,9 @@ const Invoice = () => {
             )}
           </div>
         </section>
-      </main>
-    </div>
+        </main>
+      </div>
+    </PageTransition>
   );
 };
 

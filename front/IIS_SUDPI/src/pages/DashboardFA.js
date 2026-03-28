@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import styles from "../styles/DashboardFA.module.css";
 import MainSideBar from "../components/MainSideBar";
 import { dashboardAPI } from "../api";
+import PageTransition from "../components/PageTransition";
 
 const DashboardFA = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -125,19 +126,20 @@ const DashboardFA = () => {
   };
 
   return (
-    <div
-      className={`${styles.dashboardFaWrapper} ${
-        isSidebarCollapsed ? styles.sidebarCollapsed : ""
-      }`}
-    >
-      <MainSideBar
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-      />
-      <main className={styles.dashboardFaMainContent}>
-        <header className={styles.dashboardHeader}>
-          <h1>Kontrolna tabla - Finansijski analitičar</h1>
-        </header>
+    <PageTransition>
+      <div
+        className={`${styles.dashboardFaWrapper} ${
+          isSidebarCollapsed ? styles.sidebarCollapsed : ""
+        }`}
+      >
+        <MainSideBar
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+        />
+        <main className={styles.dashboardFaMainContent}>
+          <header className={styles.dashboardHeader}>
+            <h1>Kontrolna tabla - Finansijski analitičar</h1>
+          </header>
 
         {loading && (
           <div className={styles.loadingMessage}>Učitavanje podataka...</div>
@@ -470,8 +472,9 @@ const DashboardFA = () => {
             </div>
           </div>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </PageTransition>
   );
 };
 
