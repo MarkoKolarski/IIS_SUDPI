@@ -376,7 +376,8 @@
 }
 
 .notificationBtn.confirm {
-    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+    background-color: #14b8a6;
+    box-shadow: 0 4px 8px rgba(20, 184, 166, 0.3);
 }
 
 .notificationBtn.decline {
@@ -392,7 +393,8 @@
 }
 
 .notificationBtn.confirm:hover {
-    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    background-color: #0f766e;
+    box-shadow: 0 6px 12px rgba(20, 184, 166, 0.4);
 }
 
 .notificationBtn.decline:hover {
@@ -652,10 +654,12 @@
 .transactionCard {
     width: 100%;
     border-radius: 8px;
-    background-color: #ffffff;
+    background-color: #ecfdf5;
     border: 1px solid #a7f3d0;
     box-shadow: 0 2px 4px rgba(20, 184, 166, 0.1);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .itemsCard .cardHeader,
@@ -675,6 +679,15 @@
 .itemsCard .cardBody,
 .transactionCard .cardBody {
     padding: 24px;
+}
+
+.transactionCard .cardBody {
+    background-color: #ecfdf5;
+    flex: 1;
+    min-height: 220px;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .itemsCard.expandedCard .cardBody,
