@@ -342,14 +342,24 @@
     min-height: 240px;
 }
 
+.notificationQuestionWrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
 .notificationQuestion {
     font-size: 18px;
     font-weight: 600;
     color: #134e4a;
     line-height: 1.6;
     margin: 0;
-    max-width: 44ch;
+    width: 100%;
+    max-width: 48ch;
     align-self: center;
+    text-align: center;
 }
 
 .notificationActions {

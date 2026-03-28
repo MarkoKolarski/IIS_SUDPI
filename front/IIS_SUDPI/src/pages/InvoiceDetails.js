@@ -385,11 +385,13 @@ const InvoiceDetails = () => {
               <div className={styles.cardBody}>
                 {canApproveReject ? (
                   <>
-                    <p className={styles.notificationQuestion}>
-                      {invoice.status_f === "primljena"
-                        ? "Da li želite da verifikujete fakturu?"
-                        : "Da li želite da izvršite plaćanje (simulacija)?"}
-                    </p>
+                    <div className={styles.notificationQuestionWrap}>
+                      <p className={styles.notificationQuestion}>
+                        {invoice.status_f === "primljena"
+                          ? "Da li želite da verifikujete fakturu?"
+                          : "Da li želite da izvršite plaćanje (simulacija)?"}
+                      </p>
+                    </div>
                     <div className={styles.notificationActions}>
                       {invoice.status_f === "primljena" ? (
                         <button
