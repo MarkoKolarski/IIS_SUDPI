@@ -258,6 +258,38 @@
   justify-content: flex-end;
 }
 
+.register-action-buttons {
+  width: 100%;
+  max-width: 920px;
+  margin: 14px auto 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+.register-back-btn {
+  background-color: #14b8a6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(20, 184, 166, 0.3);
+  transition: all 0.3s ease;
+}
+
+.register-back-btn:hover {
+  background-color: #0f766e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(20, 184, 166, 0.4);
+}
+
+.register-back-btn:active {
+  transform: translateY(0);
+}
+
 .register-home-btn {
   display: inline-flex;
   align-items: center;

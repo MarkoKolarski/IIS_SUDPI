@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axiosInstance from "../axiosInstance";
 import "../styles/Register.css";
 import MainSideBar from "../components/MainSideBar";
@@ -42,6 +42,7 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState({ type: "", text: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const isAdmin = sessionStorage.getItem("user_type") === "administrator";
 
@@ -379,13 +380,13 @@ const Register = () => {
                 <p className="register-auth-switch">
                   Već imate nalog? <Link to="/login">Prijavite se</Link>
                 </p>
-
-                <div className="register-secondary-actions">
-                  <Link to="/" className="register-home-btn">
-                    Nazad na početnu
-                  </Link>
-                </div>
               </div>
+            </div>
+
+            <div className="register-action-buttons">
+              <button className="register-back-btn" onClick={() => navigate("/")}>
+                ← Nazad na početnu stranu
+              </button>
             </div>
           </section>
         </main>
