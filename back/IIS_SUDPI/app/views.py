@@ -48,14 +48,15 @@ from .serializers import (
     NotifikacijaSerializer
 )
 from rest_framework import generics, filters
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from .decorators import allowed_users
-from django.core.mail import send_mail
+from django.core.mail import send_mail, get_connection
 from django.conf import settings
 import logging
 import uuid
 import re
 import unicodedata
+from threading import Thread
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.urls import reverse_lazy
 from django.contrib.auth import login, authenticate
@@ -1143,48 +1144,43 @@ def penalties_analysis(request):
     """
     API endpoint za automatsku analizu saradnje sa dobavljačima na osnovu penala
     """
-    
-    # Analiziramo dobavljače koji imaju penale
-    dobavljaci_analiza = []
-    
-    # Dobijamo sve dobavljače koji imaju ugovore (ne samo one sa penalima)
-    dobavljaci = Dobavljac.objects.filter(
-        ugovori__isnull=False
-    ).distinct()
-    
-    for dobavljac in dobavljaci:
-        # Ukupan broj ugovora za ovog dobavljača
-        ukupno_ugovora = dobavljac.ugovori.count()
-        
-        # Dobijamo unikatne ID-jeve ugovora koji imaju penale
-        # Koristimo values_list sa flat=True da izbegnemo NCLOB problem
-        ugovori_sa_penalima_ids = list(
-            dobavljac.ugovori.filter(
-                penali__isnull=False
-            ).values_list('sifra_u', flat=True).distinct()
+    # Agregiramo sve ključne metrike jednim upitom da izbegnemo N+1 obrasce.
+    dobavljaci_agregati = (
+        Dobavljac.objects.filter(ugovori__isnull=False)
+        .annotate(
+            ukupno_ugovora=Count('ugovori', distinct=True),
+            ugovori_sa_penalima=Count(
+                'ugovori',
+                filter=Q(ugovori__penali__isnull=False),
+                distinct=True,
+            ),
+            broj_penala=Count('ugovori__penali'),
+            ukupan_iznos=Sum('ugovori__penali__iznos_p'),
         )
-        broj_ugovora_sa_penalima = len(ugovori_sa_penalima_ids)
-        
-        # Ukupan broj penala za ovog dobavljača
-        broj_penala = Penal.objects.filter(
-            ugovor__dobavljac=dobavljac
-        ).count()
-        
-        # Ukupan iznos penala
-        ukupan_iznos = Penal.objects.filter(
-            ugovor__dobavljac=dobavljac
-        ).aggregate(
-            total=Sum('iznos_p')
-        )['total'] or 0
-        
-        # Preskačemo dobavljače koji nemaju penale
-        if broj_penala == 0:
-            continue
-            
-        # Računamo stopu kršenja kao procenat ugovora koji imaju penale
-        stopa_krsenja = (broj_ugovora_sa_penalima / ukupno_ugovora * 100) if ukupno_ugovora > 0 else 0
-        
-        # Određujemo preporuku na osnovu stope kršenja
+        .filter(broj_penala__gt=0)
+        .values(
+            'naziv',
+            'broj_penala',
+            'ukupno_ugovora',
+            'ugovori_sa_penalima',
+            'ukupan_iznos',
+        )
+    )
+
+    dobavljaci_analiza = []
+    for row in dobavljaci_agregati:
+        ukupno_ugovora = row['ukupno_ugovora'] or 0
+        broj_ugovora_sa_penalima = row['ugovori_sa_penalima'] or 0
+        broj_penala = row['broj_penala'] or 0
+        ukupan_iznos = row['ukupan_iznos'] or Decimal('0')
+
+        # Računamo stopu kršenja kao procenat ugovora koji imaju penale.
+        stopa_krsenja = (
+            (broj_ugovora_sa_penalima / ukupno_ugovora) * 100
+            if ukupno_ugovora > 0 else 0
+        )
+
+        # Određujemo preporuku na osnovu stope kršenja.
         if stopa_krsenja >= 50:
             preporuka = "Razmotriti prekid saradnje"
             tip_preporuke = "negative"
@@ -1194,9 +1190,9 @@ def penalties_analysis(request):
         else:
             preporuka = "Pouzdana saradnja"
             tip_preporuke = "positive"
-        
+
         dobavljaci_analiza.append({
-            'naziv': dobavljac.naziv,
+            'naziv': row['naziv'],
             'broj_penala': broj_penala,
             'ukupno_ugovora': ukupno_ugovora,
             'ugovori_sa_penalima': broj_ugovora_sa_penalima,
@@ -1289,7 +1285,7 @@ def send_confirmation_notification(dobavljac_email, transakcija, faktura):
         logger.error(f"Greška pri slanju email potvrde: {str(e)}")
         return False
 
-def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji=""):
+def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji="", connection=None):
     """
     Slanje email notifikacije dobavljaču o kršenju ugovora i dodeljenom penalu
     """
@@ -1336,6 +1332,7 @@ def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji="")
             message,
             settings.DEFAULT_FROM_EMAIL,
             [dobavljac_email],
+            connection=connection,
             fail_silently=False,
         )
         logger.info(f"Email o penalu poslat na {dobavljac_email} za ugovor {ugovor.sifra_u}, penal {penal.sifra_p}")
@@ -1343,6 +1340,42 @@ def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji="")
     except Exception as e:
         logger.error(f"Greška pri slanju email obaveštenja o penalu: {str(e)}")
         return False
+
+
+def _dispatch_penalty_notifications_async(email_jobs):
+    """
+    Asinhrono šalje email obaveštenja kako bi API odgovor bio brz.
+    """
+    if not email_jobs:
+        return
+
+    try:
+        penal_ids = [job['penal_id'] for job in email_jobs]
+        penali_map = {
+            penal.sifra_p: penal
+            for penal in Penal.objects.select_related('ugovor__dobavljac').filter(sifra_p__in=penal_ids)
+        }
+
+        connection = get_connection(fail_silently=False)
+        try:
+            connection.open()
+            for job in email_jobs:
+                penal = penali_map.get(job['penal_id'])
+                if penal is None:
+                    logger.warning(f"Penal {job['penal_id']} nije pronađen za slanje email obaveštenja")
+                    continue
+
+                send_penalty_notification(
+                    dobavljac_email=job['dobavljac_email'],
+                    penal=penal,
+                    ugovor=penal.ugovor,
+                    razlog_detalji=job.get('razlog_detalji', ''),
+                    connection=connection,
+                )
+        finally:
+            connection.close()
+    except Exception as e:
+        logger.error(f"Greška pri asinhronom batch slanju emailova o penalima: {str(e)}")
 
 
 def check_contract_violations():
@@ -1381,7 +1414,7 @@ def check_contract_violations():
         return []
 
 
-def auto_create_penalty(violation_data):
+def auto_create_penalty(violation_data, send_email=True, email_connection=None, penal_id=None):
     """
     Automatski kreira penal za dato kršenje i šalje email obaveštenje dobavljaču
     
@@ -1397,36 +1430,47 @@ def auto_create_penalty(violation_data):
         
         # Kreiraj penal
         with transaction.atomic():
-            from django.db.models import Max
-            max_penal_id = Penal.objects.aggregate(Max('sifra_p'))['sifra_p__max'] or 0
-            next_penal_id = max_penal_id + 1
-            
-            penal = Penal.objects.create(
-                sifra_p=next_penal_id,
-                razlog_p=violation_data['razlog'],
-                iznos_p=violation_data['iznos_penala'],
-                ugovor=ugovor
-            )
+            create_kwargs = {
+                'razlog_p': violation_data['razlog'],
+                'iznos_p': violation_data['iznos_penala'],
+                'ugovor': ugovor,
+            }
+            if penal_id is not None:
+                # Eksplicitni ID izbegava probleme sa razdešenim sekvencama nakon SQL inserta.
+                create_kwargs['sifra_p'] = penal_id
+
+            try:
+                penal = Penal.objects.create(**create_kwargs)
+            except IntegrityError:
+                # U retkim slučajevima kolizije ID-a pokušaj još jednom sa svežim max+1.
+                if penal_id is None:
+                    raise
+
+                fresh_next_id = (Penal.objects.aggregate(max_id=Max('sifra_p'))['max_id'] or 0) + 1
+                create_kwargs['sifra_p'] = fresh_next_id
+                penal = Penal.objects.create(**create_kwargs)
             
             # Ako je kršenje 'istek_ugovora', ažuriraj status ugovora
-            if violation_data['tip_krsenja'] == 'istek_ugovora':
+            if violation_data['tip_krsenja'] == 'istek_ugovora' and ugovor.status_u != 'istekao':
                 ugovor.status_u = 'istekao'
-                ugovor.save()
+                ugovor.save(update_fields=['status_u'])
             
             logger.info(f"Automatski kreiran penal {penal.sifra_p} za ugovor {ugovor.sifra_u}")
-        
-        # Pošalji email obaveštenje dobavljaču
-        email_sent = send_penalty_notification(
-            dobavljac_email=dobavljac.email,
-            penal=penal,
-            ugovor=ugovor,
-            razlog_detalji=f"\n{violation_data.get('detalji', '')}\n"
-        )
-        
-        if email_sent:
-            logger.info(f"Email obaveštenje uspešno poslato za penal {penal.sifra_p}")
-        else:
-            logger.warning(f"Email obaveštenje nije poslato za penal {penal.sifra_p}")
+
+        if send_email:
+            # Pošalji email obaveštenje dobavljaču
+            email_sent = send_penalty_notification(
+                dobavljac_email=dobavljac.email,
+                penal=penal,
+                ugovor=ugovor,
+                razlog_detalji=f"\n{violation_data.get('detalji', '')}\n",
+                connection=email_connection,
+            )
+
+            if email_sent:
+                logger.info(f"Email obaveštenje uspešno poslato za penal {penal.sifra_p}")
+            else:
+                logger.warning(f"Email obaveštenje nije poslato za penal {penal.sifra_p}")
         
         return True, penal, None
         
@@ -1467,9 +1511,18 @@ def check_and_create_penalties(request):
         # Kreiraj penale za svako kršenje
         created_penalties = []
         errors = []
+        email_jobs = []
+
+        # Računamo sledeći penal ID jednom po zahtevu radi brzine i stabilnosti.
+        next_penal_id = (Penal.objects.aggregate(max_id=Max('sifra_p'))['max_id'] or 0) + 1
         
         for violation in violations:
-            success, penal, error_msg = auto_create_penalty(violation)
+            success, penal, error_msg = auto_create_penalty(
+                violation,
+                send_email=False,
+                penal_id=next_penal_id,
+            )
+            next_penal_id += 1
             
             if success:
                 created_penalties.append({
@@ -1480,12 +1533,28 @@ def check_and_create_penalties(request):
                     'iznos': float(violation['iznos_penala']),
                     'razlog': violation['razlog']
                 })
+
+                email_jobs.append({
+                    'penal_id': penal.sifra_p,
+                    'dobavljac_email': violation['ugovor'].dobavljac.email,
+                    'razlog_detalji': f"\n{violation.get('detalji', '')}\n",
+                })
             else:
                 errors.append({
                     'ugovor_id': violation['ugovor'].sifra_u,
                     'dobavljac': violation['ugovor'].dobavljac.naziv,
                     'error': error_msg
                 })
+
+        if email_jobs:
+            jobs_payload = list(email_jobs)
+            transaction.on_commit(
+                lambda jobs=jobs_payload: Thread(
+                    target=_dispatch_penalty_notifications_async,
+                    args=(jobs,),
+                    daemon=True,
+                ).start()
+            )
         
         # Pripremi odgovor
         response_data = {

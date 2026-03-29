@@ -174,17 +174,16 @@ const Penalties = () => {
 
       const response = await axiosInstance.post("penalties/auto-create/");
       
-      const { message, penalties_created, violations_found } = response.data;
+      const { penalties_created, violations_found } = response.data;
       
       // Prikaži success poruku
       setViolationMessage({
         type: "success",
-        text: `${message} Pronađeno: ${violations_found}, Kreirano: ${penalties_created} penala.`,
+        text: `Pronađeno: ${violations_found}, Kreirano: ${penalties_created} penala.`,
       });
 
-      // Refresh penala i analize
-      await fetchPenalties();
-      await fetchAnalysis();
+      // Refresh penala i analize paralelno radi bržeg odziva UI-a
+      await Promise.all([fetchPenalties(), fetchAnalysis()]);
       
       // Sakrij poruku nakon 5 sekundi
       setTimeout(() => {
