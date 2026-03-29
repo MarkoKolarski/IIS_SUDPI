@@ -554,9 +554,9 @@
 
 .chartBar {
     width: 30px;
-    background: linear-gradient(180deg, #38bdf8 0%, #3b82f6 56%, #2563eb 100%);
+    background: linear-gradient(180deg, #6f8fc8 0%, #5476ad 56%, #3f5f91 100%);
     border-radius: 6px 6px 2px 2px;
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.18);
+    box-shadow: 0 6px 16px rgba(63, 95, 145, 0.18);
     transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
     transform-origin: bottom;
     animation: chartBarGrow 0.56s cubic-bezier(0.2, 0.9, 0.2, 1) both;
@@ -577,7 +577,7 @@
 
 .chartBar:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.24);
+    box-shadow: 0 10px 20px rgba(63, 95, 145, 0.24);
 }
 
 .chartAmount {

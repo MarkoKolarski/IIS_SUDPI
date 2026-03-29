@@ -495,7 +495,7 @@ const DashboardFA = () => {
                                     (item.iznos / chartMaxValue) *
                                       100 || 10
                                   )}px`,
-                                  backgroundColor: "#3b82f6",
+                                  backgroundColor: "#5476ad",
                                 }}
                               ></div>
                               <div className={styles.chartAmount}>

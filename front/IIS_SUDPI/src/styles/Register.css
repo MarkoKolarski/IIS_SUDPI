@@ -1,34 +1,116 @@
 .register-wrapper {
+  --register-bg: #f0fdfa;
+  --register-brand: #14b8a6;
+  --register-brand-hover: #0f766e;
+  --register-brand-deep: #0b5c56;
+  --register-border: #a7f3d0;
+  --register-border-soft: #ccfbf1;
+  --register-text: #134e4a;
+  --register-text-soft: #0f766e;
+  --register-card-bg: #ffffff;
+  --register-input-bg: #f8fffd;
+  --register-danger: #dc2626;
+  --register-success-bg: #d1fae5;
+  --register-success-text: #065f46;
+  --register-error-bg: #fee2e2;
+  --register-error-text: #991b1b;
   display: flex;
   min-height: 100vh;
-  background-color: #f0fdfa;
+  background-color: var(--register-bg);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--register-text);
 }
 
 .register-main-content {
-  flex-grow: 1;
-  margin-left: 280px;
-  padding: 20px;
+  flex: 1;
+  min-height: 100vh;
+  margin-left: 0;
   transition: margin-left 0.3s ease;
 }
 
-.register-wrapper.sidebar-collapsed .register-main-content {
+.register-wrapper.has-sidebar .register-main-content {
+  margin-left: 280px;
+}
+
+.register-wrapper.has-sidebar.sidebar-collapsed .register-main-content {
   margin-left: 80px;
 }
 
-.register-container {
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 30px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.register-header {
+  background-color: var(--register-brand);
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(20, 184, 166, 0.2);
 }
 
-.register-container h2 {
-  color: #1a237e;
-  margin-bottom: 30px;
+.register-header h1 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.register-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  background-color: var(--register-card-bg);
+  border: 1px solid var(--register-border);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
+  overflow: hidden;
+}
+
+.register-card-header {
+  background-color: var(--register-brand);
+  color: #ffffff;
+  padding: 20px 24px;
   text-align: center;
-  font-size: 24px;
+}
+
+.register-card-header h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.register-card-header p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #e6fffa;
+}
+
+.register-card-body {
+  padding: 28px;
+  background-color: #ecfdf5;
+}
+
+.register-message {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.register-message.success {
+  background-color: var(--register-success-bg);
+  color: var(--register-success-text);
+  border-color: #6ee7b7;
+}
+
+.register-message.error {
+  background-color: var(--register-error-bg);
+  color: var(--register-error-text);
+  border-color: #fca5a5;
 }
 
 .register-form {
@@ -37,67 +119,208 @@
   gap: 20px;
 }
 
-.register-form input,
-.register-form select {
-  padding: 12px 15px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 16px;
-  transition: border-color 0.3s ease;
+.register-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
 }
 
-.register-form input:focus,
-.register-form select:focus {
-  border-color: #1a237e;
+.register-form-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.register-form-group-full {
+  grid-column: 1 / -1;
+}
+
+.register-form-label {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--register-text-soft);
+}
+
+.register-form-control {
+  width: 100%;
+  height: 46px;
+  border: 1px solid var(--register-border);
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 15px;
+  color: var(--register-text);
+  background-color: var(--register-input-bg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.register-form-control:focus {
   outline: none;
+  border-color: var(--register-brand);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18);
+  background-color: #ffffff;
 }
 
-.register-form button {
-  padding: 12px;
-  background-color: #1a237e;
-  color: white;
+.register-form-select {
+  appearance: none;
+  padding-right: 42px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--register-brand) 50%),
+    linear-gradient(135deg, var(--register-brand) 50%, transparent 50%);
+  background-position: calc(100% - 17px) 19px, calc(100% - 12px) 19px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.register-form-control.is-invalid {
+  border-color: var(--register-danger);
+  background-color: #fffbfb;
+}
+
+.register-form-control.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+}
+
+.register-password-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #0f766e;
+}
+
+.register-error-message {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--register-danger);
+  font-weight: 500;
+}
+
+.register-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.register-submit-btn {
+  min-width: 220px;
+  height: 46px;
   border: none;
-  border-radius: 5px;
-  font-size: 16px;
+  border-radius: 8px;
+  padding: 0 22px;
+  background-color: var(--register-brand);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 10px rgba(20, 184, 166, 0.25);
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.register-form button:hover {
-  background-color: #0d1657;
+.register-submit-btn:hover:not(:disabled) {
+  background-color: var(--register-brand-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(20, 184, 166, 0.32);
 }
 
-.message {
-  padding: 15px;
-  margin-bottom: 20px;
-  border-radius: 5px;
+.register-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.register-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  box-shadow: none;
+}
+
+.register-auth-switch {
+  margin: 16px 0 0;
   text-align: center;
+  font-size: 15px;
+  color: #0f766e;
 }
 
-.message.success {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
+.register-auth-switch a {
+  color: var(--register-brand-deep);
+  font-weight: 700;
+  text-decoration: none;
 }
 
-.message.error {
-  background-color: #ffebee;
-  color: #c62828;
-  border: 1px solid #ef9a9a;
+.register-auth-switch a:hover {
+  text-decoration: underline;
 }
 
-.error-message {
-  color: #c62828;
-  font-size: 14px;
-  margin-top: -15px;
-  margin-bottom: -15px;
+@media (max-width: 1200px) {
+  .register-wrapper.has-sidebar .register-main-content {
+    margin-left: 260px;
+  }
+
+  .register-wrapper.has-sidebar.sidebar-collapsed .register-main-content {
+    margin-left: 72px;
+  }
+}
+
+@media (max-width: 992px) {
+  .register-wrapper.has-sidebar .register-main-content {
+    margin-left: 240px;
+  }
+
+  .register-content {
+    padding: 28px 24px;
+  }
+
+  .register-card {
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
-  .register-main-content {
-    margin-left: 80px;
-  }
-  .register-wrapper.sidebar-collapsed .register-main-content {
+  .register-wrapper.has-sidebar .register-main-content,
+  .register-wrapper.has-sidebar.sidebar-collapsed .register-main-content {
     margin-left: 0;
+  }
+
+  .register-header {
+    padding: 22px 16px;
+  }
+
+  .register-header h1 {
+    font-size: 27px;
+  }
+
+  .register-content {
+    padding: 20px;
+  }
+
+  .register-card-body {
+    padding: 20px;
+  }
+
+  .register-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .register-actions {
+    justify-content: stretch;
+  }
+
+  .register-submit-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-card-header h2 {
+    font-size: 22px;
+  }
+
+  .register-card-header p {
+    font-size: 14px;
+  }
+
+  .register-form-control {
+    font-size: 14px;
   }
 }
