@@ -379,6 +379,12 @@ const Register = () => {
                 <p className="register-auth-switch">
                   Već imate nalog? <Link to="/login">Prijavite se</Link>
                 </p>
+
+                <div className="register-secondary-actions">
+                  <Link to="/" className="register-home-btn">
+                    Nazad na početnu
+                  </Link>
+                </div>
               </div>
             </div>
           </section>

@@ -403,7 +403,6 @@ const EditProfile = () => {
         <main className="edit-profile-main">
           <header className="edit-profile-header">
             <h1>Izmena profila</h1>
-            <p>Ažurirajte lične podatke i sigurnosne postavke naloga.</p>
           </header>
 
           <div className="edit-profile-content">

@@ -38,9 +38,10 @@
 
 .register-header {
   background-color: var(--register-brand);
-  padding: 28px 24px;
+  padding: 28px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(20, 184, 166, 0.2);
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .register-header h1 {
@@ -251,6 +252,34 @@
   text-decoration: underline;
 }
 
+.register-secondary-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.register-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid var(--register-border);
+  background-color: #ffffff;
+  color: var(--register-brand-deep);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.register-home-btn:hover {
+  background-color: #f0fdfa;
+  border-color: #5eead4;
+  transform: translateY(-1px);
+}
+
 @media (max-width: 1200px) {
   .register-wrapper.has-sidebar .register-main-content {
     margin-left: 260px;
@@ -281,12 +310,8 @@
     margin-left: 0;
   }
 
-  .register-header {
-    padding: 22px 16px;
-  }
-
   .register-header h1 {
-    font-size: 27px;
+    font-size: 24px;
   }
 
   .register-content {
@@ -308,6 +333,14 @@
   .register-submit-btn {
     width: 100%;
     min-width: 0;
+  }
+
+  .register-secondary-actions {
+    justify-content: stretch;
+  }
+
+  .register-home-btn {
+    width: 100%;
   }
 }
 
