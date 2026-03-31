@@ -15,6 +15,10 @@ const InvoiceDetails = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectReasonError, setRejectReasonError] = useState("");
+  const [actionFeedback, setActionFeedback] = useState(null);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!isSidebarCollapsed);
@@ -44,8 +48,27 @@ const InvoiceDetails = () => {
     loadInvoiceDetails();
   };
 
+  const closeRejectModal = useCallback(() => {
+    if (actionLoading) {
+      return;
+    }
+
+    setIsRejectModalOpen(false);
+    setRejectReason("");
+    setRejectReasonError("");
+  }, [actionLoading]);
+
+  const openRejectModal = () => {
+    setActionFeedback(null);
+    setRejectReason("");
+    setRejectReasonError("");
+    setIsRejectModalOpen(true);
+  };
+
   const handleInvoiceAction = async (action, reason = "") => {
     setActionLoading(true);
+    setActionFeedback(null);
+
     try {
       const response = await axiosInstance.post(`/invoices/${invoiceId}/action/`, {
         action,
@@ -53,10 +76,21 @@ const InvoiceDetails = () => {
       });
 
       await loadInvoiceDetails();
-      alert(response.data.message);
+      setActionFeedback({
+        type: "success",
+        message: response.data.message || "Akcija je uspešno izvršena.",
+      });
+      return true;
     } catch (error) {
       console.error("Greška pri izvršavanju akcije:", error);
-      alert("Greška pri izvršavanju akcije. Pokušajte ponovo.");
+      setActionFeedback({
+        type: "error",
+        message:
+          error.response?.data?.error ||
+          error.response?.data?.detail ||
+          "Greška pri izvršavanju akcije. Pokušajte ponovo.",
+      });
+      return false;
     } finally {
       setActionLoading(false);
     }
@@ -75,13 +109,36 @@ const InvoiceDetails = () => {
   }, [loadInvoiceDetails]);
 
   useEffect(() => {
+    if (!actionFeedback) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setActionFeedback(null);
+    }, 4500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [actionFeedback]);
+
+  useEffect(() => {
     const onKeyDown = (event) => {
-      if (event.key === "Escape") {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      if (isRejectModalOpen) {
+        closeRejectModal();
+        return;
+      }
+
+      if (expandedCard) {
         setExpandedCard(null);
       }
     };
 
-    if (expandedCard) {
+    if (expandedCard || isRejectModalOpen) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", onKeyDown);
     }
@@ -90,7 +147,7 @@ const InvoiceDetails = () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [expandedCard]);
+  }, [expandedCard, isRejectModalOpen, closeRejectModal]);
 
   const hasProcessSteps =
     Array.isArray(invoice?.process_steps) && invoice.process_steps.length > 0;
@@ -99,10 +156,42 @@ const InvoiceDetails = () => {
     invoice?.status_f === "primljena" || invoice?.status_f === "verifikovana";
   const hasTransaction = Boolean(invoice?.transakcija);
 
-  const handleRejectAction = () => {
-    const reason = prompt("Unesite razlog odbacivanja:");
-    if (reason) {
-      handleInvoiceAction("reject", reason);
+  const resolveStatusTone = (statusCode) => {
+    const normalizedStatus = String(statusCode || "").toLowerCase();
+
+    if (["primljena", "na_cekanju", "ceka_verifikaciju"].includes(normalizedStatus)) {
+      return "statusPending";
+    }
+
+    if (["verifikovana", "spremna_za_placanje", "u_obradi"].includes(normalizedStatus)) {
+      return "statusInfo";
+    }
+
+    if (["placena", "isplacena", "zavrsena"].includes(normalizedStatus)) {
+      return "statusSuccess";
+    }
+
+    if (["odbijena", "stornirana", "ponistena"].includes(normalizedStatus)) {
+      return "statusRejected";
+    }
+
+    return "statusNeutral";
+  };
+
+  const statusToneClass = resolveStatusTone(invoice?.status_f);
+
+  const handleRejectAction = async () => {
+    const normalizedReason = rejectReason.trim();
+
+    if (!normalizedReason) {
+      setRejectReasonError("Unesite razlog odbacivanja pre potvrde.");
+      return;
+    }
+
+    setRejectReasonError("");
+    const succeeded = await handleInvoiceAction("reject", normalizedReason);
+    if (succeeded) {
+      closeRejectModal();
     }
   };
 
@@ -163,6 +252,81 @@ const InvoiceDetails = () => {
           </header>
 
         <div className={styles.invoiceDetailsContent}>
+          <section className={styles.quickActionsPanel}>
+            <div className={styles.quickActionsInfo}>
+              <h2>{canApproveReject ? "Faktura očekuje akciju" : "Pregled statusa fakture"}</h2>
+              <p>
+                {canApproveReject
+                  ? invoice.status_f === "primljena"
+                    ? "Potrebno je da fakturu verifikujete ili odbacite sa obrazloženjem."
+                    : "Faktura je verifikovana i čeka završnu akciju plaćanja ili odbacivanja."
+                  : "Za trenutni status nema dostupnih akcija."}
+              </p>
+              <div className={styles.quickActionsStatusWrap}>
+                <span className={styles.quickActionsStatusLabel}>Status fakture</span>
+                <span
+                  className={`${styles.quickActionsStatus} ${styles[statusToneClass]}`}
+                >
+                  {invoice.status_display}
+                </span>
+              </div>
+            </div>
+
+            {canApproveReject ? (
+              <div className={styles.quickActionsButtons}>
+                {invoice.status_f === "primljena" ? (
+                  <button
+                    className={`${styles.notificationBtn} ${styles.confirm} ${styles.quickActionPrimary}`}
+                    onClick={() => handleInvoiceAction("approve")}
+                    disabled={actionLoading}
+                  >
+                    {actionLoading ? "Procesiranje..." : "Verifikuj fakturu"}
+                  </button>
+                ) : (
+                  <button
+                    className={`${styles.notificationBtn} ${styles.confirm} ${styles.quickActionPrimary}`}
+                    onClick={openPaymentSimulation}
+                    disabled={actionLoading}
+                  >
+                    Izvrši plaćanje
+                  </button>
+                )}
+
+                <button
+                  className={`${styles.notificationBtn} ${styles.decline} ${styles.quickActionSecondary}`}
+                  onClick={openRejectModal}
+                  disabled={actionLoading}
+                >
+                  Odbaci fakturu
+                </button>
+              </div>
+            ) : (
+              <div className={styles.quickActionsEmpty}>Nema akcija za ovaj status.</div>
+            )}
+          </section>
+
+          {actionFeedback && (
+            <div
+              className={`${styles.actionFeedback} ${
+                actionFeedback.type === "success"
+                  ? styles.actionFeedbackSuccess
+                  : styles.actionFeedbackError
+              }`}
+              role={actionFeedback.type === "error" ? "alert" : "status"}
+              aria-live="polite"
+            >
+              <span>{actionFeedback.message}</span>
+              <button
+                type="button"
+                className={styles.actionFeedbackClose}
+                aria-label="Zatvori poruku"
+                onClick={() => setActionFeedback(null)}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {expandedCard && (
             <button
               type="button"
@@ -383,53 +547,6 @@ const InvoiceDetails = () => {
                 )}
               </div>
             </div>
-
-            <div className={styles.notificationCard}>
-              <div className={styles.cardHeader}>
-                <h3>Akcije</h3>
-              </div>
-              <div className={styles.cardBody}>
-                {canApproveReject ? (
-                  <>
-                    <div className={styles.notificationQuestionWrap}>
-                      <p className={styles.notificationQuestion}>
-                        {invoice.status_f === "primljena"
-                          ? "Da li želite da verifikujete fakturu?"
-                          : "Da li želite da izvršite plaćanje (simulacija)?"}
-                      </p>
-                    </div>
-                    <div className={styles.notificationActions}>
-                      {invoice.status_f === "primljena" ? (
-                        <button
-                          className={`${styles.notificationBtn} ${styles.confirm}`}
-                          onClick={() => handleInvoiceAction("approve")}
-                          disabled={actionLoading}
-                        >
-                          {actionLoading ? "Procesiranje..." : "Verifikuj"}
-                        </button>
-                      ) : (
-                        <button
-                          className={`${styles.notificationBtn} ${styles.confirm}`}
-                          onClick={openPaymentSimulation}
-                          disabled={actionLoading}
-                        >
-                          Izvrši plaćanje
-                        </button>
-                      )}
-                      <button
-                        className={`${styles.notificationBtn} ${styles.decline}`}
-                        onClick={handleRejectAction}
-                        disabled={actionLoading}
-                      >
-                        Odbaci
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className={styles.noData}>Za trenutni status nema dostupnih akcija</div>
-                )}
-              </div>
-            </div>
           </section>
 
           <div className={styles.actionButtons}>
@@ -439,6 +556,85 @@ const InvoiceDetails = () => {
           </div>
         </div>
         </main>
+
+        {isRejectModalOpen && (
+          <div
+            className={styles.rejectModalOverlay}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                closeRejectModal();
+              }
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-modal-title"
+          >
+            <div className={styles.rejectModalCard}>
+              <div className={styles.rejectModalHeader}>
+                <h2 id="reject-modal-title">Odbacivanje fakture</h2>
+                <button
+                  type="button"
+                  className={styles.rejectModalClose}
+                  onClick={closeRejectModal}
+                  disabled={actionLoading}
+                  aria-label="Zatvori prozor"
+                >
+                  ×
+                </button>
+              </div>
+
+              <p className={styles.rejectModalDescription}>
+                Unesite razlog odbacivanja. Ova poruka će biti evidentirana uz fakturu.
+              </p>
+
+              <label htmlFor="reject-reason" className={styles.rejectModalLabel}>
+                Razlog odbacivanja
+              </label>
+              <textarea
+                id="reject-reason"
+                className={styles.rejectModalTextarea}
+                value={rejectReason}
+                onChange={(event) => {
+                  setRejectReason(event.target.value);
+                  if (rejectReasonError) {
+                    setRejectReasonError("");
+                  }
+                }}
+                placeholder="Npr. Stavke fakture nisu usklađene sa ugovorom."
+                rows={5}
+                maxLength={500}
+                autoFocus
+                disabled={actionLoading}
+              />
+
+              <div className={styles.rejectModalMeta}>
+                <span className={styles.rejectModalCounter}>{rejectReason.length}/500</span>
+                {rejectReasonError && (
+                  <span className={styles.rejectModalError}>{rejectReasonError}</span>
+                )}
+              </div>
+
+              <div className={styles.rejectModalActions}>
+                <button
+                  type="button"
+                  className={styles.rejectModalCancelBtn}
+                  onClick={closeRejectModal}
+                  disabled={actionLoading}
+                >
+                  Otkaži
+                </button>
+                <button
+                  type="button"
+                  className={styles.rejectModalConfirmBtn}
+                  onClick={handleRejectAction}
+                  disabled={actionLoading}
+                >
+                  {actionLoading ? "Odbacivanje..." : "Potvrdi odbacivanje"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <PaymentSimulationModal
           isOpen={isPaymentModalOpen}

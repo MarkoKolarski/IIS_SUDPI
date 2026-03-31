@@ -44,6 +44,167 @@
     gap: 36px;
 }
 
+/* Quick Actions */
+.quickActionsPanel {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 1px solid #99f6e4;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.16);
+    padding: 22px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    position: sticky;
+    top: 14px;
+    z-index: 20;
+}
+
+.quickActionsInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.quickActionsInfo h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f766e;
+}
+
+.quickActionsInfo p {
+    margin: 0;
+    color: #115e59;
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+.quickActionsStatusWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.quickActionsStatusLabel {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #0f766e;
+}
+
+.quickActionsStatus {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 7px 14px;
+}
+
+.statusPending {
+    background-color: #fef9c3;
+    border-color: #fde68a;
+    color: #854d0e;
+}
+
+.statusInfo {
+    background-color: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.statusSuccess {
+    background-color: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+}
+
+.statusRejected {
+    background-color: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+.statusNeutral {
+    background-color: #ccfbf1;
+    border-color: #5eead4;
+    color: #0f766e;
+}
+
+.quickActionsButtons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.quickActionPrimary,
+.quickActionSecondary {
+    min-width: 196px;
+    min-height: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.quickActionsEmpty {
+    color: #115e59;
+    font-weight: 600;
+    text-align: right;
+}
+
+.actionFeedback {
+    width: 100%;
+    max-width: 1600px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.12);
+}
+
+.actionFeedbackSuccess {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border-color: #86efac;
+}
+
+.actionFeedbackError {
+    background-color: #fff1f2;
+    color: #9f1239;
+    border-color: #fda4af;
+}
+
+.actionFeedbackClose {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+.actionFeedbackClose:hover {
+    opacity: 0.7;
+}
+
 /* Invoice Summary Card */
 .invoiceSummaryCard {
     width: 100%;
@@ -261,8 +422,7 @@
     }
 }
 
-.discrepancyCard,
-.notificationCard {
+.discrepancyCard {
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(20, 184, 166, 0.18);
     display: flex;
@@ -334,42 +494,6 @@
     justify-content: center;
 }
 
-.notificationCard .cardBody {
-    gap: 24px;
-    align-items: stretch;
-    justify-content: space-between;
-    text-align: center;
-    min-height: 240px;
-}
-
-.notificationQuestionWrap {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-}
-
-.notificationQuestion {
-    font-size: 18px;
-    font-weight: 600;
-    color: #134e4a;
-    line-height: 1.6;
-    margin: 0;
-    width: 100%;
-    max-width: 48ch;
-    align-self: center;
-    text-align: center;
-}
-
-.notificationActions {
-    display: flex;
-    gap: 16px;
-    justify-content: space-between;
-    flex-wrap: nowrap;
-    width: 100%;
-}
-
 .notificationBtn {
     background-color: #14b8a6;
     color: #ffffff;
@@ -377,9 +501,10 @@
     border-radius: 6px;
     padding: 12px 18px;
     min-width: 0;
-    flex: 1;
+    flex: 0 0 auto;
     font-size: 16px;
     font-weight: 600;
+    line-height: 1;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.2s ease;
     box-shadow: 0 4px 10px rgba(20, 184, 166, 0.2);
@@ -421,6 +546,174 @@
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+}
+
+/* Reject Modal */
+.rejectModalOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    animation: overlayFadeIn 0.14s ease-out;
+}
+
+.rejectModalCard {
+    width: min(560px, 100%);
+    border-radius: 14px;
+    border: 1px solid #99f6e4;
+    background: #ffffff;
+    box-shadow: 0 24px 42px rgba(6, 95, 70, 0.22);
+    padding: 24px;
+    transform-origin: center;
+    animation: rejectModalIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes rejectModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.rejectModalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.rejectModalHeader h2 {
+    margin: 0;
+    color: #0f766e;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.rejectModalClose {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #99f6e4;
+    background-color: #ecfeff;
+    color: #115e59;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.rejectModalClose:hover {
+    background-color: #ccfbf1;
+}
+
+.rejectModalDescription {
+    margin: 0 0 14px;
+    color: #0f766e;
+    line-height: 1.6;
+}
+
+.rejectModalLabel {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: #0f766e;
+}
+
+.rejectModalTextarea {
+    width: 100%;
+    min-height: 132px;
+    resize: vertical;
+    border-radius: 10px;
+    border: 1px solid #99f6e4;
+    padding: 12px 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #134e4a;
+    box-sizing: border-box;
+}
+
+.rejectModalTextarea:focus {
+    outline: 2px solid rgba(20, 184, 166, 0.35);
+    border-color: #14b8a6;
+}
+
+.rejectModalTextarea:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+}
+
+.rejectModalMeta {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 22px;
+}
+
+.rejectModalCounter {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.rejectModalError {
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.rejectModalActions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.rejectModalCancelBtn,
+.rejectModalConfirmBtn {
+    border: none;
+    border-radius: 8px;
+    padding: 11px 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.rejectModalCancelBtn {
+    background-color: #f8fafc;
+    color: #0f766e;
+    border: 1px solid #99f6e4;
+}
+
+.rejectModalConfirmBtn {
+    background-color: #0f766e;
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(15, 118, 110, 0.22);
+}
+
+.rejectModalCancelBtn:hover {
+    background-color: #ecfeff;
+}
+
+.rejectModalConfirmBtn:hover {
+    background-color: #115e59;
+}
+
+.rejectModalCancelBtn:disabled,
+.rejectModalConfirmBtn:disabled,
+.rejectModalClose:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 /* Simulation Button */
@@ -467,6 +760,8 @@
     .invoiceSummaryCard,
     .processFlow,
     .bottomCards,
+    .quickActionsPanel,
+    .actionFeedback,
     .actionButtons {
         max-width: 100%;
     }
@@ -475,6 +770,20 @@
 @media (max-width: 992px) {
     .invoiceDetailsMain {
         margin-left: 240px;
+    }
+
+    .quickActionsPanel {
+        position: static;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quickActionsButtons {
+        justify-content: flex-start;
+    }
+
+    .quickActionsEmpty {
+        text-align: left;
     }
 
     .bottomCards {
@@ -527,6 +836,37 @@
         gap: 20px;
     }
 
+    .quickActionsPanel {
+        padding: 18px 20px;
+        gap: 16px;
+        top: 0;
+    }
+
+    .quickActionsInfo h2 {
+        font-size: 22px;
+    }
+
+    .quickActionsInfo p {
+        font-size: 15px;
+    }
+
+    .quickActionsButtons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quickActionPrimary,
+    .quickActionSecondary,
+    .notificationBtn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .actionFeedback {
+        padding: 12px 14px;
+        align-items: flex-start;
+    }
+
     .simulatePaymentBtn {
         margin: 0;
         width: 100%;
@@ -560,22 +900,41 @@
         width: 100%;
     }
 
-    .notificationCard .cardBody {
-        min-height: 0;
+    .rejectModalOverlay {
+        padding: 12px;
     }
 
-    .notificationActions {
-        flex-direction: column;
-        flex-wrap: nowrap;
+    .rejectModalCard {
+        width: calc(100vw - 24px);
+        border-radius: 12px;
+        padding: 20px 18px;
     }
 
-    .notificationBtn {
+    .rejectModalHeader h2 {
+        font-size: 22px;
+    }
+
+    .rejectModalActions {
+        flex-direction: column-reverse;
+    }
+
+    .rejectModalCancelBtn,
+    .rejectModalConfirmBtn {
         width: 100%;
     }
 
     .invoiceItemMeta,
     .transactionGrid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rejectModalOverlay,
+    .rejectModalCard,
+    .expandedCard,
+    .expandedOverlay {
+        animation: none;
     }
 }
 
@@ -600,12 +959,24 @@
         padding: 24px 20px;
     }
 
+    .quickActionsPanel {
+        padding: 16px;
+    }
+
+    .quickActionsInfo h2 {
+        font-size: 20px;
+    }
+
     .reasonText {
         font-size: 17px;
     }
 
     .invoiceItemTitle {
         font-size: 16px;
+    }
+
+    .rejectModalDescription {
+        font-size: 14px;
     }
 }
 
@@ -670,6 +1041,10 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+.transactionCard {
+    grid-column: 1 / -1;
 }
 
 .itemsCard .cardHeader,

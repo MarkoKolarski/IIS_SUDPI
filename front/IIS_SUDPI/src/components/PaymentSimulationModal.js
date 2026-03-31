@@ -8,6 +8,7 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
     const [simulationComplete, setSimulationComplete] = useState(false);
     const [error, setError] = useState(null);
     const [transactionData, setTransactionData] = useState(null);
+    const [showStopConfirm, setShowStopConfirm] = useState(false);
 
     const steps = useMemo(() => [
         { id: 1, text: 'Pokretanje simulacije...', duration: 1500 },
@@ -26,6 +27,7 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
         setIsSimulating(true);
         setCurrentStep(1);
         setError(null);
+        setShowStopConfirm(false);
         
         try {
             // Pozovi backend za stvarno plaćanje
@@ -60,6 +62,7 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
         setSimulationComplete(false);
         setError(null);
         setTransactionData(null);
+        setShowStopConfirm(false);
     }, []);
 
     useEffect(() => {
@@ -73,11 +76,21 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
 
     const handleClose = useCallback(() => {
         if (isSimulating) {
-            const confirmClose = window.confirm('Da li ste sigurni da želite da prekinete simulaciju?');
-            if (!confirmClose) return;
+            setShowStopConfirm(true);
+            return;
         }
+
         onClose();
     }, [isSimulating, onClose]);
+
+    const confirmStopSimulation = useCallback(() => {
+        setShowStopConfirm(false);
+        onClose();
+    }, [onClose]);
+
+    const cancelStopSimulation = useCallback(() => {
+        setShowStopConfirm(false);
+    }, []);
 
     const handleOverlayClick = useCallback((e) => {
         if (e.target === e.currentTarget) {
@@ -87,9 +100,14 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
 
     const handleKeyDown = useCallback((e) => {
         if (e.key === 'Escape') {
+            if (showStopConfirm) {
+                setShowStopConfirm(false);
+                return;
+            }
+
             handleClose();
         }
-    }, [handleClose]);
+    }, [handleClose, showStopConfirm]);
 
     useEffect(() => {
         if (isOpen) {
@@ -180,6 +198,30 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                                     {transactionData.notifications?.confirmation_sent && (
                                         <p className={styles.notificationStatus}>📧 Potvrda poslata</p>
                                     )}
+                                </div>
+                            </div>
+                        )}
+
+                        {showStopConfirm && (
+                            <div className={styles.stopConfirmBox} role="alert">
+                                <p className={styles.stopConfirmMessage}>
+                                    Simulacija je u toku. Da li želite da je prekinete?
+                                </p>
+                                <div className={styles.stopConfirmActions}>
+                                    <button
+                                        type="button"
+                                        className={styles.stopConfirmContinueBtn}
+                                        onClick={cancelStopSimulation}
+                                    >
+                                        Nastavi simulaciju
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.stopConfirmStopBtn}
+                                        onClick={confirmStopSimulation}
+                                    >
+                                        Prekini simulaciju
+                                    </button>
                                 </div>
                             </div>
                         )}

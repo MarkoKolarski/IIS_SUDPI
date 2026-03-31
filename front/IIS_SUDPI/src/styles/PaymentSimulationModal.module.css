@@ -244,6 +244,59 @@
     background: #22c55e;
 }
 
+.stopConfirmBox {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #fbbf24;
+    background: #fffbeb;
+    animation: stepFadeIn 220ms ease-out;
+}
+
+.stopConfirmMessage {
+    margin: 0;
+    color: #92400e;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.stopConfirmActions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+}
+
+.stopConfirmContinueBtn,
+.stopConfirmStopBtn {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 1;
+}
+
+.stopConfirmContinueBtn {
+    background: #ecfeff;
+    color: #0f766e;
+    border: 1px solid #99f6e4;
+}
+
+.stopConfirmStopBtn {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.stopConfirmContinueBtn:hover {
+    background: #ccfbf1;
+}
+
+.stopConfirmStopBtn:hover {
+    background: #b91c1c;
+}
+
 /* Close Button */
 .paymentModalCloseBtn {
     width: 160px;
@@ -452,6 +505,10 @@
     
     .paymentStepConnector {
         left: 20px;
+    }
+
+    .stopConfirmActions {
+        flex-direction: column;
     }
 }
 
