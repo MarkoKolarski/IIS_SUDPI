@@ -204,6 +204,28 @@ const InvoiceDetails = () => {
 
   const panelToneClass = resolvePanelTone(invoice?.status_f, canApproveReject);
 
+  const resolveProcessTone = (toneClass) => {
+    if (toneClass === "statusPending") {
+      return "processTonePending";
+    }
+
+    if (toneClass === "statusInfo") {
+      return "processToneInfo";
+    }
+
+    if (toneClass === "statusSuccess") {
+      return "processToneSuccess";
+    }
+
+    if (toneClass === "statusRejected") {
+      return "processToneRejected";
+    }
+
+    return "processToneNeutral";
+  };
+
+  const processToneClass = resolveProcessTone(statusToneClass);
+
   const handleRejectAction = async () => {
     const normalizedReason = rejectReason.trim();
 
@@ -402,7 +424,7 @@ const InvoiceDetails = () => {
             </div>
           </section>
 
-          <section className={styles.processFlow}>
+          <section className={`${styles.processFlow} ${styles[processToneClass]}`}>
             <div className={styles.processFlowHeader}>
               <h3>Vizuelni tok procesa</h3>
             </div>
