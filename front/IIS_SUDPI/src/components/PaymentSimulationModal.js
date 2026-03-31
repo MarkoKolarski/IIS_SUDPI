@@ -74,6 +74,13 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
         }
     }, [isOpen, isSimulating, simulationComplete, error, startSimulation, resetSimulation]);
 
+    useEffect(() => {
+        // If simulation finished while confirm was open, hide it to avoid stale messaging.
+        if (!isSimulating && showStopConfirm) {
+            setShowStopConfirm(false);
+        }
+    }, [isSimulating, showStopConfirm]);
+
     const handleClose = useCallback(() => {
         if (isSimulating) {
             setShowStopConfirm(true);
@@ -203,10 +210,16 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                         )}
 
                         {showStopConfirm && (
-                            <div className={styles.stopConfirmBox} role="alert">
-                                <p className={styles.stopConfirmMessage}>
-                                    Simulacija je u toku. Da li želite da je prekinete?
-                                </p>
+                            <div className={styles.stopConfirmBox} role="alertdialog" aria-live="assertive">
+                                <div className={styles.stopConfirmHeader}>
+                                    <span className={styles.stopConfirmIcon} aria-hidden="true">!</span>
+                                    <div>
+                                        <p className={styles.stopConfirmTitle}>Prekinuti simulaciju?</p>
+                                        <p className={styles.stopConfirmMessage}>
+                                            Simulacija je u toku. Da li želite da je prekinete?
+                                        </p>
+                                    </div>
+                                </div>
                                 <div className={styles.stopConfirmActions}>
                                     <button
                                         type="button"
@@ -228,13 +241,15 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                     </>
                 )}
 
-                <button 
-                    className={styles.paymentModalCloseBtn}
-                    onClick={handleClose}
-                    autoFocus
-                >
-                    {isSimulating ? 'Prekini' : 'Zatvori'}
-                </button>
+                {!showStopConfirm && (
+                    <button 
+                        className={styles.paymentModalCloseBtn}
+                        onClick={handleClose}
+                        autoFocus
+                    >
+                        {isSimulating ? 'Prekini' : 'Zatvori'}
+                    </button>
+                )}
             </div>
         </div>
     );
