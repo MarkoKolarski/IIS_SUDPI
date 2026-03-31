@@ -180,6 +180,30 @@ const InvoiceDetails = () => {
 
   const statusToneClass = resolveStatusTone(invoice?.status_f);
 
+  const resolvePanelTone = (statusCode, requiresAction) => {
+    const normalizedStatus = String(statusCode || "").toLowerCase();
+
+    if (requiresAction) {
+      return "panelActionRequired";
+    }
+
+    if (["placena", "isplacena", "zavrsena"].includes(normalizedStatus)) {
+      return "panelCompleted";
+    }
+
+    if (["odbijena", "stornirana", "ponistena"].includes(normalizedStatus)) {
+      return "panelRejected";
+    }
+
+    if (["verifikovana", "spremna_za_placanje", "u_obradi"].includes(normalizedStatus)) {
+      return "panelInProgress";
+    }
+
+    return "panelNeutral";
+  };
+
+  const panelToneClass = resolvePanelTone(invoice?.status_f, canApproveReject);
+
   const handleRejectAction = async () => {
     const normalizedReason = rejectReason.trim();
 
@@ -252,7 +276,7 @@ const InvoiceDetails = () => {
           </header>
 
         <div className={styles.invoiceDetailsContent}>
-          <section className={styles.quickActionsPanel}>
+          <section className={`${styles.quickActionsPanel} ${styles[panelToneClass]}`}>
             <div className={styles.quickActionsInfo}>
               <h2>{canApproveReject ? "Faktura očekuje akciju" : "Pregled statusa fakture"}</h2>
               <p>
@@ -583,6 +607,8 @@ const InvoiceDetails = () => {
                 </button>
               </div>
 
+              <div className={styles.rejectModalBody}>
+
               <p className={styles.rejectModalDescription}>
                 Unesite razlog odbacivanja. Ova poruka će biti evidentirana uz fakturu.
               </p>
@@ -631,6 +657,7 @@ const InvoiceDetails = () => {
                 >
                   {actionLoading ? "Odbacivanje..." : "Potvrdi odbacivanje"}
                 </button>
+              </div>
               </div>
             </div>
           </div>

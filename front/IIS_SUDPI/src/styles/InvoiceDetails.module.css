@@ -61,6 +61,57 @@
     position: sticky;
     top: 14px;
     z-index: 20;
+    transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.quickActionsPanel.panelActionRequired {
+    border-color: #0f766e;
+    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.26);
+}
+
+.quickActionsPanel.panelActionRequired .quickActionsInfo h2,
+.quickActionsPanel.panelActionRequired .quickActionsInfo p,
+.quickActionsPanel.panelActionRequired .quickActionsStatusLabel,
+.quickActionsPanel.panelActionRequired .quickActionsEmpty {
+    color: #f0fdfa;
+}
+
+.quickActionsPanel.panelCompleted {
+    border-color: #86efac;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.14);
+}
+
+.quickActionsPanel.panelRejected {
+    border-color: #fecdd3;
+    background: linear-gradient(135deg, #fff7ed 0%, #fff1f2 100%);
+    box-shadow: 0 5px 14px rgba(225, 29, 72, 0.1);
+}
+
+.quickActionsPanel.panelRejected .quickActionsInfo h2,
+.quickActionsPanel.panelRejected .quickActionsInfo p,
+.quickActionsPanel.panelRejected .quickActionsStatusLabel,
+.quickActionsPanel.panelRejected .quickActionsEmpty {
+    color: #9f1239;
+}
+
+.quickActionsPanel.panelInProgress {
+    border-color: #93c5fd;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
+}
+
+.quickActionsPanel.panelInProgress .quickActionsInfo h2,
+.quickActionsPanel.panelInProgress .quickActionsInfo p,
+.quickActionsPanel.panelInProgress .quickActionsStatusLabel,
+.quickActionsPanel.panelInProgress .quickActionsEmpty {
+    color: #1e3a8a;
+}
+
+.quickActionsPanel.panelNeutral {
+    border-color: #99f6e4;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
 }
 
 .quickActionsInfo {
@@ -157,6 +208,28 @@
     align-items: center;
     justify-content: center;
     white-space: nowrap;
+}
+
+.quickActionsPanel.panelActionRequired .notificationBtn.confirm {
+    background-color: #ffffff;
+    color: #0f766e;
+    box-shadow: 0 6px 14px rgba(6, 95, 70, 0.24);
+}
+
+.quickActionsPanel.panelActionRequired .notificationBtn.confirm:hover {
+    background-color: #ecfeff;
+    color: #0f766e;
+}
+
+.quickActionsPanel.panelActionRequired .notificationBtn.decline {
+    background-color: rgba(255, 255, 255, 0.14);
+    color: #f8fafc;
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.quickActionsPanel.panelActionRequired .notificationBtn.decline:hover {
+    background-color: rgba(255, 255, 255, 0.24);
+    color: #ffffff;
 }
 
 .quickActionsEmpty {
@@ -565,10 +638,10 @@
 .rejectModalCard {
     width: min(560px, 100%);
     border-radius: 14px;
-    border: 1px solid #99f6e4;
+    border: 1px solid #5eead4;
     background: #ffffff;
     box-shadow: 0 24px 42px rgba(6, 95, 70, 0.22);
-    padding: 24px;
+    overflow: hidden;
     transform-origin: center;
     animation: rejectModalIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -589,13 +662,15 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+    border-bottom: 1px solid #0f766e;
 }
 
 .rejectModalHeader h2 {
     margin: 0;
-    color: #0f766e;
-    font-size: 26px;
+    color: #ffffff;
+    font-size: 24px;
     font-weight: 700;
 }
 
@@ -603,21 +678,26 @@
     width: 34px;
     height: 34px;
     border-radius: 8px;
-    border: 1px solid #99f6e4;
-    background-color: #ecfeff;
-    color: #115e59;
+    border: 1px solid rgba(236, 254, 255, 0.65);
+    background-color: rgba(15, 118, 110, 0.42);
+    color: #ffffff;
     font-size: 22px;
     line-height: 1;
     cursor: pointer;
 }
 
 .rejectModalClose:hover {
-    background-color: #ccfbf1;
+    background-color: rgba(15, 118, 110, 0.68);
+}
+
+.rejectModalBody {
+    padding: 20px 24px 24px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fffd 100%);
 }
 
 .rejectModalDescription {
     margin: 0 0 14px;
-    color: #0f766e;
+    color: #134e4a;
     line-height: 1.6;
 }
 
@@ -696,9 +776,9 @@
 }
 
 .rejectModalConfirmBtn {
-    background-color: #0f766e;
+    background-color: #14b8a6;
     color: #ffffff;
-    box-shadow: 0 4px 10px rgba(15, 118, 110, 0.22);
+    box-shadow: 0 4px 10px rgba(20, 184, 166, 0.28);
 }
 
 .rejectModalCancelBtn:hover {
@@ -706,7 +786,7 @@
 }
 
 .rejectModalConfirmBtn:hover {
-    background-color: #115e59;
+    background-color: #0f766e;
 }
 
 .rejectModalCancelBtn:disabled,
@@ -907,11 +987,14 @@
     .rejectModalCard {
         width: calc(100vw - 24px);
         border-radius: 12px;
-        padding: 20px 18px;
     }
 
     .rejectModalHeader h2 {
         font-size: 22px;
+    }
+
+    .rejectModalBody {
+        padding: 18px;
     }
 
     .rejectModalActions {
