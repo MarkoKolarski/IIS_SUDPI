@@ -422,85 +422,39 @@
     border-radius: 999px;
 }
 
-.processFlow.processToneNeutral .stepCircle {
-    border-color: #14b8a6;
-    color: #065f46;
-}
-
-.processFlow.processTonePending .stepCircle {
-    border-color: #d97706;
-    color: #92400e;
-}
-
-.processFlow.processTonePending .processStep.completed .stepCircle {
-    background-color: #f59e0b;
-    border-color: #d97706;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.22);
+.processFlow.processToneNeutral .processStep.active .stepCircle {
+    background-color: #ccfbf1;
+    border-color: #5eead4;
+    color: #0f766e;
+    box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.24);
 }
 
 .processFlow.processTonePending .processStep.active .stepCircle {
-    background-color: #b45309;
-    border-color: #92400e;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.24);
-}
-
-.processFlow.processToneInfo .stepCircle {
-    border-color: #3b82f6;
-    color: #1e3a8a;
-}
-
-.processFlow.processToneInfo .processStep.completed .stepCircle {
-    background-color: #3b82f6;
-    border-color: #2563eb;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.24);
+    background-color: #fef9c3;
+    border-color: #fde68a;
+    color: #854d0e;
+    box-shadow: 0 0 0 4px rgba(253, 224, 71, 0.24);
 }
 
 .processFlow.processToneInfo .processStep.active .stepCircle {
-    background-color: #1d4ed8;
-    border-color: #1e3a8a;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.24);
-}
-
-.processFlow.processToneSuccess .stepCircle {
-    border-color: #22c55e;
-    color: #166534;
-}
-
-.processFlow.processToneSuccess .processStep.completed .stepCircle {
-    background-color: #22c55e;
-    border-color: #16a34a;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.22);
+    background-color: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+    box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.28);
 }
 
 .processFlow.processToneSuccess .processStep.active .stepCircle {
-    background-color: #15803d;
-    border-color: #166534;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.24);
-}
-
-.processFlow.processToneRejected .stepCircle {
-    border-color: #f43f5e;
-    color: #9f1239;
-}
-
-.processFlow.processToneRejected .processStep.completed .stepCircle {
-    background-color: #f43f5e;
-    border-color: #e11d48;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.22);
+    background-color: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+    box-shadow: 0 0 0 4px rgba(134, 239, 172, 0.24);
 }
 
 .processFlow.processToneRejected .processStep.active .stepCircle {
-    background-color: #be123c;
-    border-color: #9f1239;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.24);
+    background-color: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+    box-shadow: 0 0 0 4px rgba(252, 165, 165, 0.28);
 }
 
 /* Bottom Cards */
