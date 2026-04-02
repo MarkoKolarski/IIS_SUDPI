@@ -395,16 +395,28 @@ class Reklamacija(models.Model):
 class Dashboard(models.Model):
     sifra_d = models.AutoField(primary_key=True)
     datum_d = models.DateTimeField(auto_now_add=True)
-    
-    # Veze prema ER dijagramu
-    skladisni_operater = models.ForeignKey(SkladisniOperater, on_delete=models.SET_NULL, null=True, blank=True, related_name='dashboards')
-    finansijski_analiticar = models.ForeignKey(FinansijskiAnaliticar, on_delete=models.SET_NULL, null=True, blank=True, related_name='dashboards')
-    nabavni_menadzer = models.ForeignKey(NabavniMenadzer, on_delete=models.SET_NULL, null=True, blank=True, related_name='dashboards')
-    
+    period_od_d = models.DateField(null=True, blank=True)
+    period_do_d = models.DateField(null=True, blank=True)
+    snimak_metrika_json = models.TextField(
+        default='{}',
+        help_text='JSON snimak metrika dashboarda za izabrani period.'
+    )
+
+    # Dashboard kao istorijski snapshot: 1:N prema finansijskom analitičaru.
+    finansijski_analiticar = models.ForeignKey(
+        FinansijskiAnaliticar,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='dashboards'
+    )
     class Meta:
         db_table = 'dashboard'
+        ordering = ['-datum_d']
     
     def __str__(self):
+        if self.finansijski_analiticar_id:
+            return f"Dashboard snimak FA {self.finansijski_analiticar_id} - {self.datum_d.strftime('%d.%m.%Y %H:%M')}"
         return f"Dashboard {self.sifra_d} - {self.datum_d.strftime('%d.%m.%Y %H:%M')}"
 
 # Model za izveštaj
@@ -412,23 +424,46 @@ class Izvestaj(models.Model):
     TIP_CHOICES = (
         ('zalihe', 'Izveštaj o zalihama'),
         ('finansijski', 'Finansijski izveštaj'),
+        ('fakture', 'Izveštaj o fakturama'),
+        ('penali', 'Izveštaj o penalima'),
+        ('fa_troskovi_profitabilnost', 'FA troškovi i profitabilnost'),
         ('dobavljaci', 'Izveštaj o dobavljačima'),
         ('kvalitet', 'Izveštaj o kvalitetu'),
         ('temperature', 'Izveštaj o temperaturama'),
     )
-    
+
     sifra_i = models.AutoField(primary_key=True)
     datum_i = models.DateTimeField(auto_now_add=True)
     tip_i = models.CharField(max_length=30, choices=TIP_CHOICES)
-    sadrzaj_i = models.TextField()
+    period_od_i = models.DateField(null=True, blank=True)
+    period_do_i = models.DateField(null=True, blank=True)
+    sadrzaj_i = models.TextField(blank=True, default='{}')
     
     # Veza sa korisnikom koji je kreirao izveštaj
     kreirao = models.ForeignKey(User, on_delete=models.CASCADE, related_name='izvestaji')
+
+    # Izveštaj može da bude napravljen na osnovu konkretnog snapshot-a dashboarda.
+    dashboard = models.ForeignKey(
+        Dashboard,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='izvestaji'
+    )
+
+    # Veze ka izvornim entitetima umesto dupliranja njihovih obeležja.
+    fakture = models.ManyToManyField(Faktura, related_name='izvestaji', blank=True)
+    penali = models.ManyToManyField(Penal, related_name='izvestaji', blank=True)
+    dobavljaci = models.ManyToManyField(Dobavljac, related_name='izvestaji', blank=True)
     
     pdf_file = models.FileField(upload_to='izvestaji_pdfs/', null=True, blank=True)
     
     class Meta:
         db_table = 'izvestaj'
+        indexes = [
+            models.Index(fields=['tip_i', 'datum_i']),
+            models.Index(fields=['kreirao', 'datum_i']),
+        ]
     
     def __str__(self):
         return f"Izveštaj {self.sifra_i} - {self.get_tip_i_display()}"
