@@ -453,7 +453,6 @@ class Izvestaj(models.Model):
 
     # Veze ka izvornim entitetima umesto dupliranja njihovih obeležja.
     fakture = models.ManyToManyField(Faktura, related_name='izvestaji', blank=True)
-    penali = models.ManyToManyField(Penal, related_name='izvestaji', blank=True)
     dobavljaci = models.ManyToManyField(Dobavljac, related_name='izvestaji', blank=True)
     
     pdf_file = models.FileField(upload_to='izvestaji_pdfs/', null=True, blank=True)
