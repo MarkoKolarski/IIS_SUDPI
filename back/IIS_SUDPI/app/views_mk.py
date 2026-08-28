@@ -1186,6 +1186,9 @@ def send_payment_notification(dobavljac_email, faktura):
     """
     Slanje email notifikacije dobavljaču o pokretanju plaćanja
     """
+    logger.info(f"Email notifikacije su onemogućene - preskočeno slanje za fakturu {faktura.sifra_f}")
+    return True
+
     try:
         subject = f"Notifikacija: Pokrenuto plaćanje za fakturu {faktura.sifra_f}"
         message = f"""
@@ -1222,6 +1225,9 @@ def send_confirmation_notification(dobavljac_email, transakcija, faktura):
     """
     Slanje email potvrde o uspešnoj transakciji
     """
+    logger.info(f"Email notifikacije su onemogućene - preskočena potvrda za fakturu {faktura.sifra_f}")
+    return True
+
     try:
         subject = f"Potvrda plaćanja: Faktura {faktura.sifra_f}"
         message = f"""
@@ -1260,6 +1266,9 @@ def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji="",
     """
     Slanje email notifikacije dobavljaču o kršenju ugovora i dodeljenom penalu
     """
+    logger.info(f"Email notifikacije su onemogućene - preskočeno obaveštenje o penalu za ugovor {ugovor.sifra_u}")
+    return True
+
     try:
         subject = f"OBAVEŠTENJE: Kršenje ugovora {ugovor.sifra_u} - Dodeljen penal"
         message = f"""
