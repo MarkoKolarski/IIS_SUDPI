@@ -1,16 +1,6 @@
 """
 View-i podsistema finansijskog analitičara (FA).
 
-Sadrži: kontrolnu tablu, listu/detalje faktura, verifikaciju/odbacivanje,
-simulaciju plaćanja, izveštaje, preglede penala i automatsku proveru
-kršenja ugovora. JSON odgovori ka frontendu su nepromenjeni; ispod njih:
-- Faktura.status_f menja se ISKLJUČIVO preko Faktura.promeni_status(), koja
-  upisuje istorijat u PromenaStatusa (razlog čekanja/odbijanja se sada čita
-  odatle, ne iz posebne kolone na Fakturi).
-- StavkaFakture ide preko ProizvodDobavljaca (kataloška stavka dobavljača),
-  ne direktno na Proizvod.
-- Kontrolna tabla (bivši Dashboard) i izveštaji upisuju stvarne Metrika/
-  Merenje/PredmetIzvestaja redove umesto JSON snapshot-a (Deo D).
 """
 from rest_framework.response import Response
 from rest_framework import status

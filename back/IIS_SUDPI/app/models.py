@@ -5,29 +5,6 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal
 
-# ============================================================================
-# DRUGI PASS (avgust 2026): mentorka je tražila izmene EER-a i podsistem je
-# SUŽEN isključivo na finansijsko-analitički deo (dobavljači, katalog/cenovnik,
-# ugovori/penali, fakture/stavke, transakcije, izveštavanje, kontrolna tabla).
-# Zalihe, nabavka, skladištenje, kontrola kvaliteta i notifikacije NISU deo ovog
-# EER-a - njihovi modeli ispod (sekcija "OSTALI PODSISTEMI") su namerno
-# NETAKNUTI, uključujući i deljeni Dobavljac koji zadržava par polja koja taj
-# kod i dalje koristi. Vidi CLAUDE.md za punu listu odstupanja.
-#
-# Konvencija (ista kao u prvom passu): ime Python polja = ime ER atributa;
-# svaki FK dobija db_column jednak ER koloni; JSON ključevi ka frontendu
-# ostaju nepromenjeni preko serializers_mk.py (source=...) ili @property.
-# ============================================================================
-
-
-# ============================================================================
-# MOJI MODELI - finansijsko-analitički podsistem (views_mk.py, serializers_mk.py)
-# ============================================================================
-
-# Model za korisnika - centralni entitet (KORISNIK). Deljen sa svim ostalim
-# ulogama u aplikaciji (tip_k zadržava svih 6 vrednosti - odstupanje od ER-ovog
-# "samo FINANSIJSKI_ANALITICAR", jer bi suženje pokvarilo prijavu za ostale
-# uloge čiji kod namerno ne diramo).
 class User(AbstractUser):
     USER_TYPES = (
         ('logisticki_koordinator', 'Logistički koordinator'),
@@ -58,8 +35,6 @@ class User(AbstractUser):
         return f"{self.ime_k} {self.prz_k} ({self.get_tip_k_display()})"
 
 
-# FinansijskiAnaliticar - parcijalna specijalizacija Korisnika (ne mora svaki
-# korisnik biti analitičar). PK JE sifra_k korisnika, tačno kao u ER-u.
 class FinansijskiAnaliticar(models.Model):
     korisnik = models.OneToOneField(
         User, on_delete=models.CASCADE, primary_key=True,
@@ -73,8 +48,6 @@ class FinansijskiAnaliticar(models.Model):
         return f"Finansijski analitičar: {self.korisnik.ime_k} {self.korisnik.prz_k}"
 
 
-# Šifarnik jedinica mere - koristi se i za količinske jedinice i za valute
-# (redovi tipa NOVAC: RSD, EUR).
 class JedinicaMere(models.Model):
     TIP_CHOICES = (
         ('KOLICINA', 'Količina'),
@@ -97,11 +70,6 @@ class JedinicaMere(models.Model):
         return f"{self.naziv_jm} ({self.oznaka_jm})"
 
 
-# Model za dobavljača (DOBAVLJAC) - DELJEN entitet. ER traži samo
-# sifra_db/naziv_db/email_db/pib_db; ocena_db/datum_ocenjivanja/ime_sirovine/
-# cena/rok_isporuke/izabran su NAMERNO zadržani jer ih views_mv.py i
-# views_mv2.py (nabavni menadžer / kontrolor kvaliteta - van obima ove izmene)
-# aktivno čitaju i pišu. Brisanje bi pokvarilo taj kod.
 class Dobavljac(models.Model):
     sifra_db = models.AutoField(primary_key=True)
     naziv_db = models.CharField(max_length=150)
@@ -144,7 +112,6 @@ class Dobavljac(models.Model):
         return f"{self.naziv_db} - {self.ime_sirovine}"
 
 
-# Model za kategoriju proizvoda (KATEGORIJA_PROIZVODA). limit_kp uklonjen (ER).
 class KategorijaProizvoda(models.Model):
     sifra_kp = models.AutoField(primary_key=True)
     naziv_kp = models.CharField(max_length=100)
@@ -156,8 +123,6 @@ class KategorijaProizvoda(models.Model):
         return self.naziv_kp
 
 
-# Model za proizvod (PROIZVOD) - master katalog proizvoda (bez cene/dobavljača,
-# to je sada u ProizvodDobavljaca/Cenovnik).
 class Proizvod(models.Model):
     PDV_CHOICES = (
         (0, '0%'),
@@ -199,9 +164,6 @@ class ProizvodDobavljaca(models.Model):
     def __str__(self):
         return f"{self.proizvod.naziv_pr} @ {self.dobavljac.naziv_db}"
 
-
-# Ugovorena neto cena kataloške stavke (rabati su već uračunati - popust se
-# ne modeluje odvojeno).
 class Cenovnik(models.Model):
     sifra_c = models.AutoField(primary_key=True)
     cena_c = models.DecimalField(max_digits=12, decimal_places=2)
@@ -225,7 +187,6 @@ class Cenovnik(models.Model):
         return f"{self.proizvod_dobavljaca} - {self.cena_c} od {self.datum_od_c}"
 
 
-# Model za ugovor (UGOVOR)
 class Ugovor(models.Model):
     STATUS_CHOICES = (
         ('u_pripremi', 'U pripremi'),
@@ -240,7 +201,7 @@ class Ugovor(models.Model):
     status_u = models.CharField(max_length=30, choices=STATUS_CHOICES, default='aktivan')
     uslovi_u = models.TextField()
 
-    # PROTECT: finansijski/pravni trag - ugovor sa već izdatim fakturama/penalima
+    # ugovor sa već izdatim fakturama/penalima
     # ne sme nestati zajedno sa dobavljačem.
     dobavljac = models.ForeignKey(Dobavljac, on_delete=models.PROTECT, db_column='DOBAVLJAC_sifra_db', related_name='ugovori')
 
@@ -250,8 +211,6 @@ class Ugovor(models.Model):
     def __str__(self):
         return f"Ugovor {self.sifra_u} sa {self.dobavljac.naziv_db}"
 
-
-# Model za fakturu (FAKTURA)
 class Faktura(models.Model):
     STATUS_CHOICES = (
         ('primljena', 'Primljena'),
@@ -259,11 +218,6 @@ class Faktura(models.Model):
         ('isplacena', 'Isplaćena'),
         ('odbijena', 'Odbijena'),
     )
-    # NAMERNO ODSTUPANJE: ER traži širi skup (PRIMLJENA, U_OBRADI, ODOBRENA,
-    # NA_CEKANJU, PLACENA, ODBIJENA, STORNIRANA). front/ (Invoice.js,
-    # InvoiceDetails.js) hardkoduje tačno ove 4 postojeće vrednosti za prikaz
-    # dugmadi/toka procesa, a front se ne dira - zato je zadržan uži, već
-    # funkcionalan skup. Vidi CLAUDE.md.
 
     sifra_f = models.AutoField(primary_key=True)
     iznos_f = models.DecimalField(max_digits=12, decimal_places=2)
@@ -271,7 +225,7 @@ class Faktura(models.Model):
     rok_placanja_f = models.DateField()
     status_f = models.CharField(max_length=30, choices=STATUS_CHOICES, default='primljena')
 
-    # PROTECT: faktura je finansijski dokument, ne sme nestati ako se ugovor obriše.
+    # faktura je finansijski dokument, ne sme nestati ako se ugovor obriše.
     ugovor = models.ForeignKey(Ugovor, on_delete=models.PROTECT, db_column='UGOVOR_sifra_u', related_name='fakture')
     valuta = models.ForeignKey(JedinicaMere, on_delete=models.PROTECT, db_column='JEDINICA_MERE_sifra_jm', related_name='fakture')
 
@@ -311,9 +265,6 @@ class Faktura(models.Model):
     def __str__(self):
         return f"Faktura {self.sifra_f} - {self.iznos_f} RSD"
 
-
-# Model za stavku fakture (STAVKA_FAKTURE) - sada FK ka ProizvodDobavljaca
-# (kataloškoj stavci dobavljača), NE direktno ka Proizvod.
 class StavkaFakture(models.Model):
     sifra_sf = models.AutoField(primary_key=True)
     naziv_sf = models.CharField(max_length=150)
@@ -349,16 +300,12 @@ class StavkaFakture(models.Model):
         return f"Stavka {self.naziv_sf} - {self.kolicina_sf} x {self.cena_po_jed_sf}"
 
 
-# Model za transakciju (TRANSAKCIJA)
 class Transakcija(models.Model):
     STATUS_CHOICES = (
         ('na_cekanju', 'Na čekanju'),
         ('uspesna', 'Uspešna'),
         ('neuspesna', 'Neuspešna'),
     )
-    # NAMERNO ODSTUPANJE: ER traži INICIRANA/IZVRSENA/NEUSPELA/STORNIRANA;
-    # zadržan postojeći skup iz istog razloga kao Faktura.status_f (front/
-    # prikazuje get_status_t_display() teksta koje smo already lokalizovali).
 
     sifra_t = models.AutoField(primary_key=True)
     datum_t = models.DateTimeField(auto_now_add=True)
@@ -366,7 +313,7 @@ class Transakcija(models.Model):
     status_t = models.CharField(max_length=30, choices=STATUS_CHOICES, default='na_cekanju')
     iznos_t = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
-    # PROTECT: transakcija je finansijski dokaz o plaćanju, ne sme nestati
+    # transakcija je finansijski dokaz o plaćanju, ne sme nestati
     # zajedno sa fakturom.
     faktura = models.ForeignKey(Faktura, on_delete=models.PROTECT, db_column='FAKTURA_sifra_f', related_name='transakcije')
 
@@ -380,8 +327,6 @@ class Transakcija(models.Model):
     def __str__(self):
         return f"Transakcija {self.broj_potvrde_t} za fakturu {self.faktura.sifra_f}"
 
-
-# Model za penal (PENAL)
 class Penal(models.Model):
     TIP_PENALA_CHOICES = (
         ('KASNJENJE_ISPORUKE', 'Kašnjenje isporuke'),
@@ -405,8 +350,6 @@ class Penal(models.Model):
         return f"Penal {self.sifra_p} - {self.iznos_p} RSD"
 
 
-# Istorijat promena statusa fakture (Ugovor i Transakcija nemaju istorijat -
-# njihov status se izvodi iz datuma).
 class PromenaStatusa(models.Model):
     sifra_ps = models.AutoField(primary_key=True)
     datum_vreme_ps = models.DateTimeField(auto_now_add=True)
@@ -415,7 +358,7 @@ class PromenaStatusa(models.Model):
     razlog_ps = models.CharField(max_length=500, blank=True)
 
     faktura = models.ForeignKey(Faktura, on_delete=models.CASCADE, db_column='FAKTURA_sifra_f', related_name='promene_statusa')
-    # PROTECT: ne sme se izgubiti "ko je izvršio promenu" brisanjem korisnika.
+    # ne sme se izgubiti "ko je izvršio promenu" brisanjem korisnika.
     korisnik = models.ForeignKey(User, on_delete=models.PROTECT, db_column='KORISNIK_sifra_k', related_name='promene_statusa_izvrsene')
 
     class Meta:
@@ -426,9 +369,6 @@ class PromenaStatusa(models.Model):
         return f"Faktura {self.faktura_id}: {self.stari_status_ps} -> {self.novi_status_ps}"
 
 
-# Ocena dobavljača po kriterijumu i periodu (zamenjuje staru jednu ocena_db kolonu
-# vremenskom istorijom po kriterijumima - ocena_db na Dobavljac je i dalje
-# zadržana zbog NM/KK koda, ali FA sada vodi svoju, precizniju analitiku ovde).
 class OcenaDobavljaca(models.Model):
     KRITERIJUM_CHOICES = (
         ('TACNOST_FAKTURISANJA', 'Tačnost fakturisanja'),
@@ -457,9 +397,6 @@ class OcenaDobavljaca(models.Model):
     def __str__(self):
         return f"Ocena {self.dobavljac.naziv_db} - {self.kriterijum_od}: {self.vrednost_od}"
 
-
-# Model za kontrolnu tablu (bivši DASHBOARD - preimenovan i pojednostavljen;
-# JSON snapshot je zamenjen relacionim Metrika/Merenje modelima ispod).
 class KontrolnaTabla(models.Model):
     sifra_kt = models.AutoField(primary_key=True)
     naziv_kt = models.CharField(max_length=150)
@@ -477,8 +414,6 @@ class KontrolnaTabla(models.Model):
 
 
 # Gerund nad vezom "kreira" (FinansijskiAnaliticar <-> KontrolnaTabla).
-# Izvestaj visi na OVOM modelu (ne direktno na FA ili tabli), čime je
-# garantovano da izveštaj pripada tačno onom paru (analitičar, tabla).
 class Kreiranje(models.Model):
     finansijski_analiticar = models.ForeignKey(FinansijskiAnaliticar, on_delete=models.CASCADE, db_column='FINANSIJSKI_ANALITICAR_sifra_k')
     kontrolna_tabla = models.ForeignKey(KontrolnaTabla, on_delete=models.CASCADE, db_column='KONTROLNA_TABLA_sifra_kt')
@@ -493,8 +428,6 @@ class Kreiranje(models.Model):
     def __str__(self):
         return f"{self.finansijski_analiticar} kreira {self.kontrolna_tabla}"
 
-
-# Definicija metrike (npr. "Ukupno plaćeno", "Mesečni trošak"...).
 class Metrika(models.Model):
     sifra_m = models.AutoField(primary_key=True)
     naziv_m = models.CharField(max_length=150)
@@ -510,17 +443,12 @@ class Metrika(models.Model):
         return self.naziv_m
 
 
-# Gerund nad vezom "se_meri" (KontrolnaTabla <-> Metrika) - jedna izmerena
-# vrednost metrike na tabli u datom trenutku/periodu. Ovo zamenjuje bivši
-# Dashboard.snimak_metrika_json.
+# Gerund nad vezom "se_meri" (KontrolnaTabla <-> Metrika)
 class Merenje(models.Model):
     kontrolna_tabla = models.ForeignKey(KontrolnaTabla, on_delete=models.CASCADE, db_column='KONTROLNA_TABLA_sifra_kt', related_name='merenja')
     metrika = models.ForeignKey(Metrika, on_delete=models.PROTECT, db_column='METRIKA_sifra_m', related_name='merenja')
     vrednost_me = models.DecimalField(max_digits=14, decimal_places=2)
-    # Namerno NIJE auto_now_add: za istorijske/periodične tačke (npr. mesečni
-    # trošak) vreme_merenja_me predstavlja trenutak NA KOJI SE merenje odnosi,
-    # ne trenutak upisa u bazu - inače bi svi redovi upisani u istom pozivu
-    # dobili identičnu vrednost i pukli na unique_together.
+
     vreme_merenja_me = models.DateTimeField(default=timezone.now)
     period_od_me = models.DateField(null=True, blank=True)
     period_do_me = models.DateField(null=True, blank=True)
@@ -535,8 +463,6 @@ class Merenje(models.Model):
         return f"{self.metrika.naziv_m} = {self.vrednost_me} ({self.kontrolna_tabla})"
 
 
-# Model za izveštaj (IZVESTAJ) - sadržaj je sada relacioni (PredmetIzvestaja +
-# Merenje), ne JSON blob; visi na Kreiranje (FA + tabla), ne direktno na FA.
 class Izvestaj(models.Model):
     TIP_CHOICES = (
         ('FINANSIJSKI', 'Finansijski'),
@@ -588,8 +514,6 @@ class Izvestaj(models.Model):
 
 
 # Generički "predmet" izveštaja - tačno JEDAN od 4 FK-a sme biti popunjen
-# (garantovano CheckConstraint-om), a tip_predmeta_pi mora njemu odgovarati
-# (poslovno pravilo #4, proverava se u clean()).
 class PredmetIzvestaja(models.Model):
     TIP_PREDMETA_CHOICES = (
         ('DOBAVLJAC', 'Dobavljač'),
@@ -637,10 +561,7 @@ class PredmetIzvestaja(models.Model):
 
 
 # ============================================================================
-# OSTALI PODSISTEMI - NE MENJATI (van obima ovog EER-a; nabavni menadžer,
-# skladišni operater, kontrolor kvaliteta, logistički koordinator). Ovi modeli
-# su namerno ostavljeni netaknuti - njihov kod (views_mv.py, views_mv2.py, deo
-# views.py, signals.py, management komande) i dalje radi bez izmena.
+# OSTALI PODSISTEMI
 # ============================================================================
 
 class Administrator(models.Model):
