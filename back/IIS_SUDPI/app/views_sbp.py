@@ -3,11 +3,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import connection, transaction
+from django.db.models import Sum, Count, F
 from django.utils import timezone
 from .decorators import allowed_users
-from .models import Faktura, StavkaFakture, Proizvod, Ugovor, Dobavljac, Izvestaj
-from decimal import Decimal
-import json
+from .models import Faktura, StavkaFakture, Proizvod, ProizvodDobavljaca, Izvestaj
 import time
 
 
@@ -55,14 +54,23 @@ def dodaj_stavku_fakture(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # StavkaFakture sada referencira ProizvodDobavljaca (katalošku stavku
+        # dobavljača), ne direktno Proizvod - nađi je (ili je kreiraj) za
+        # dobavljača sa ugovora ove fakture, čime je automatski zadovoljeno
+        # poslovno pravilo #1 (dobavljač stavke = dobavljač fakture).
+        proizvod_dobavljaca, _ = ProizvodDobavljaca.objects.get_or_create(
+            dobavljac=faktura.ugovor.dobavljac,
+            proizvod=proizvod,
+        )
+
         with transaction.atomic():
             with connection.cursor() as cursor:
                 try:
                     sql = """
-                        INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED, FAKTURA_ID, PROIZVOD_ID)
+                        INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED_SF, FAKTURA_SIFRA_F, PROIZVOD_DOBAVLJACA_ID)
                         VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, %s, %s, %s, %s, %s)
                     """
-                    cursor.execute(sql, [naziv_sf, kolicina_sf, cena_po_jed, faktura_id, proizvod_id])
+                    cursor.execute(sql, [naziv_sf, kolicina_sf, cena_po_jed, faktura_id, proizvod_dobavljaca.id])
                 except Exception as e:
                     raise
 
@@ -97,7 +105,7 @@ def get_fakture_za_stavke(request):
             'sifra_f': f.sifra_f,
             'iznos_f': float(f.iznos_f),
             'status_f': f.status_f,
-            'dobavljac': f.ugovor.dobavljac.naziv if f.ugovor and f.ugovor.dobavljac else 'N/A'
+            'dobavljac': f.ugovor.dobavljac.naziv_db if f.ugovor and f.ugovor.dobavljac else 'N/A'
         } for f in fakture]
 
         return Response({'fakture': data})
@@ -138,11 +146,11 @@ def izracunaj_dug_dobavljaca(request):
             try:
                 cursor.execute("""
                     SELECT
-                        SIFRA_D,
-                        NAZIV,
-                        IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_D) AS UKUPAN_DUG
+                        SIFRA_DB AS SIFRA_D,
+                        NAZIV_DB AS NAZIV,
+                        IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_DB) AS UKUPAN_DUG
                     FROM DOBAVLJAC
-                    ORDER BY IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_D) DESC
+                    ORDER BY IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_DB) DESC
                 """)
                 
                 columns = [col[0] for col in cursor.description]
@@ -249,7 +257,7 @@ def generiši_test_fakture(request):
                         SELECT SIFRA_U INTO v_ugovor_id FROM UGOVOR FETCH FIRST 1 ROWS ONLY;
 
                         FOR i IN 1..800000 LOOP
-                            INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
+                            INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_SIFRA_U)
                             VALUES (
                                 FAKTURA_SEQ.NEXTVAL,
                                 TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2),
@@ -345,12 +353,60 @@ def obrisi_indeks(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+def _rekonstruisi_sadrzaj_izvestaja(izvestaj):
+    """
+    ER uklanja Izvestaj.sadrzaj_json - sadržaj je sada relacioni. Za zadatak 4
+    (mesečna profitabilnost po kategorijama) to znači: umesto da čitamo
+    sačuvan JSON, PONOVO izračunamo istu analizu iz STAVKA_FAKTURE za period
+    koji je izveštaj zabeležio (period_od_i/period_do_i). Isti filter kao u
+    PL/SQL proceduri (isplaćene fakture, uspešna transakcija, prihod > 1000).
+    """
+    stavke_qs = StavkaFakture.objects.filter(
+        faktura__status_f='isplacena',
+        faktura__transakcije__status_t='uspesna',
+    )
+    if izvestaj.period_od_i and izvestaj.period_do_i:
+        stavke_qs = stavke_qs.filter(
+            faktura__transakcije__datum_t__date__gte=izvestaj.period_od_i,
+            faktura__transakcije__datum_t__date__lte=izvestaj.period_do_i,
+        )
+
+    kategorije = (
+        stavke_qs
+        .values('proizvod_dobavljaca__proizvod__kategorija__naziv_kp')
+        .annotate(
+            ukupan_prihod=Sum(F('kolicina_sf') * F('cena_po_jed_sf')),
+            broj_prodatih_artikala=Count('sifra_sf'),
+        )
+        .filter(ukupan_prihod__gt=1000)
+        .order_by('-ukupan_prihod')
+    )
+
+    return {
+        'izvestaj': 'Mesecna profitabilnost po kategorijama',
+        'mesec': izvestaj.period_od_i.month if izvestaj.period_od_i else None,
+        'godina': izvestaj.period_od_i.year if izvestaj.period_od_i else None,
+        'stavke': [
+            {
+                'kategorija': k['proizvod_dobavljaca__proizvod__kategorija__naziv_kp'],
+                'ukupan_prihod': float(k['ukupan_prihod'] or 0),
+                'broj_prodatih_artikala': k['broj_prodatih_artikala'],
+            }
+            for k in kategorije
+        ],
+    }
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['finansijski_analiticar'])
 def generisi_mesecni_izvestaj(request):
     """
-    ZADATAK 4: Poziva proceduru GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI
+    ZADATAK 4: Poziva proceduru GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI.
+    Procedura upisuje IZVESTAJ (relaciono, po novoj ER šemi - vidi
+    mk_sbp_procedures.sql) i vraća sifru novog izveštaja kroz OUT parametar;
+    sadržaj se zatim rekonstruiše iz STAVKA_FAKTURE (isto kao pre, samo se ne
+    čita sačuvan JSON jer ta kolona više ne postoji).
     """
     try:
         mesec = request.data.get('mesec')
@@ -364,33 +420,27 @@ def generisi_mesecni_izvestaj(request):
             )
 
         with connection.cursor() as cursor:
-            try:
-                sql = """
-                    BEGIN
-                        GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI(%s, %s, %s);
-                    END;
-                """
-                cursor.execute(sql, [mesec, godina, kreator_id])
-            except Exception as e:
-                raise
+            sifra_izvestaja_var = cursor.var(int)
+            cursor.callproc(
+                'GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI',
+                [mesec, godina, kreator_id, sifra_izvestaja_var]
+            )
+            novi_sifra_i = sifra_izvestaja_var.getvalue()
 
-        izvestaj = Izvestaj.objects.filter(
-            tip_i='finansijski',
-            kreirao_id=kreator_id
-        ).order_by('-datum_i').first()
-
-        if izvestaj:
-            sadrzaj = json.loads(izvestaj.sadrzaj_i)
-            return Response({
-                'success': True,
-                'izvestaj': sadrzaj,
-                'datum_kreiranja': izvestaj.datum_i
-            })
-        else:
+        if not novi_sifra_i:
             return Response({
                 'success': False,
                 'message': 'Izveštaj nije kreiran. Možda nema dovoljno podataka za izabrani period.'
             })
+
+        izvestaj = Izvestaj.objects.get(sifra_i=novi_sifra_i)
+        sadrzaj = _rekonstruisi_sadrzaj_izvestaja(izvestaj)
+
+        return Response({
+            'success': True,
+            'izvestaj': sadrzaj,
+            'datum_kreiranja': izvestaj.datum_i
+        })
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -401,11 +451,13 @@ def generisi_mesecni_izvestaj(request):
 @allowed_users(['finansijski_analiticar'])
 def poslednji_izvestaj(request):
     """
-    ZADATAK 4: Vraća poslednji generisani izveštaj
+    ZADATAK 4: Vraća poslednji generisani izveštaj (rekonstruiše sadržaj iz
+    STAVKA_FAKTURE za period koji je izveštaj zabeležio - vidi napomenu u
+    _rekonstruisi_sadrzaj_izvestaja).
     """
     try:
         izvestaj = Izvestaj.objects.filter(
-            tip_i='finansijski'
+            tip_i='FINANSIJSKI'
         ).order_by('-datum_i').first()
 
         if not izvestaj:
@@ -413,8 +465,8 @@ def poslednji_izvestaj(request):
                 'message': 'Nema dostupnih izveštaja'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        sadrzaj = json.loads(izvestaj.sadrzaj_i)
-        
+        sadrzaj = _rekonstruisi_sadrzaj_izvestaja(izvestaj)
+
         return Response({
             'izvestaj': sadrzaj,
             'datum_kreiranja': izvestaj.datum_i,

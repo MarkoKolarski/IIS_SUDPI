@@ -22,11 +22,11 @@ DECLARE
     v_iznos_nove_stavke NUMBER;
 BEGIN
     -- Izračunaj iznos samo za red koji se unosi, koristeći :NEW
-    v_iznos_nove_stavke := :NEW.CENA_PO_JED * :NEW.KOLICINA_SF;
-    
+    v_iznos_nove_stavke := :NEW.CENA_PO_JED_SF * :NEW.KOLICINA_SF;
+
     UPDATE FAKTURA F
     SET F.IZNOS_F = NVL(F.IZNOS_F, 0) + v_iznos_nove_stavke
-    WHERE F.SIFRA_F = :NEW.FAKTURA_ID;
+    WHERE F.SIFRA_F = :NEW.FAKTURA_SIFRA_F;
     
 EXCEPTION
     WHEN OTHERS THEN
@@ -59,11 +59,11 @@ IS
     v_ukupan_dug NUMBER := 0; 
 BEGIN 
     SELECT NVL(SUM(F.IZNOS_F), 0)
-    INTO v_ukupan_dug 
-    FROM FAKTURA F 
-    JOIN UGOVOR U ON F.UGOVOR_ID = U.SIFRA_U 
-    WHERE U.DOBAVLJAC_ID = p_dobavljac_id 
-      AND F.STATUS_F != 'isplacena'; 
+    INTO v_ukupan_dug
+    FROM FAKTURA F
+    JOIN UGOVOR U ON F.UGOVOR_SIFRA_U = U.SIFRA_U
+    WHERE U.DOBAVLJAC_SIFRA_DB = p_dobavljac_id
+      AND F.STATUS_F != 'isplacena';
  
     RETURN v_ukupan_dug; 
 EXCEPTION 
@@ -75,9 +75,9 @@ END;
 
 -- Primer poziva funkcije u SQL upitu
 SELECT
-    SIFRA_D,
-    NAZIV,
-    IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_D) AS UKUPAN_DUG
+    SIFRA_DB,
+    NAZIV_DB,
+    IZRACUNAJ_DUG_DOBAVLJACU(SIFRA_DB) AS UKUPAN_DUG
 FROM
     DOBAVLJAC;
 
@@ -183,7 +183,7 @@ CREATE INDEX IDX_FAKTURA_STATUS_ROK ON FAKTURA(STATUS_F, ROK_PLACANJA_F);
 
 --     DBMS_OUTPUT.PUT_LINE('Pocinje generisanje 500,000 faktura...');
 --     FOR i IN 1..500000 LOOP
---         INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_ID)
+--         INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_SIFRA_U)
 --         VALUES (
 --             FAKTURA_SEQ.NEXTVAL,
 --             TRUNC(DBMS_RANDOM.VALUE(1000, 50000), 2),
@@ -240,13 +240,18 @@ COMMIT;
         - GROUP BY: Grupiše podatke po nazivu kategorije proizvoda.
         - AGREGACIJE: Koristi `SUM` za ukupan prihod i `COUNT` za broj prodatih stavki.
         - HAVING: Filtrira grupisane rezultate i prikazuje samo kategorije sa prihodom većim od 1000.
- Rezultat se formatira kao JSON i upisuje u tabelu IZVESTAJ.
+ Rezultat se formatira kao JSON (i dalje, radi demonstracije) i upisuje se
+ relacioni zapis u tabelu IZVESTAJ (druga ER iteracija je uklonila kolonu
+ SADRZAJ_JSON - sadržaj se sada rekonstruiše iz STAVKA_FAKTURE na strani
+ Django-a, vidi views_sbp.py:_rekonstruisi_sadrzaj_izvestaja). Procedura zato
+ novu šifru izveštaja vraća kroz OUT parametar p_sifra_izvestaja.
 ====================================================================================================================================
 */
 CREATE OR REPLACE PROCEDURE GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI (
     p_mesec IN NUMBER,
     p_godina IN NUMBER,
-    p_kreator_id IN NUMBER
+    p_kreator_id IN NUMBER,
+    p_sifra_izvestaja OUT NUMBER
 )
 IS
     -- 1. Složeni PL/SQL tipovi
@@ -259,18 +264,24 @@ IS
 
     l_profitabilnost tab_kategorija_profit;
     v_sadrzaj_izvestaja CLOB;
+    v_kreiranje_id NUMBER;
+    v_tabla_id NUMBER;
+    v_period_od DATE := TRUNC(TO_DATE(p_mesec || '/' || p_godina, 'MM/YYYY'), 'MM');
 
 BEGIN
     -- 2. Kurzor (implicitni) i 3. Složen SQL upit
+    -- JOIN je sada 6 tabela (STAVKA_FAKTURE -> PROIZVOD_DOBAVLJACA -> PROIZVOD
+    -- je dodatni hop otkako STAVKA_FAKTURE ne pokazuje direktno na PROIZVOD).
     WITH ProdajaPoStavkama AS (
         SELECT
             SF.KOLICINA_SF,
-            SF.CENA_PO_JED,
-            P.KATEGORIJA_ID
+            SF.CENA_PO_JED_SF,
+            P.KATEGORIJA_PROIZVODA_SIFRA_KP
         FROM STAVKA_FAKTURE SF
-        JOIN FAKTURA F ON SF.FAKTURA_ID = F.SIFRA_F
-        JOIN PROIZVOD P ON SF.PROIZVOD_ID = P.SIFRA_PR
-        JOIN TRANSAKCIJA T ON F.SIFRA_F = T.FAKTURA_ID
+        JOIN FAKTURA F ON SF.FAKTURA_SIFRA_F = F.SIFRA_F
+        JOIN PROIZVOD_DOBAVLJACA PD ON SF.PROIZVOD_DOBAVLJACA_ID = PD.ID
+        JOIN PROIZVOD P ON PD.PROIZVOD_SIFRA_PR = P.SIFRA_PR
+        JOIN TRANSAKCIJA T ON F.SIFRA_F = T.FAKTURA_SIFRA_F
         WHERE F.STATUS_F = 'isplacena'
           AND T.STATUS_T = 'uspesna'
           AND EXTRACT(MONTH FROM T.DATUM_T) = p_mesec
@@ -278,16 +289,17 @@ BEGIN
     )
     SELECT
         KP.NAZIV_KP,
-        SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED),
+        SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED_SF),
         COUNT(PPS.KOLICINA_SF)
     BULK COLLECT INTO l_profitabilnost
     FROM ProdajaPoStavkama PPS
-    JOIN KATEGORIJA_PROIZVODA KP ON PPS.KATEGORIJA_ID = KP.SIFRA_KP
+    JOIN KATEGORIJA_PROIZVODA KP ON PPS.KATEGORIJA_PROIZVODA_SIFRA_KP = KP.SIFRA_KP
     GROUP BY KP.NAZIV_KP
-    HAVING SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED) > 1000
-    ORDER BY SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED) DESC;
+    HAVING SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED_SF) > 1000
+    ORDER BY SUM(PPS.KOLICINA_SF * PPS.CENA_PO_JED_SF) DESC;
 
-    -- Generisanje sadržaja izveštaja u JSON formatu
+    -- Generisanje sadržaja izveštaja u JSON formatu (informativno/DBMS_OUTPUT -
+    -- ne upisuje se više u bazu, vidi napomenu iznad).
     v_sadrzaj_izvestaja := '{"izvestaj": "Mesecna profitabilnost po kategorijama", "mesec": ' || p_mesec || ', "godina": ' || p_godina || ', "stavke": [';
 
     FOR i IN 1..l_profitabilnost.COUNT LOOP
@@ -301,10 +313,30 @@ BEGIN
     END LOOP;
 
     v_sadrzaj_izvestaja := v_sadrzaj_izvestaja || ']}';
+    DBMS_OUTPUT.PUT_LINE(v_sadrzaj_izvestaja);
 
-    -- Čuvanje izveštaja u tabelu IZVESTAJ
-    INSERT INTO IZVESTAJ (SIFRA_I, TIP_I, SADRZAJ_I, DATUM_I, KREIRAO_ID)
-    VALUES (IZVESTAJ_SEQ.NEXTVAL, 'finansijski', v_sadrzaj_izvestaja, SYSDATE, p_kreator_id);
+    -- Nađi (ili kreiraj) Kreiranje par (FA + kontrolna tabla) na koji Izvestaj
+    -- mora da visi (ER: FK Izvestaj -> Kreiranje, NOT NULL).
+    BEGIN
+        SELECT ID INTO v_kreiranje_id
+        FROM KREIRANJE
+        WHERE FINANSIJSKI_ANALITICAR_SIFRA_K = p_kreator_id
+        FETCH FIRST 1 ROWS ONLY;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            INSERT INTO KONTROLNA_TABLA (SIFRA_KT, NAZIV_KT, OPIS_KT)
+            VALUES (KONTROLNA_TABLA_SEQ.NEXTVAL, 'Kontrolna tabla (SBP)', 'Automatski kreirana iz PL/SQL procedure zadatka 4.')
+            RETURNING SIFRA_KT INTO v_tabla_id;
+
+            INSERT INTO KREIRANJE (FINANSIJSKI_ANALITICAR_SIFRA_K, KONTROLNA_TABLA_SIFRA_KT, DATUM_KR)
+            VALUES (p_kreator_id, v_tabla_id, SYSDATE)
+            RETURNING ID INTO v_kreiranje_id;
+    END;
+
+    -- Čuvanje izveštaja u tabelu IZVESTAJ (relaciono - bez SADRZAJ_JSON)
+    INSERT INTO IZVESTAJ (SIFRA_I, TIP_I, PERIOD_OD_I, PERIOD_DO_I, DATUM_I, KREIRANJE_ID)
+    VALUES (IZVESTAJ_SEQ.NEXTVAL, 'FINANSIJSKI', v_period_od, LAST_DAY(v_period_od), SYSDATE, v_kreiranje_id)
+    RETURNING SIFRA_I INTO p_sifra_izvestaja;
 
     COMMIT;
 
@@ -312,13 +344,17 @@ EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Greška prilikom generisanja izvestaja: ' || SQLERRM);
         ROLLBACK;
+        p_sifra_izvestaja := NULL;
 END;
 /
 
 -- Primer poziva procedure za generisanje izveštaja za tekući mesec i godinu
 -- Pretpostavka je da korisnik sa ID=1 poziva proceduru.
+DECLARE
+    v_nova_sifra NUMBER;
 BEGIN
-    GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI(EXTRACT(MONTH FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE), 1);
+    GENERISI_MESECNI_IZVESTAJ_PROFITABILNOSTI(EXTRACT(MONTH FROM SYSDATE), EXTRACT(YEAR FROM SYSDATE), 1, v_nova_sifra);
+    DBMS_OUTPUT.PUT_LINE('Novi izveštaj: ' || v_nova_sifra);
 END;
 /
 

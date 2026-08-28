@@ -17,26 +17,26 @@ def check_and_update_skladiste_status(skladiste):
     # Dobij poslednju temperaturu za ovo skladište
     poslednja_temp = Temperatura.objects.filter(
         skladiste=skladiste
-    ).order_by('-vreme_merenja').first()
-    
+    ).order_by('-vreme_merenja_tp').first()
+
     if not poslednja_temp:
         return False
-    
-    stari_status = skladiste.status_rizika_s
-    
+
+    stari_status = skladiste.status_rizika_sk
+
     # Odredi novi status na osnovu temperature
-    if poslednja_temp.vrednost > 6:
+    if poslednja_temp.vrednost_tp > 6:
         novi_status = 'visok'
-    elif poslednja_temp.vrednost >= 4:
+    elif poslednja_temp.vrednost_tp >= 4:
         novi_status = 'umeren'
     else:
         novi_status = 'nizak'
-    
+
     # Promeni status ako je potrebno
     if stari_status != novi_status:
         # Direktno ažuriranje u bazi
-        Skladiste.objects.filter(sifra_s=skladiste.sifra_s).update(status_rizika_s=novi_status)
-        logger.info(f"Skladište {skladiste.sifra_s} ({skladiste.mesto_s}): {stari_status} → {novi_status} (temperatura: {poslednja_temp.vrednost}°C)")
+        Skladiste.objects.filter(sifra_sk=skladiste.sifra_sk).update(status_rizika_sk=novi_status)
+        logger.info(f"Skladište {skladiste.sifra_sk} ({skladiste.mesto_sk}): {stari_status} → {novi_status} (temperatura: {poslednja_temp.vrednost_tp}°C)")
         return True
     
     return False
@@ -56,8 +56,8 @@ def update_all_skladista_status():
             if was_changed:
                 updated_count += 1
         except Exception as e:
-            logger.error(f"Greška pri proveri skladišta {skladiste.sifra_s}: {str(e)}")
-    
+            logger.error(f"Greška pri proveri skladišta {skladiste.sifra_sk}: {str(e)}")
+
     return updated_count
 
 
@@ -93,7 +93,7 @@ def check_all_skladista_status():
             if was_changed:
                 promenjenih_skladista += 1
         except Exception as e:
-            logger.error(f"Greška pri proveri skladišta {skladiste.sifra_s}: {str(e)}")
+            logger.error(f"Greška pri proveri skladišta {skladiste.sifra_sk}: {str(e)}")
     
     return promenjenih_skladista
 
@@ -108,7 +108,7 @@ def check_skladiste_on_temperatura_save(sender, instance, created, **kwargs):
         was_changed = check_and_update_skladiste_status(instance.skladiste)
         
         if created and was_changed:
-            logger.info(f"Status skladišta {instance.skladiste.mesto_s} ažuriran nakon dodavanja temperature {instance.vrednost}°C")
+            logger.info(f"Status skladišta {instance.skladiste.mesto_sk} ažuriran nakon dodavanja temperature {instance.vrednost_tp}°C")
             
     except Exception as e:
         logger.error(f"Greška pri proveri skladišta nakon temperature: {str(e)}")
@@ -122,7 +122,7 @@ def check_and_update_artikel_status(artikal):
     danas = date.today()
     datum_za_7_dana = danas + timedelta(days=7)
     
-    stari_status = artikal.status_trajanja
+    stari_status = artikal.status_trajanja_a
     novi_status = stari_status
     
     # Proveri status na osnovu roka trajanja
@@ -138,7 +138,7 @@ def check_and_update_artikel_status(artikal):
     
     # Promeni status ako je potrebno
     if stari_status != novi_status:
-        artikal.status_trajanja = novi_status
+        artikal.status_trajanja_a = novi_status
         artikal.save()
         
         logger.info(f"Artikal {artikal.sifra_a} ({artikal.naziv_a}): {stari_status} → {novi_status}")
@@ -159,8 +159,8 @@ def create_discount_for_artikel(artikal):
     # Proverava da li već postoji popust za ovaj artikal u tom periodu
     postojeci_popust = Popust.objects.filter(
         artikli=artikal,
-        datum_pocetka_vazenja_p__lte=danas,
-        datum_kraja_vazenja_p__gte=danas
+        datum_poc_vaz_pop__lte=danas,
+        datum_kr_vaz_pop__gte=danas
     ).first()
     
     if not postojeci_popust:
@@ -169,9 +169,9 @@ def create_discount_for_artikel(artikal):
         
         # Kreiraj novi popust
         popust = Popust.objects.create(
-            predlozena_cena_a=popust_cena,
-            datum_pocetka_vazenja_p=danas,
-            datum_kraja_vazenja_p=artikal.rok_trajanja_a
+            pred_cena_pop=popust_cena,
+            datum_poc_vaz_pop=danas,
+            datum_kr_vaz_pop=artikal.rok_trajanja_a
         )
         # Dodeli artikal popustu
         popust.artikli.add(artikal)
@@ -185,7 +185,7 @@ def create_discount_for_artikel(artikal):
     else:
         logger.info(
             f"Popust već postoji za artikal {artikal.sifra_a} "
-            f"u periodu {postojeci_popust.datum_pocetka_vazenja_p} - {postojeci_popust.datum_kraja_vazenja_p}"
+            f"u periodu {postojeci_popust.datum_poc_vaz_pop} - {postojeci_popust.datum_kr_vaz_pop}"
         )
         return postojeci_popust
 
@@ -233,7 +233,7 @@ def check_all_artikli_on_startup(sender, **kwargs):
                         promenjenih_artikala += 1
                         
                         # Ako je promenjen na 'istice', popust je već kreiran u check_and_update_artikel_status
-                        if artikal.status_trajanja == 'istice':
+                        if artikal.status_trajanja_a == 'istice':
                             kreiranih_popusta += 1
                             
                 except Exception as e:
@@ -243,14 +243,14 @@ def check_all_artikli_on_startup(sender, **kwargs):
             promenjenih_skladista = check_all_skladista_status()
             
             # Statistike za artikle
-            aktivni = Artikal.objects.filter(status_trajanja='aktivan').count()
-            isticu = Artikal.objects.filter(status_trajanja='istice').count()
-            istekli = Artikal.objects.filter(status_trajanja='istekao').count()
+            aktivni = Artikal.objects.filter(status_trajanja_a='aktivan').count()
+            isticu = Artikal.objects.filter(status_trajanja_a='istice').count()
+            istekli = Artikal.objects.filter(status_trajanja_a='istekao').count()
             
             # Statistike za skladišta
-            nizak_rizik = Skladiste.objects.filter(status_rizika_s='nizak').count()
-            umeren_rizik = Skladiste.objects.filter(status_rizika_s='umeren').count()
-            visok_rizik = Skladiste.objects.filter(status_rizika_s='visok').count()
+            nizak_rizik = Skladiste.objects.filter(status_rizika_sk='nizak').count()
+            umeren_rizik = Skladiste.objects.filter(status_rizika_sk='umeren').count()
+            visok_rizik = Skladiste.objects.filter(status_rizika_sk='visok').count()
             
             logger.info(f"Automatska provera završena:")
             logger.info(f"- Artikli: {promenjenih_artikala} promenjeno, {kreiranih_popusta} popusta kreirano")

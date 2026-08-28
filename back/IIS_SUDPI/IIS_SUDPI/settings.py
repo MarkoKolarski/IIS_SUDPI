@@ -22,6 +22,7 @@ from datetime import timedelta
 from logging import config
 from pathlib import Path
 import os
+import sys
 import environ
 
 env = environ.Env(
@@ -228,12 +229,19 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            # Eksplicitno na stdout (ne podrazumevani stderr) - na nekim Windows
+            # terminalima/IDE-ovima stderr ostaje na cp1252 čak i posle
+            # sys.stderr.reconfigure(encoding='utf-8') u manage.py, pa
+            # ćirilični/dijakritički log tekst (č, ć, š, ž...) baca
+            # UnicodeEncodeError. stdout se pouzdano reconfiguriše.
+            'stream': sys.stdout,
             'formatter': 'detailed',
         },
         'file': {
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
             'formatter': 'detailed',
+            'encoding': 'utf-8',
         },
     },
     'loggers': {

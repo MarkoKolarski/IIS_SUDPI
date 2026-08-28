@@ -30,7 +30,7 @@ class Command(BaseCommand):
         artikli = Artikal.objects.all()
         
         for artikal in artikli:
-            stari_status = artikal.status_trajanja
+            stari_status = artikal.status_trajanja_a
             novi_status = stari_status
             
             # Proveri status na osnovu roka trajanja
@@ -47,7 +47,7 @@ class Command(BaseCommand):
             # Promeni status ako je potrebno
             if stari_status != novi_status:
                 if not dry_run:
-                    artikal.status_trajanja = novi_status
+                    artikal.status_trajanja_a = novi_status
                     artikal.save()
                 
                 self.stdout.write(
@@ -61,8 +61,8 @@ class Command(BaseCommand):
                     # Proverava da li već postoji popust za ovaj artikal u tom periodu
                     postojeci_popust = Popust.objects.filter(
                         artikli=artikal,
-                        datum_pocetka_vazenja_p__lte=danas,
-                        datum_kraja_vazenja_p__gte=danas
+                        datum_poc_vaz_pop__lte=danas,
+                        datum_kr_vaz_pop__gte=danas
                     ).first()
                     
                     if not postojeci_popust:
@@ -72,9 +72,9 @@ class Command(BaseCommand):
                         if not dry_run:
                             # Kreiraj novi popust
                             popust = Popust.objects.create(
-                                predlozena_cena_a=popust_cena,
-                                datum_pocetka_vazenja_p=danas,
-                                datum_kraja_vazenja_p=artikal.rok_trajanja_a
+                                pred_cena_pop=popust_cena,
+                                datum_poc_vaz_pop=danas,
+                                datum_kr_vaz_pop=artikal.rok_trajanja_a
                             )
                             # Dodeli artikal popustu
                             popust.artikli.add(artikal)
@@ -86,7 +86,7 @@ class Command(BaseCommand):
                         kreiranih_popusta += 1
                     else:
                         self.stdout.write(
-                            f"  → Popust već postoji za period {postojeci_popust.datum_pocetka_vazenja_p} - {postojeci_popust.datum_kraja_vazenja_p}"
+                            f"  → Popust već postoji za period {postojeci_popust.datum_poc_vaz_pop} - {postojeci_popust.datum_kr_vaz_pop}"
                         )
         
         # Prikaži sažetak
@@ -107,9 +107,9 @@ class Command(BaseCommand):
         
         # Dodatno: Prikaži pregled trenutnog stanja
         self.stdout.write("\n=== PREGLED STANJA ===")
-        aktivni = Artikal.objects.filter(status_trajanja='aktivan').count()
-        isticu = Artikal.objects.filter(status_trajanja='istice').count()
-        istekli = Artikal.objects.filter(status_trajanja='istekao').count()
+        aktivni = Artikal.objects.filter(status_trajanja_a='aktivan').count()
+        isticu = Artikal.objects.filter(status_trajanja_a='istice').count()
+        istekli = Artikal.objects.filter(status_trajanja_a='istekao').count()
         
         self.stdout.write(f"Aktivni artikli: {aktivni}")
         self.stdout.write(f"Artikli koji ističu: {isticu}")
@@ -117,7 +117,7 @@ class Command(BaseCommand):
         
         # Prikaži aktivne popuste
         aktivni_popusti = Popust.objects.filter(
-            datum_pocetka_vazenja_p__lte=danas,
-            datum_kraja_vazenja_p__gte=danas
+            datum_poc_vaz_pop__lte=danas,
+            datum_kr_vaz_pop__gte=danas
         ).count()
         self.stdout.write(f"Aktivni popusti: {aktivni_popusti}")

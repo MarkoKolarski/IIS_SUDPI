@@ -183,7 +183,7 @@ def get_supplier_report(request, supplier_id):
     """
     try:
         # Verify the supplier exists in Django
-        supplier = Dobavljac.objects.filter(sifra_d=supplier_id).first()
+        supplier = Dobavljac.objects.filter(sifra_db=supplier_id).first()
         if not supplier:
             return Response(
                 {"error": "Supplier not found"},
@@ -237,7 +237,7 @@ def get_supplier_comparison_report(request):
         
         # Verify all suppliers exist in Django
         for supplier_id in supplier_ids:
-            if not Dobavljac.objects.filter(sifra_d=supplier_id).exists():
+            if not Dobavljac.objects.filter(sifra_db=supplier_id).exists():
                 return Response(
                     {"error": f"Supplier with ID {supplier_id} not found"},
                     status=status.HTTP_404_NOT_FOUND
@@ -331,7 +331,7 @@ def create_complaint_with_rating(request):
         
         # Get the supplier from Django
         try:
-            supplier = Dobavljac.objects.get(sifra_d=supplier_id)
+            supplier = Dobavljac.objects.get(sifra_db=supplier_id)
         except Dobavljac.DoesNotExist:
             return Response(
                 {"error": "Supplier not found"},
@@ -356,10 +356,10 @@ def create_complaint_with_rating(request):
         django_complaint = Reklamacija.objects.create(
             kontrolor=kontrolor,
             dobavljac=supplier,
-            status='prijem',
-            opis_problema=problem_description,
-            vreme_trajanja=duration,
-            jacina_zalbe=severity
+            status_r='prijem',
+            opis_problema_r=problem_description,
+            vreme_trajanja_r=duration,
+            jacina_zalbe_r=severity
         )
         
         # 2. Create the complaint in the microservice
@@ -386,7 +386,7 @@ def create_complaint_with_rating(request):
         # Update supplier rating in Django based on response from microservice
         new_rating = ms_result.get('new_rating')
         if new_rating is not None:
-            supplier.ocena = new_rating
+            supplier.ocena_db = new_rating
             supplier.datum_ocenjivanja = datetime.now().date()
             supplier.save()
         

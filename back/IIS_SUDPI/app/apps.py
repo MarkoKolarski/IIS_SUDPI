@@ -28,25 +28,25 @@ class AppConfig(AppConfig):
                 # Dobij najnoviju temperaturu
                 najnovija_temp = Temperatura.objects.filter(
                     skladiste=skladiste
-                ).order_by('-vreme_merenja').first()
-                
+                ).order_by('-vreme_merenja_tp').first()
+
                 if najnovija_temp:
                     # Određi novi status
-                    if najnovija_temp.vrednost > 6:
+                    if najnovija_temp.vrednost_tp > 6:
                         novi_status = 'visok'
-                    elif najnovija_temp.vrednost > 4:
+                    elif najnovija_temp.vrednost_tp > 4:
                         novi_status = 'umeren'
                     else:
                         novi_status = 'nizak'
-                    
+
                     # Ažuriraj ako je potrebno
-                    if skladiste.status_rizika_s != novi_status:
-                        stari_status = skladiste.status_rizika_s
-                        skladiste.status_rizika_s = novi_status
+                    if skladiste.status_rizika_sk != novi_status:
+                        stari_status = skladiste.status_rizika_sk
+                        skladiste.status_rizika_sk = novi_status
                         skladiste.save()
                         promenjenih += 1
-                        
-                        print(f"Ažuriran status: {skladiste.mesto_s} - {stari_status} → {novi_status} (temp: {najnovija_temp.vrednost}°C)")
+
+                        print(f"Ažuriran status: {skladiste.mesto_sk} - {stari_status} → {novi_status} (temp: {najnovija_temp.vrednost_tp}°C)")
             
             print(f"Provera završena: {promenjenih} skladišta ažurirano")
             print("=== ZAVRŠETAK AUTOMATSKE PROVERE ===")

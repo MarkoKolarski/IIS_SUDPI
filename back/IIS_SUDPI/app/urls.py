@@ -3,14 +3,15 @@ from . import views
 from . import views_mv
 from . import views_sbp
 from .views_saga import create_faktura_with_payment_saga, create_penal_saga, saga_status
-from .views import (LoginView, index, register, api_login, dashboard_finansijski_analiticar, invoice_list, 
+from .views import (LoginView, index, register, api_login,
+                    select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal,
+                    artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail,
+                    izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama)
+from .views_mk import (dashboard_finansijski_analiticar, invoice_list,
                     dashboard_finansijski_analiticar_troskovi,
-                    invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options, 
-                    penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties, 
-                    preview_contract_violations, select_supplier, skladista_list, dodaj_skladiste, dodaj_artikal, 
-                    artikli_list, obrisi_artikal, artikal_detail, izmeni_artikal, zalihe_list, zaliha_detail, 
-                    izmeni_zalihu, rizicni_artikli_list, artikli_statistike, artikli_grafikon_po_nedeljama, 
-                    simulate_payment)
+                    invoice_filter_options, invoice_detail, invoice_action, reports_data, reports_filter_options,
+                    penalties_list, penalties_filter_options, penalties_analysis, check_and_create_penalties,
+                    preview_contract_violations, simulate_payment)
 from .views_mv import suppliers, expiring_certificates, visits_list, visit_detail, create_visit, busy_visit_slots, complaints_list, create_complaint
 from .views_mv2 import (
     check_service_health, sync_suppliers, sync_complaints, sync_certificates, 

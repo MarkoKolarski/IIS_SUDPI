@@ -21,9 +21,9 @@ class Command(BaseCommand):
         
         # Prikaži trenutno stanje
         from app.models import Skladiste
-        nizak_rizik = Skladiste.objects.filter(status_rizika_s='nizak').count()
-        umeren_rizik = Skladiste.objects.filter(status_rizika_s='umeren').count() 
-        visok_rizik = Skladiste.objects.filter(status_rizika_s='visok').count()
+        nizak_rizik = Skladiste.objects.filter(status_rizika_sk='nizak').count()
+        umeren_rizik = Skladiste.objects.filter(status_rizika_sk='umeren').count()
+        visok_rizik = Skladiste.objects.filter(status_rizika_sk='visok').count()
         
         self.stdout.write(f"Trenutno stanje skladišta:")
         self.stdout.write(f"- Nizak rizik: {nizak_rizik}")

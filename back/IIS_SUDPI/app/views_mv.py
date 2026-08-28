@@ -18,12 +18,12 @@ class suppliers(generics.ListAPIView):
     queryset = Dobavljac.objects.all()
     serializer_class = DobavljacSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ['naziv', 'ime_sirovine', 'PIB_d']
+    search_fields = ['naziv_db', 'ime_sirovine', 'pib_db']
 
     def check_permissions(self, request):
         super().check_permissions(request)
         allowed_types = ['administrator', 'nabavni_menadzer', 'kontrolor_kvaliteta']
-        
+
         # For GET methods, all three roles are allowed
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
             if request.user.tip_k not in allowed_types:
@@ -42,15 +42,15 @@ class suppliers(generics.ListAPIView):
     def post(self, request):
         try:
             # Check if PIB already exists
-            if Dobavljac.objects.filter(PIB_d=request.data.get('PIB_d')).exists():
+            if Dobavljac.objects.filter(pib_db=request.data.get('PIB_d')).exists():
                 return Response({
                     'error': 'Dobavljač sa ovim PIB-om već postoji'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Get the max sifra_d value and increment by 1
-            max_sifra = Dobavljac.objects.aggregate(Max('sifra_d'))['sifra_d__max'] or 0
+            # Get the max sifra_db value and increment by 1
+            max_sifra = Dobavljac.objects.aggregate(Max('sifra_db'))['sifra_db__max'] or 0
             next_sifra = max_sifra + 1
-            
+
             # Add sifra_d to request data
             request_data = request.data.copy()
             request_data['sifra_d'] = next_sifra
@@ -85,7 +85,7 @@ class suppliers(generics.ListAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
     def get_object(self, sifra_d):
-        return get_object_or_404(Dobavljac, sifra_d=sifra_d)
+        return get_object_or_404(Dobavljac, sifra_db=sifra_d)
 
     def get(self, request, sifra_d=None, *args, **kwargs):
         if sifra_d is not None:
@@ -106,14 +106,14 @@ class suppliers(generics.ListAPIView):
             request_data = request.data.copy()
             request_data.pop('ocena', None)
             request_data.pop('datum_ocenjivanja', None)
-            
+
             serializer = self.get_serializer(supplier, data=request_data, partial=True)
-            
+
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
+
         except Exception as e:
             return Response({
                 'error': str(e)
@@ -130,30 +130,30 @@ def visits_list(request):
         # First check if user is kontrolor_kvaliteta
         if not hasattr(request.user, 'kontrolor_kvaliteta'):
             return Response(
-                {'error': 'Samo kontrolor kvaliteta može pristupiti ovom endpoint-u'}, 
+                {'error': 'Samo kontrolor kvaliteta može pristupiti ovom endpoint-u'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
         kontrolor = request.user.kontrolor_kvaliteta
         visits = Poseta.objects.filter(kontrolor=kontrolor).select_related('dobavljac')
-        
+
         # Filter by status if provided
         status_filter = request.GET.get('status')
         if status_filter:
-            visits = visits.filter(status=status_filter)
-            
+            visits = visits.filter(status_po=status_filter)
+
         # Filter by date range if provided
         date_from = request.GET.get('date_from')
         date_to = request.GET.get('date_to')
         if date_from and date_to:
-            visits = visits.filter(datum_od__range=[date_from, date_to])
-        
+            visits = visits.filter(datum_od_po__range=[date_from, date_to])
+
         serializer = VisitSerializer(visits, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         return Response(
-            {'error': 'Greška pri dohvatanju poseta', 'details': str(e)}, 
+            {'error': 'Greška pri dohvatanju poseta', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -165,14 +165,14 @@ def visit_detail(request, visit_id):
     API endpoint za detalje posete i ažuriranje statusa
     """
     try:
-        visit = get_object_or_404(Poseta, poseta_id=visit_id)
-        
+        visit = get_object_or_404(Poseta, sifra_po=visit_id)
+
         if request.method == 'PUT':
             new_status = request.data.get('status')
             if new_status in dict(Poseta.STATUS_CHOICES):
-                visit.status = new_status
+                visit.status_po = new_status
                 visit.save()
-        
+
         return Response({
             'poseta_id': visit.poseta_id,
             'datum_od': visit.datum_od,
@@ -181,7 +181,7 @@ def visit_detail(request, visit_id):
             'dobavljac': visit.dobavljac.naziv,
             'dobavljac_id': visit.dobavljac.sifra_d
         })
-        
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -194,8 +194,12 @@ def busy_visit_slots(request):
     """
     try:
         # Get all visits that are not cancelled
-        busy_slots = Poseta.objects.exclude(status='otkazana').values('datum_od', 'datum_do')
-        return Response(list(busy_slots), status=status.HTTP_200_OK)
+        busy_slots = Poseta.objects.exclude(status_po='otkazana').values('datum_od_po', 'datum_do_po')
+        rezultat = [
+            {'datum_od': slot['datum_od_po'], 'datum_do': slot['datum_do_po']}
+            for slot in busy_slots
+        ]
+        return Response(rezultat, status=status.HTTP_200_OK)
     except Exception as e:
         return Response(
             {'error': 'Greška pri dohvatanju zauzetih termina', 'details': str(e)},
@@ -214,7 +218,7 @@ def create_visit(request):
         datum_od = request.data.get('datum_od')
         datum_do = request.data.get('datum_do')
         dobavljac_id = request.data.get('dobavljac_id')
-        
+
         # Parse datetime strings properly
         from datetime import datetime
         from django.utils import timezone
@@ -223,7 +227,7 @@ def create_visit(request):
         # First convert to naive datetime by removing timezone info
         naive_od = datetime.fromisoformat(datum_od.replace('Z', '')).replace(tzinfo=None)
         naive_do = datetime.fromisoformat(datum_do.replace('Z', '')).replace(tzinfo=None)
-        
+
         # Then make them timezone aware
         datum_od = timezone.make_aware(naive_od)
         datum_do = timezone.make_aware(naive_do)
@@ -235,38 +239,38 @@ def create_visit(request):
                 {'error': 'Ne možete zakazati posetu u prošlosti (BE)'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Check for overlapping visits
         if settings.BUSINESS_LOGIC_IN_DJANGO.get('visit_overlap', True):
             overlapping_visits = Poseta.objects.filter(
-                datum_od__lt=datum_do,
-                datum_do__gt=datum_od
-            ).exclude(status='otkazana')
-        
+                datum_od_po__lt=datum_do,
+                datum_do_po__gt=datum_od
+            ).exclude(status_po='otkazana')
+
             if overlapping_visits.exists():
                 return Response(
                     {'error': 'Termin je već zauzet'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
-        dobavljac = get_object_or_404(Dobavljac, sifra_d=dobavljac_id)
-        
+
+        dobavljac = get_object_or_404(Dobavljac, sifra_db=dobavljac_id)
+
         visit = Poseta.objects.create(
             kontrolor=kontrolor,
             dobavljac=dobavljac,
-            datum_od=datum_od,
-            datum_do=datum_do,
-            status='zakazana'
+            datum_od_po=datum_od,
+            datum_do_po=datum_do,
+            status_po='zakazana'
         )
-        
+
         return Response({
             'message': 'Poseta je uspešno kreirana',
             'poseta_id': visit.poseta_id
         }, status=status.HTTP_201_CREATED)
-        
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @allowed_users(['kontrolor_kvaliteta'])
@@ -278,19 +282,19 @@ def complaints_list(request):
         # First check if user is kontrolor_kvaliteta
         if not hasattr(request.user, 'kontrolor_kvaliteta'):
             return Response(
-                {'error': 'Samo kontrolor kvaliteta može pristupiti ovom endpoint-u'}, 
+                {'error': 'Samo kontrolor kvaliteta može pristupiti ovom endpoint-u'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
         kontrolor = request.user.kontrolor_kvaliteta
         complaints = Reklamacija.objects.filter(kontrolor=kontrolor).select_related('dobavljac')
-        
+
         serializer = ComplaintSerializer(complaints, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         return Response(
-            {'error': 'Greška pri dohvatanju reklamacija', 'details': str(e)}, 
+            {'error': 'Greška pri dohvatanju reklamacija', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -305,19 +309,19 @@ def create_complaint(request):
     try:
         if not hasattr(request.user, 'kontrolor_kvaliteta'):
             return Response(
-                {'error': 'Samo kontrolor kvaliteta može podneti reklamaciju'}, 
+                {'error': 'Samo kontrolor kvaliteta može podneti reklamaciju'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
         kontrolor = request.user.kontrolor_kvaliteta
         dobavljac_id = request.data.get('dobavljac_id')
         jacina_zalbe = int(request.data.get('jacina_zalbe', 1))
-        
+
         try:
-            dobavljac = Dobavljac.objects.get(sifra_d=dobavljac_id)
-            
+            dobavljac = Dobavljac.objects.get(sifra_db=dobavljac_id)
+
             new_rating = dobavljac.ocena
-            
+
             # Ako je konfiguracija postavljena da se koristi Django logika
             if settings.BUSINESS_LOGIC_IN_DJANGO.get('supplier_rating', True):
                 # Calculate rating penalty based on complaint strength
@@ -330,10 +334,10 @@ def create_complaint(request):
                     penalty = jacina_zalbe * 0.3
                 else:
                     penalty = jacina_zalbe * 0.3
-                
+
                 # Update supplier's rating
                 new_rating = max(0, min(10, float(dobavljac.ocena) - penalty))
-                dobavljac.ocena = new_rating
+                dobavljac.ocena_db = new_rating
                 dobavljac.datum_ocenjivanja = timezone.now().date()
                 dobavljac.save()
             # Ako je False, rating će biti ažuriran kroz PL/SQL trigger
@@ -345,33 +349,33 @@ def create_complaint(request):
                 'jacina_zalbe': jacina_zalbe,
                 'vreme_trajanja': request.data.get('vreme_trajanja', 1)
             }
-            
+
             serializer = ComplaintSerializer(data=complaint_data)
             if serializer.is_valid():
                 serializer.save(
                     kontrolor=kontrolor,
-                    status='prijem'
+                    status_r='prijem'
                 )
                 return Response({
                     'message': 'Reklamacija je uspešno kreirana',
                     'complaint': serializer.data,
                     'new_rating': new_rating
                 }, status=status.HTTP_201_CREATED)
-                
+
             return Response(
-                {'error': 'Nevalidni podaci', 'details': serializer.errors}, 
+                {'error': 'Nevalidni podaci', 'details': serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         except Dobavljac.DoesNotExist:
             return Response(
-                {'error': 'Dobavljač nije pronađen'}, 
+                {'error': 'Dobavljač nije pronađen'},
                 status=status.HTTP_404_NOT_FOUND
             )
-            
+
     except Exception as e:
         return Response(
-            {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)}, 
+            {'error': 'Greška pri kreiranju reklamacije', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
@@ -385,16 +389,16 @@ def expiring_certificates(request):
     try:
         # Današnji datum
         today = timezone.now().date()
-        
+
         # Datum za 30 dana unapred
         thirty_days_ahead = today + timedelta(days=30)
-        
+
         # Pronađi sertifikate koji ističu u narednih 30 dana
         expiring_certs = Sertifikat.objects.filter(
-            datum_isteka__gt=today,
-            datum_isteka__lte=thirty_days_ahead
+            datum_isteka_s__gt=today,
+            datum_isteka_s__lte=thirty_days_ahead
         ).select_related('dobavljac')
-        
+
         results = []
         for cert in expiring_certs:
             days_left = (cert.datum_isteka - today).days
@@ -408,12 +412,12 @@ def expiring_certificates(request):
                 'dobavljac_naziv': cert.dobavljac.naziv,
                 'days_left': days_left,
             })
-        
+
         return Response(results, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         print(e)
         return Response(
-            {'error': f'Greška pri dohvatanju sertifikata koji ističu {str(e)}', 'details': str(e)}, 
+            {'error': f'Greška pri dohvatanju sertifikata koji ističu {str(e)}', 'details': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

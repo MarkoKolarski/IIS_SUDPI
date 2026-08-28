@@ -285,3 +285,6 @@ secrets.json
 *.dump
 
 FinancialEventsAnalysisService/
+
+CLAUDE.md
+ER_MAPPING.md

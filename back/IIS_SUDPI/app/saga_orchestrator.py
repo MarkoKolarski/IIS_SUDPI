@@ -124,6 +124,7 @@ class SagaOrchestrator:
                     sifra_t=next_transakcija_id,
                     potvrda_t=potvrda_transakcije,
                     status_t=status_transakcije,
+                    iznos_t=iznos,
                     faktura=faktura
                 )
                 transakcija.save()
