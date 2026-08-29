@@ -129,7 +129,7 @@ const DashboardFA = () => {
       : styles.chartDataEnterFromOlder;
 
   const getProfitabilityValue = (value) => {
-    const parsed = Number(String(value || "0").replace("%", ""));
+    const parsed = Number(value || 0);
     if (Number.isNaN(parsed)) return 0;
     return Math.max(0, Math.min(100, parsed));
   };
@@ -292,16 +292,16 @@ const DashboardFA = () => {
                       {dashboardData.profitabilnost_dobavljaca.map(
                         (supplier, index) => (
                           <div key={index} className={styles.supplierItem}>
-                            <span className={styles.supplierName}>{supplier.name}</span>
+                            <span className={styles.supplierName}>{supplier.naziv_db}</span>
                             <div className={styles.supplierMetricWrap}>
-                              <span>{supplier.profitability}</span>
+                              <span>{supplier.profitabilnost}%</span>
                               {expandedCard === "profitability" && (
                                 <div className={styles.supplierProgressTrack}>
                                   <div
                                     className={styles.supplierProgressFill}
                                     style={{
                                       width: `${getProfitabilityValue(
-                                        supplier.profitability
+                                        supplier.profitabilnost
                                       )}%`,
                                     }}
                                   />
@@ -360,12 +360,12 @@ const DashboardFA = () => {
                         tabIndex={0}
                       >
                         {dashboardData.nadolazece_isplate.map((payment) => (
-                          <div key={payment.id} className={styles.tableRow}>
+                          <div key={payment.sifra_f} className={styles.tableRow}>
                             <div className={`${styles.tableCol} ${styles.supplierCol}`}>
-                              {payment.supplier}
+                              {payment.naziv_db}
                             </div>
                             <div className={`${styles.tableCol} ${styles.amountCol}`}>
-                              {Number(payment.amount || 0).toLocaleString(
+                              {Number(payment.iznos_f || 0).toLocaleString(
                                 "sr-Latn-RS"
                               )}{" "}
                               RSD

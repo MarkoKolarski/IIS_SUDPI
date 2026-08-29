@@ -78,7 +78,7 @@ const InvoiceDetails = () => {
       await loadInvoiceDetails();
       setActionFeedback({
         type: "success",
-        message: response.data.message || "Akcija je uspešno izvršena.",
+        message: response.data.poruka || "Akcija je uspešno izvršena.",
       });
       return true;
     } catch (error) {
@@ -86,7 +86,6 @@ const InvoiceDetails = () => {
       setActionFeedback({
         type: "error",
         message:
-          error.response?.data?.error ||
           error.response?.data?.detail ||
           "Greška pri izvršavanju akcije. Pokušajte ponovo.",
       });
@@ -389,7 +388,7 @@ const InvoiceDetails = () => {
             <div className={`${styles.invoiceSummaryRow} ${styles.rowLight}`}>
               <div className={styles.summaryCol}>
                 <span className={styles.summaryLabel}>Dobavljač:</span>
-                <span className={styles.summaryValue}>{invoice.dobavljac_naziv}</span>
+                <span className={styles.summaryValue}>{invoice.naziv_db}</span>
               </div>
               <div className={styles.summaryCol}>
                 <span className={styles.summaryLabel}>Iznos:</span>
@@ -487,7 +486,7 @@ const InvoiceDetails = () => {
                           <p className={styles.invoiceItemTitle}>{stavka.naziv_sf}</p>
                           <span className={styles.invoiceItemPrice}>
                             {formatAmount(
-                              Number(stavka.kolicina_sf) * Number(stavka.cena_po_jed)
+                              Number(stavka.kolicina_sf) * Number(stavka.cena_po_jed_sf)
                             )}
                           </span>
                         </div>
@@ -503,7 +502,7 @@ const InvoiceDetails = () => {
                               Cena po jedinici
                             </span>
                             <span className={styles.invoiceItemMetaValue}>
-                              {formatAmount(stavka.cena_po_jed)}
+                              {formatAmount(stavka.cena_po_jed_sf)}
                             </span>
                           </div>
                         </div>
@@ -581,7 +580,7 @@ const InvoiceDetails = () => {
                     </div>
                     <div className={styles.transactionField}>
                       <span className={styles.transactionLabel}>Potvrda</span>
-                      <span className={styles.transactionValue}>{invoice.transakcija.potvrda_t}</span>
+                      <span className={styles.transactionValue}>{invoice.transakcija.broj_potvrde_t}</span>
                     </div>
                     <div className={styles.transactionField}>
                       <span className={styles.transactionLabel}>Status</span>

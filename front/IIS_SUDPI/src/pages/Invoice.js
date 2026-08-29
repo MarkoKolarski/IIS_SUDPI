@@ -372,7 +372,7 @@ const Invoice = () => {
                         {invoice.sifra_f}
                       </div>
                       <div className={styles.tableCol} style={{ width: "12%" }}>
-                        {invoice.dobavljac_naziv}
+                        {invoice.naziv_db}
                       </div>
                       <div className={styles.tableCol} style={{ width: "14%" }}>
                         {formatAmount(invoice.iznos_f)}

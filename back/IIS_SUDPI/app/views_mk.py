@@ -23,6 +23,11 @@ from django.db import transaction, IntegrityError
 from django.core.mail import send_mail, get_connection
 from django.conf import settings
 
+from .constants_mk import (
+    FAKTURE_DATUM_OPCIJE, FAKTURE_STATUS_OPCIJE,
+    IZVESTAJI_GRUPIRANJE_OPCIJE, IZVESTAJI_PERIOD_OPCIJE, IZVESTAJI_STATUS_OPCIJE,
+    PENAL_DANI_DO_RESENJA, PENALI_STATUS_OPCIJE,
+)
 from .decorators import allowed_users
 from .models import (
     Faktura, Ugovor, Dobavljac, Penal, StavkaFakture, Transakcija,
@@ -30,10 +35,32 @@ from .models import (
     Izvestaj, PredmetIzvestaja, OcenaDobavljaca,
 )
 from .serializers_mk import (
-    FakturaSerializer, FakturaDetailSerializer, PenalSerializer,
+    AnalizaDobavljacaSerializer, AutoKreiranjePenalaSerializer,
+    DashboardSerializer, FakturaSerializer, FakturaDetailSerializer,
+    InvoiceActionSerializer, InvoiceActionResultSerializer,
+    IzvestajTroskovaSerializer, KrsenjeUgovoraSerializer, PenalSerializer,
+    SimulacijaPlacanjaSerializer, TrendTroskovaSerializer,
 )
 
 logger = logging.getLogger(__name__)
+
+
+def prva_greska(errors):
+    """Spljošti DRF `serializer.errors` na jednu poruku.
+
+    Front (`InvoiceDetails.js`) čita greške kao `error.response.data.detail`,
+    pa ulazni serijalajzeri moraju da zadrže taj oblik odgovora umesto
+    podrazumevanog DRF rečnika `{polje: [poruke]}`.
+    """
+    if isinstance(errors, dict):
+        for vrednost in errors.values():
+            return prva_greska(vrednost)
+    elif isinstance(errors, (list, tuple)):
+        for vrednost in errors:
+            return prva_greska(vrednost)
+    elif errors:
+        return str(errors)
+    return 'Neispravan zahtev.'
 
 
 def shift_month(month_start, delta):
@@ -270,15 +297,15 @@ def dashboard_finansijski_analiticar(request):
         profitabilnost = max(0, min(100, profitabilnost))  # Ograniči na 0-100%
 
         dobavljaci_profitabilnost.append({
-            'name': dobavljac.naziv_db,
-            'profitability': f"{profitabilnost:.0f}%"
+            'naziv_db': dobavljac.naziv_db,
+            'profitabilnost': round(profitabilnost, 0)
         })
 
         # Servisna funkcija (tačka 8.4): upiši ocenu dobavljača za kriterijum
         # BROJ_PENALA za tekući 6-mesečni period (0-10 skala, manje penala = veća ocena).
         _upisi_ocenu_dobavljaca(dobavljac, 'BROJ_PENALA', max(0, 10 - penali_count), pre_6_meseci, date.today())
 
-    dobavljaci_profitabilnost.sort(key=lambda x: float(x['profitability'].replace('%', '')), reverse=True)
+    dobavljaci_profitabilnost.sort(key=lambda x: x['profitabilnost'], reverse=True)
 
     # 3. NADOLAZEĆE ISPLATE
     danas = date.today()
@@ -292,9 +319,9 @@ def dashboard_finansijski_analiticar(request):
 
     for faktura in fakture_za_isplatu:
         nadolazece_isplate.append({
-            'id': str(faktura.sifra_f),
-            'supplier': faktura.ugovor.dobavljac.naziv_db,
-            'amount': float(faktura.iznos_f)
+            'sifra_f': faktura.sifra_f,
+            'naziv_db': faktura.ugovor.dobavljac.naziv_db,
+            'iznos_f': faktura.iznos_f
         })
 
     # 4. VIZUALIZACIJA TROŠKOVA (tekući prozor od 6 meseci)
@@ -317,7 +344,8 @@ def dashboard_finansijski_analiticar(request):
     if getattr(request.user, 'tip_k', None) == 'finansijski_analiticar' and hasattr(request.user, 'finansijski_analiticar'):
         _save_dashboard_snapshot(request.user.finansijski_analiticar, dashboard_data)
 
-    return Response(dashboard_data, status=status.HTTP_200_OK)
+    serializer = DashboardSerializer(dashboard_data)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -334,23 +362,23 @@ def dashboard_finansijski_analiticar_troskovi(request):
         offset = int(request.GET.get('offset', 0))
         limit = int(request.GET.get('limit', 6))
     except (TypeError, ValueError):
-        return Response({'error': 'Neispravni parametri offset/limit.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': 'Neispravni parametri offset/limit.'}, status=status.HTTP_400_BAD_REQUEST)
 
     if offset < 0:
-        return Response({'error': 'Offset ne može biti negativan.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': 'Offset ne može biti negativan.'}, status=status.HTTP_400_BAD_REQUEST)
 
     if limit < 1 or limit > 24:
-        return Response({'error': 'Limit mora biti između 1 i 24.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'detail': 'Limit mora biti između 1 i 24.'}, status=status.HTTP_400_BAD_REQUEST)
 
     window = get_cost_window(offset=offset, limit=limit)
-    response_payload = {
+    serializer = TrendTroskovaSerializer({
         'offset': window['offset'],
         'limit': window['limit'],
         'window_start': window['window_start'],
         'window_end': window['window_end'],
         'vizualizacija_troskova': window['vizualizacija_troskova'],
-    }
-    return Response(response_payload, status=status.HTTP_200_OK)
+    })
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 def _normalize_search_text(value):
@@ -531,14 +559,6 @@ def invoice_filter_options(request):
     """
     API endpoint za dobijanje opcija za dropdown filtere
     """
-    statusi = [
-        {'value': 'svi', 'label': 'Svi statusi'},
-        {'value': 'primljena', 'label': 'Čeka verifikaciju'},
-        {'value': 'verifikovana', 'label': 'Čeka isplatu'},
-        {'value': 'isplacena', 'label': 'Plaćeno'},
-        {'value': 'odbijena', 'label': 'Odbačeno'},
-    ]
-
     dobavljaci = Dobavljac.objects.filter(
         ugovori__fakture__isnull=False
     ).distinct().values('sifra_db', 'naziv_db')
@@ -549,18 +569,10 @@ def invoice_filter_options(request):
         for d in dobavljaci
     ])
 
-    datumi = [
-        {'value': 'svi', 'label': 'Svi datumi'},
-        {'value': 'danas', 'label': 'Danas'},
-        {'value': 'ova_nedelja', 'label': 'Ova nedelja'},
-        {'value': 'ovaj_mesec', 'label': 'Ovaj mesec'},
-        {'value': 'poslednji_mesec', 'label': 'Prošli mesec'},
-    ]
-
     return Response({
-        'statusi': statusi,
+        'statusi': FAKTURE_STATUS_OPCIJE,
         'dobavljaci': dobavljaci_opcije,
-        'datumi': datumi,
+        'datumi': FAKTURE_DATUM_OPCIJE,
     }, status=status.HTTP_200_OK)
 
 
@@ -589,18 +601,25 @@ def invoice_action(request, invoice_id):
     """
     API endpoint za akcije nad fakturom (potpis, odbacivanje)
     """
+    ulaz = InvoiceActionSerializer(data=request.data)
+    if not ulaz.is_valid():
+        return Response({'detail': prva_greska(ulaz.errors)}, status=status.HTTP_400_BAD_REQUEST)
+
+    action = ulaz.validated_data['action']
+    reason = ulaz.validated_data.get('reason', '')
+
     try:
         faktura = get_object_or_404(Faktura.objects.prefetch_related('transakcije'), sifra_f=invoice_id)
-        action = request.data.get('action')
 
         if action == 'approve':
             if faktura.status_f == 'primljena':
                 faktura.promeni_status('verifikovana', request.user)
 
-                return Response({
-                    'message': 'Faktura je uspešno verifikovana.',
-                    'new_status': faktura.status_f
-                }, status=status.HTTP_200_OK)
+                rezultat = InvoiceActionResultSerializer({
+                    'poruka': 'Faktura je uspešno verifikovana.',
+                    'status_f': faktura.status_f,
+                })
+                return Response(rezultat.data, status=status.HTTP_200_OK)
 
             if faktura.status_f == 'verifikovana':
                 return Response({
@@ -611,13 +630,8 @@ def invoice_action(request, invoice_id):
                 'detail': f'Akcija approve nije dozvoljena za status {faktura.status_f}.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        elif action == 'reject':
-            reason = (request.data.get('reason') or '').strip()
-            if not reason:
-                return Response({
-                    'detail': 'Razlog odbacivanja je obavezan.'
-                }, status=status.HTTP_400_BAD_REQUEST)
-
+        # ChoiceField u InvoiceActionSerializer garantuje da nema treće opcije
+        else:
             if faktura.status_f == 'isplacena':
                 return Response({
                     'detail': 'Nije moguće odbaciti već isplaćenu fakturu.'
@@ -626,28 +640,82 @@ def invoice_action(request, invoice_id):
             with transaction.atomic():
                 faktura.promeni_status('odbijena', request.user, razlog=reason)
 
-                transaction_status = None
+                novi_status_t = None
                 postojeca_transakcija = faktura.transakcija
                 if postojeca_transakcija is not None:
                     if postojeca_transakcija.status_t != 'uspesna':
                         postojeca_transakcija.status_t = 'neuspesna'
                         postojeca_transakcija.save(update_fields=['status_t'])
-                    transaction_status = postojeca_transakcija.status_t
+                    novi_status_t = postojeca_transakcija.status_t
 
-            return Response({
-                'message': 'Faktura je odbijena.',
-                'new_status': faktura.status_f,
-                'transaction_status': transaction_status
-            }, status=status.HTTP_200_OK)
-
-        else:
-            return Response({'detail': 'Nevalidna akcija.'}, status=status.HTTP_400_BAD_REQUEST)
+            rezultat = InvoiceActionResultSerializer({
+                'poruka': 'Faktura je odbijena.',
+                'status_f': faktura.status_f,
+                'status_t': novi_status_t,
+            })
+            return Response(rezultat.data, status=status.HTTP_200_OK)
 
     except Faktura.DoesNotExist:
         return Response({'detail': 'Faktura nije pronađena.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-def _save_report_izvestaj(fa, final_response, start_date, end_date, fakture_queryset):
+def _skrati_naziv(naziv, duzina=20):
+    """Skraćuje naziv za prikaz na grafikonu (isti prag kao pre DTO refaktora)."""
+    return naziv[:duzina] + ('...' if len(naziv) > duzina else '')
+
+
+def _proceni_profitabilnost(naziv, kolicina, trosak):
+    """Heuristička procena profitabilnosti stavke izveštaja (nema stvarnog
+    knjigovodstva nabavne/prodajne cene po stavci u ovoj šemi). Ista formula
+    za grupisanje po proizvodu i po kategoriji - izdvojena da se ne piše dva
+    puta i da se ne razmimoiđe pri izmeni."""
+    if kolicina <= 0 or trosak <= 0:
+        return 0
+
+    efikasnost = float(trosak) / kolicina
+    obim_posla = min(kolicina / 100, 1.0)
+
+    if efikasnost < 500:
+        bazna_profitabilnost = 35 + (obim_posla * 15)
+    elif efikasnost < 1500:
+        bazna_profitabilnost = 20 + (obim_posla * 20)
+    else:
+        bazna_profitabilnost = 5 + (obim_posla * 15)
+
+    random_factor = (hash(naziv) % 21 - 10) / 10.0
+    profitabilnost_procenat = max(-10, min(60, bazna_profitabilnost + random_factor * 5))
+    return round(profitabilnost_procenat)
+
+
+def _sazmi_stavke_izvestaja(stavke):
+    """Iz liste stavki izveštaja (već sortiranih po ukupnom trošku opadajuće)
+    računa zbirne vrednosti i top-10 grafikone. Stavke nose sirove brojeve -
+    formatiranje (RSD, %, razdvajanje hiljada) je posao front-a."""
+    ukupna_kolicina = sum(s['kolicina'] for s in stavke)
+    ukupan_trosak = sum((s['ukupan_trosak'] for s in stavke), Decimal('0.00'))
+    ukupna_profitabilnost = sum(s['profitabilnost'] for s in stavke)
+
+    grafikoni = {
+        'profitabilnost': [
+            {'naziv': _skrati_naziv(s['naziv']), 'vrednost': s['profitabilnost']}
+            for s in stavke[:10]
+        ],
+        'troskovi': [
+            {'naziv': _skrati_naziv(s['naziv']), 'vrednost': float(s['ukupan_trosak'])}
+            for s in stavke[:10]
+        ],
+    }
+
+    return {
+        'ukupna_profitabilnost': ukupna_profitabilnost,
+        'ukupan_trosak': float(ukupan_trosak),
+        'ukupna_kolicina': ukupna_kolicina,
+        'stavke': stavke,
+        'grafikoni': grafikoni,
+    }
+
+
+def _save_report_izvestaj(fa, start_date, end_date, fakture_queryset):
     """
     Deo D: Izvestaj prestaje da bude mrtva tabela - svaki generisani izveštaj
     se upisuje i visi na Kreiranje (FA + kontrolna tabla), a fakture/dobavljači
@@ -702,28 +770,22 @@ def reports_data(request):
     if period_filter == 'danas':
         start_date = today
         end_date = today
-        period_label = 'Danas'
     elif period_filter == 'ova_nedelja':
         start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=6)
-        period_label = 'Ova nedelja'
     elif period_filter == 'ovaj_mesec':
         start_date = today.replace(day=1)
         end_date = (start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-        period_label = 'Ovaj mesec'
     elif period_filter == 'poslednji_mesec':
         last_month = today.replace(day=1) - timedelta(days=1)
         start_date = last_month.replace(day=1)
         end_date = today.replace(day=1) - timedelta(days=1)
-        period_label = 'Prošli mesec'
     elif period_filter == 'poslednja_3_meseca':
         start_date = (today.replace(day=1) - timedelta(days=90)).replace(day=1)
         end_date = today
-        period_label = 'Poslednja 3 meseca'
     else:  # sve (sav period)
         start_date = None
         end_date = None
-        period_label = 'Sav period'
 
     fakture_queryset = Faktura.objects.all()
     if start_date and end_date:
@@ -739,9 +801,9 @@ def reports_data(request):
         faktura__in=fakture_queryset
     ).select_related('faktura', 'proizvod_dobavljaca__proizvod')
 
-    if group_by_filter == 'proizvodu':
-        report_data = []
+    stavke = []
 
+    if group_by_filter == 'proizvodu':
         proizvodi_data = stavke_queryset.values('proizvod_dobavljaca__proizvod__naziv_pr').annotate(
             ukupna_kolicina=Sum('kolicina_sf'),
             ukupan_trosak=Sum('cena_po_jed_sf'),
@@ -749,79 +811,23 @@ def reports_data(request):
             prosecna_cena=Avg('cena_po_jed_sf')
         ).order_by('-ukupan_trosak')
 
-        chart_profitability = []
-        chart_costs = []
-
-        ukupna_kolicina_svi = 0
-        ukupan_trosak_svi = Decimal('0.00')
-        ukupna_profitabilnost = 0
-
         for proizvod in proizvodi_data:
             naziv = proizvod['proizvod_dobavljaca__proizvod__naziv_pr'] or 'Nepoznat proizvod'
             kolicina = int(proizvod['ukupna_kolicina'] or 0)
             trosak = proizvod['ukupan_trosak'] or Decimal('0.00')
 
-            if kolicina > 0 and trosak > 0:
-                efikasnost = float(trosak) / kolicina
-                obim_posla = min(kolicina / 100, 1.0)
-
-                if efikasnost < 500:
-                    bazna_profitabilnost = 35 + (obim_posla * 15)
-                elif efikasnost < 1500:
-                    bazna_profitabilnost = 20 + (obim_posla * 20)
-                else:
-                    bazna_profitabilnost = 5 + (obim_posla * 15)
-
-                random_factor = (hash(naziv) % 21 - 10) / 10.0
-                profitabilnost_procenat = max(-10, min(60, bazna_profitabilnost + random_factor * 5))
-            else:
-                profitabilnost_procenat = 0
-
-            ukupna_kolicina_svi += kolicina
-            ukupan_trosak_svi += trosak
-            ukupna_profitabilnost += profitabilnost_procenat
-
-            report_data.append({
-                'proizvod': naziv,
-                'kolicina': f"{kolicina:,}",
-                'ukupan_trosak': f"{float(trosak):,.2f} RSD",
-                'profitabilnost': f"+{profitabilnost_procenat:.0f}%"
+            stavke.append({
+                'naziv': naziv,
+                'kolicina': kolicina,
+                'ukupan_trosak': trosak,
+                'profitabilnost': _proceni_profitabilnost(naziv, kolicina, trosak),
             })
-
-            chart_profitability.append({
-                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
-                'value': profitabilnost_procenat
-            })
-
-            chart_costs.append({
-                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
-                'value': float(trosak)
-            })
-
-        chart_profitability = chart_profitability[:10]
-        chart_costs = chart_costs[:10]
-
-        total_summary = {
-            'proizvod': 'UKUPNO:',
-            'kolicina': f"{ukupna_kolicina_svi:,} kom",
-            'ukupan_trosak': f"{float(ukupan_trosak_svi):,.2f} RSD",
-            'profitabilnost': f"+{ukupna_profitabilnost:.0f}%"
-        }
 
     elif group_by_filter == 'dobavljacu':
-        report_data = []
-
         dobavljaci_data = fakture_queryset.values('ugovor__dobavljac__naziv_db').annotate(
             ukupan_trosak=Sum('iznos_f'),
             broj_faktura=Count('sifra_f')
         ).order_by('-ukupan_trosak')
-
-        chart_profitability = []
-        chart_costs = []
-
-        ukupna_kolicina_svi = 0
-        ukupan_trosak_svi = Decimal('0.00')
-        ukupna_profitabilnost = 0
 
         for dobavljac in dobavljaci_data:
             naziv = dobavljac['ugovor__dobavljac__naziv_db'] or 'Nepoznat dobavljač'
@@ -830,175 +836,46 @@ def reports_data(request):
 
             profitabilnost_procenat = min(50, max(5, (float(trosak) / 10000) + (broj_faktura * 3)))
 
-            ukupna_kolicina_svi += broj_faktura
-            ukupan_trosak_svi += trosak
-            ukupna_profitabilnost += profitabilnost_procenat
-
-            report_data.append({
-                'proizvod': naziv,
-                'kolicina': f"{broj_faktura:,}",
-                'ukupan_trosak': f"{float(trosak):,.2f} RSD",
-                'profitabilnost': f"+{profitabilnost_procenat:.0f}%"
+            stavke.append({
+                'naziv': naziv,
+                'kolicina': broj_faktura,
+                'ukupan_trosak': trosak,
+                'profitabilnost': round(profitabilnost_procenat),
             })
-
-            chart_profitability.append({
-                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
-                'value': profitabilnost_procenat
-            })
-
-            chart_costs.append({
-                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
-                'value': float(trosak)
-            })
-
-        chart_profitability = chart_profitability[:10]
-        chart_costs = chart_costs[:10]
-
-        total_summary = {
-            'proizvod': 'UKUPNO:',
-            'kolicina': f"{ukupna_kolicina_svi:,} faktura",
-            'ukupan_trosak': f"{float(ukupan_trosak_svi):,.2f} RSD",
-            'profitabilnost': f"+{ukupna_profitabilnost:.0f}%"
-        }
 
     elif group_by_filter == 'kategoriji':
-        report_data = []
-
         kategorije_data = stavke_queryset.values('proizvod_dobavljaca__proizvod__kategorija__naziv_kp').annotate(
             ukupna_kolicina=Sum('kolicina_sf'),
             ukupan_trosak=Sum('cena_po_jed_sf'),
             broj_stavki=Count('sifra_sf')
         ).order_by('-ukupan_trosak')
 
-        chart_profitability = []
-        chart_costs = []
-
-        ukupna_kolicina_svi = 0
-        ukupan_trosak_svi = Decimal('0.00')
-        ukupna_profitabilnost = 0
-
         for kategorija in kategorije_data:
             naziv = kategorija['proizvod_dobavljaca__proizvod__kategorija__naziv_kp'] or 'Nepoznata kategorija'
             kolicina = int(kategorija['ukupna_kolicina'] or 0)
             trosak = kategorija['ukupan_trosak'] or Decimal('0.00')
 
-            if kolicina > 0 and trosak > 0:
-                efikasnost = float(trosak) / kolicina
-                obim_posla = min(kolicina / 100, 1.0)
-
-                if efikasnost < 500:
-                    bazna_profitabilnost = 35 + (obim_posla * 15)
-                elif efikasnost < 1500:
-                    bazna_profitabilnost = 20 + (obim_posla * 20)
-                else:
-                    bazna_profitabilnost = 5 + (obim_posla * 15)
-
-                random_factor = (hash(naziv) % 21 - 10) / 10.0
-                profitabilnost_procenat = max(-10, min(60, bazna_profitabilnost + random_factor * 5))
-            else:
-                profitabilnost_procenat = 0
-
-            ukupna_kolicina_svi += kolicina
-            ukupan_trosak_svi += trosak
-            ukupna_profitabilnost += profitabilnost_procenat
-
-            report_data.append({
-                'proizvod': naziv,
-                'kolicina': f"{kolicina:,}",
-                'ukupan_trosak': f"{float(trosak):,.2f} RSD",
-                'profitabilnost': f"+{profitabilnost_procenat:.0f}%"
+            stavke.append({
+                'naziv': naziv,
+                'kolicina': kolicina,
+                'ukupan_trosak': trosak,
+                'profitabilnost': _proceni_profitabilnost(naziv, kolicina, trosak),
             })
 
-            chart_profitability.append({
-                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
-                'value': profitabilnost_procenat
-            })
+    # fallback za nepoznat group_by ostaje prazna lista stavki - front prikazuje "Nema podataka"
 
-            chart_costs.append({
-                'label': naziv[:20] + ('...' if len(naziv) > 20 else ''),
-                'value': float(trosak)
-            })
-
-        chart_profitability = chart_profitability[:10]
-        chart_costs = chart_costs[:10]
-
-        total_summary = {
-            'proizvod': 'UKUPNO:',
-            'kolicina': f"{ukupna_kolicina_svi:,} kom",
-            'ukupan_trosak': f"{float(ukupan_trosak_svi):,.2f} RSD",
-            'profitabilnost': f"+{ukupna_profitabilnost:.0f}%"
-        }
-
-    else:  # fallback za nepoznate opcije
-        report_data = [{
-            'proizvod': 'Nema podataka',
-            'kolicina': '0',
-            'ukupan_trosak': '0.00 RSD',
-            'profitabilnost': '0%'
-        }]
-        chart_profitability = []
-        chart_costs = []
-        total_summary = {
-            'proizvod': 'UKUPNO:',
-            'kolicina': '0 kom',
-            'ukupan_trosak': '0.00 RSD',
-            'profitabilnost': '0%'
-        }
-
-    response_data = {
-        'table_data': report_data,
-        'chart_profitability': chart_profitability,
-        'chart_costs': chart_costs,
-        'total_summary': total_summary,
-        'period_info': {
-            'period': period_filter,
-            'period_label': period_label,
-            'start_date': start_date.isoformat() if start_date else None,
-            'end_date': end_date.isoformat() if end_date else None,
-            'status_filter': status_filter,
-            'group_by': group_by_filter
-        }
-    }
-
-    final_response = {
-        'total_profitability': sum([float(item['profitabilnost'].rstrip('%')) for item in report_data]) if report_data else 0,
-        'total_cost': sum([float(item['ukupan_trosak'].replace(' RSD', '').replace(',', '')) for item in report_data]) if report_data else 0,
-        'total_quantity': sum([int(item['kolicina'].replace(' kom', '').replace(',', '')) for item in report_data]) if report_data else 0,
-        'data': [
-            {
-                'id': i + 1,
-                'name': item['proizvod'],
-                'quantity': int(item['kolicina'].replace(' kom', '').replace(',', '')),
-                'total_cost': float(item['ukupan_trosak'].replace(' RSD', '').replace(',', '')),
-                'profitability': float(item['profitabilnost'].rstrip('%'))
-            } for i, item in enumerate(report_data)
-        ] if report_data else [],
-        'chart_data': {
-            'profitability': [
-                {
-                    'name': item['label'],
-                    'value': item['value']
-                } for item in chart_profitability
-            ],
-            'costs': [
-                {
-                    'name': item['label'],
-                    'value': item['value']
-                } for item in chart_costs
-            ]
-        }
-    }
+    izvestaj = _sazmi_stavke_izvestaja(stavke)
 
     if hasattr(request.user, 'finansijski_analiticar'):
         _save_report_izvestaj(
             request.user.finansijski_analiticar,
-            final_response,
             start_date,
             end_date,
             fakture_queryset,
         )
 
-    return Response(final_response, status=status.HTTP_200_OK)
+    serializer = IzvestajTroskovaSerializer(izvestaj)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -1008,32 +885,10 @@ def reports_filter_options(request):
     """
     API endpoint za dobijanje opcija za report filtere
     """
-    statusi = [
-        {'value': 'sve', 'label': 'Sve'},
-        {'value': 'primljena', 'label': 'Primljeno'},
-        {'value': 'verifikovana', 'label': 'Verifikovano'},
-        {'value': 'isplacena', 'label': 'Isplaćeno'},
-    ]
-
-    periodi = [
-        {'value': 'sve', 'label': 'Sav period'},
-        {'value': 'danas', 'label': 'Danas'},
-        {'value': 'ova_nedelja', 'label': 'Ova nedelja'},
-        {'value': 'ovaj_mesec', 'label': 'Ovaj mesec'},
-        {'value': 'poslednji_mesec', 'label': 'Prošli mesec'},
-        {'value': 'poslednja_3_meseca', 'label': 'Poslednja 3 meseca'},
-    ]
-
-    grupiranje = [
-        {'value': 'proizvodu', 'label': 'Proizvodu'},
-        {'value': 'dobavljacu', 'label': 'Dobavljaču'},
-        {'value': 'kategoriji', 'label': 'Kategoriji'},
-    ]
-
     return Response({
-        'statusi': statusi,
-        'periodi': periodi,
-        'grupiranje': grupiranje,
+        'statusi': IZVESTAJI_STATUS_OPCIJE,
+        'periodi': IZVESTAJI_PERIOD_OPCIJE,
+        'grupiranje': IZVESTAJI_GRUPIRANJE_OPCIJE,
     }, status=status.HTTP_200_OK)
 
 
@@ -1056,11 +911,12 @@ def penalties_list(request):
 
     status_filter = request.GET.get('status')
     if status_filter and status_filter != 'svi':
-        danas = date.today()
+        # isti prag koji PenalSerializer.get_status_display koristi za prikaz
+        prag = date.today() - timedelta(days=PENAL_DANI_DO_RESENJA)
         if status_filter == 'resen':
-            queryset = queryset.filter(datum_p__lt=danas - timedelta(days=30))
+            queryset = queryset.filter(datum_p__lt=prag)
         elif status_filter == 'obavesten':
-            queryset = queryset.filter(datum_p__gte=danas - timedelta(days=30))
+            queryset = queryset.filter(datum_p__gte=prag)
 
     queryset = queryset.order_by('-datum_p', '-sifra_p')
 
@@ -1089,12 +945,6 @@ def penalties_filter_options(request):
     """
     API endpoint za dobijanje opcija za dropdown filtere
     """
-    statusi = [
-        {'value': 'svi', 'label': 'Svi statusi'},
-        {'value': 'resen', 'label': 'Rešen'},
-        {'value': 'obavesten', 'label': 'Obavešten'},
-    ]
-
     dobavljaci = Dobavljac.objects.filter(
         ugovori__penali__isnull=False
     ).distinct().values('sifra_db', 'naziv_db')
@@ -1106,7 +956,7 @@ def penalties_filter_options(request):
     ])
 
     return Response({
-        'statusi': statusi,
+        'statusi': PENALI_STATUS_OPCIJE,
         'dobavljaci': dobavljaci_opcije,
     }, status=status.HTTP_200_OK)
 
@@ -1163,11 +1013,11 @@ def penalties_analysis(request):
             tip_preporuke = "positive"
 
         dobavljaci_analiza.append({
-            'naziv': row['naziv_db'],
+            'naziv_db': row['naziv_db'],
             'broj_penala': broj_penala,
             'ukupno_ugovora': ukupno_ugovora,
             'ugovori_sa_penalima': broj_ugovora_sa_penalima,
-            'ukupan_iznos': float(ukupan_iznos),
+            'ukupan_iznos': ukupan_iznos,
             'stopa_krsenja': round(stopa_krsenja, 1),
             'preporuka': preporuka,
             'tip_preporuke': tip_preporuke
@@ -1175,8 +1025,10 @@ def penalties_analysis(request):
 
     dobavljaci_analiza.sort(key=lambda x: x['stopa_krsenja'], reverse=True)
 
+    serializer = AnalizaDobavljacaSerializer(dobavljaci_analiza, many=True)
+
     return Response({
-        'dobavljaci_analiza': dobavljaci_analiza
+        'dobavljaci_analiza': serializer.data
     }, status=status.HTTP_200_OK)
 
 
@@ -1462,12 +1314,14 @@ def check_and_create_penalties(request):
         violations = check_contract_violations()
 
         if not violations:
-            return Response({
-                'message': 'Nije pronađeno nijedno kršenje ugovora',
-                'violations_found': 0,
-                'penalties_created': 0,
-                'errors': []
-            }, status=status.HTTP_200_OK)
+            prazan = AutoKreiranjePenalaSerializer({
+                'poruka': 'Nije pronađeno nijedno kršenje ugovora',
+                'broj_krsenja': 0,
+                'broj_kreiranih_penala': 0,
+                'penali': [],
+                'greske': [],
+            })
+            return Response(prazan.data, status=status.HTTP_200_OK)
 
         created_penalties = []
         errors = []
@@ -1485,12 +1339,12 @@ def check_and_create_penalties(request):
 
             if success:
                 created_penalties.append({
-                    'penal_id': penal.sifra_p,
-                    'ugovor_id': violation['ugovor'].sifra_u,
-                    'dobavljac': violation['ugovor'].dobavljac.naziv_db,
+                    'sifra_p': penal.sifra_p,
+                    'sifra_u': violation['ugovor'].sifra_u,
+                    'naziv_db': violation['ugovor'].dobavljac.naziv_db,
                     'tip_krsenja': violation['tip_krsenja'],
-                    'iznos': float(violation['iznos_penala']),
-                    'razlog': violation['razlog']
+                    'iznos_p': violation['iznos_penala'],
+                    'razlog_p': violation['razlog']
                 })
 
                 email_jobs.append({
@@ -1500,9 +1354,9 @@ def check_and_create_penalties(request):
                 })
             else:
                 errors.append({
-                    'ugovor_id': violation['ugovor'].sifra_u,
-                    'dobavljac': violation['ugovor'].dobavljac.naziv_db,
-                    'error': error_msg
+                    'sifra_u': violation['ugovor'].sifra_u,
+                    'naziv_db': violation['ugovor'].dobavljac.naziv_db,
+                    'greska': error_msg
                 })
 
         if email_jobs:
@@ -1515,23 +1369,22 @@ def check_and_create_penalties(request):
                 ).start()
             )
 
-        response_data = {
-            'message': f'Provera završena. Kreirano {len(created_penalties)} penala.',
-            'violations_found': len(violations),
-            'penalties_created': len(created_penalties),
-            'penalties': created_penalties,
-            'errors': errors
-        }
+        serializer = AutoKreiranjePenalaSerializer({
+            'poruka': f'Provera završena. Kreirano {len(created_penalties)} penala.',
+            'broj_krsenja': len(violations),
+            'broj_kreiranih_penala': len(created_penalties),
+            'penali': created_penalties,
+            'greske': errors
+        })
 
         logger.info(f"Automatska provera penala: {len(violations)} kršenja, {len(created_penalties)} penala kreirano")
 
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     except Exception as e:
         logger.error(f"Greška pri automatskoj proveri i kreiranju penala: {str(e)}")
         return Response({
-            'error': 'Greška pri proveri kršenja ugovora',
-            'details': str(e)
+            'detail': 'Greška pri proveri kršenja ugovora.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -1544,33 +1397,18 @@ def preview_contract_violations(request):
     """
     try:
         violations = check_contract_violations()
-
-        violations_data = []
-        for violation in violations:
-            violations_data.append({
-                'ugovor_id': violation['ugovor'].sifra_u,
-                'dobavljac': violation['ugovor'].dobavljac.naziv_db,
-                'dobavljac_email': violation['ugovor'].dobavljac.email_db,
-                'tip_krsenja': violation['tip_krsenja'],
-                'razlog': violation['razlog'],
-                'iznos_penala': float(violation['iznos_penala']),
-                'detalji': violation['detalji'],
-                'datum_potpisa': violation['ugovor'].datum_potpisa_u.strftime('%d.%m.%Y'),
-                'datum_isteka': violation['ugovor'].datum_isteka_u.strftime('%d.%m.%Y'),
-                'status_ugovora': violation['ugovor'].status_u
-            })
+        serializer = KrsenjeUgovoraSerializer(violations, many=True)
 
         return Response({
-            'message': f'Pronađeno {len(violations)} kršenja ugovora',
-            'violations_count': len(violations),
-            'violations': violations_data
+            'poruka': f'Pronađeno {len(violations)} kršenja ugovora',
+            'broj_krsenja': len(violations),
+            'krsenja': serializer.data
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
         logger.error(f"Greška pri pregledu kršenja ugovora: {str(e)}")
         return Response({
-            'error': 'Greška pri pregledu kršenja ugovora',
-            'details': str(e)
+            'detail': 'Greška pri pregledu kršenja ugovora.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -1647,37 +1485,36 @@ def simulate_payment(request, invoice_id):
             postojeca_transakcija = faktura.transakcija
             if postojeca_transakcija is not None:
                 transakcija = postojeca_transakcija
-                return Response({
-                    'success': True,
-                    'message': 'Faktura je već isplaćena',
-                    'transaction': {
-                        'id': transakcija.sifra_t,
-                        'confirmation_number': transakcija.potvrda_t,
-                        'status': transakcija.get_status_t_display(),
-                        'date': transakcija.datum_t.isoformat(),
-                        'amount': float(faktura.iznos_f)
+                rezultat = SimulacijaPlacanjaSerializer({
+                    'uspesno': True,
+                    'poruka': 'Faktura je već isplaćena',
+                    'transakcija': {
+                        'sifra_t': transakcija.sifra_t,
+                        'broj_potvrde_t': transakcija.potvrda_t,
+                        'status_display': transakcija.get_status_t_display(),
+                        'datum_t': transakcija.datum_t.isoformat(),
+                        'iznos_t': faktura.iznos_f,
                     },
-                    'invoice': {
-                        'id': faktura.sifra_f,
-                        'new_status': faktura.get_status_f_display(),
-                        'supplier': faktura.ugovor.dobavljac.naziv_db
+                    'faktura': {
+                        'sifra_f': faktura.sifra_f,
+                        'status_display': faktura.get_status_f_display(),
+                        'naziv_db': faktura.ugovor.dobavljac.naziv_db,
                     },
-                    'notifications': {
-                        'payment_notification_sent': False,
-                        'confirmation_sent': False,
-                        'recipient': faktura.ugovor.dobavljac.email_db
-                    }
-                }, status=status.HTTP_200_OK)
+                    'notifikacije': {
+                        'obavestenje_poslato': False,
+                        'potvrda_poslata': False,
+                        'primalac': faktura.ugovor.dobavljac.email_db,
+                    },
+                })
+                return Response(rezultat.data, status=status.HTTP_200_OK)
             else:
                 return Response({
-                    'error': 'Faktura je već isplaćena ali nema povezanu transakciju',
-                    'current_status': faktura.status_f
+                    'detail': 'Faktura je već isplaćena ali nema povezanu transakciju.'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
         if faktura.status_f == 'odbijena':
             return Response({
-                'error': 'Ne možete izvršiti plaćanje odbijene fakture',
-                'current_status': faktura.status_f
+                'detail': 'Ne možete izvršiti plaćanje odbijene fakture.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         dobavljac = faktura.ugovor.dobavljac
@@ -1690,38 +1527,37 @@ def simulate_payment(request, invoice_id):
 
             confirmation_sent = send_confirmation_notification(dobavljac_email, transakcija, faktura)
 
-        response_data = {
-            'success': True,
-            'message': 'Plaćanje uspešno izvršeno',
-            'transaction': {
-                'id': transakcija.sifra_t,
-                'confirmation_number': transakcija.potvrda_t,
-                'status': transakcija.get_status_t_display(),
-                'date': transakcija.datum_t.isoformat(),
-                'amount': float(faktura.iznos_f)
+        rezultat = SimulacijaPlacanjaSerializer({
+            'uspesno': True,
+            'poruka': 'Plaćanje uspešno izvršeno',
+            'transakcija': {
+                'sifra_t': transakcija.sifra_t,
+                'broj_potvrde_t': transakcija.potvrda_t,
+                'status_display': transakcija.get_status_t_display(),
+                'datum_t': transakcija.datum_t.isoformat(),
+                'iznos_t': faktura.iznos_f,
             },
-            'invoice': {
-                'id': faktura.sifra_f,
-                'new_status': faktura.get_status_f_display(),
-                'supplier': dobavljac.naziv_db
+            'faktura': {
+                'sifra_f': faktura.sifra_f,
+                'status_display': faktura.get_status_f_display(),
+                'naziv_db': dobavljac.naziv_db,
             },
-            'notifications': {
-                'payment_notification_sent': notification_sent,
-                'confirmation_sent': confirmation_sent,
-                'recipient': dobavljac_email
-            }
-        }
+            'notifikacije': {
+                'obavestenje_poslato': notification_sent,
+                'potvrda_poslata': confirmation_sent,
+                'primalac': dobavljac_email,
+            },
+        })
 
         logger.info(f"Simulacija plaćanja uspešna za fakturu {invoice_id}, transakcija {transakcija.potvrda_t}")
-        return Response(response_data, status=status.HTTP_200_OK)
+        return Response(rezultat.data, status=status.HTTP_200_OK)
 
     except Faktura.DoesNotExist:
         return Response({
-            'error': 'Faktura nije pronađena'
+            'detail': 'Faktura nije pronađena.'
         }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         logger.error(f"Greška pri simulaciji plaćanja: {str(e)}")
         return Response({
-            'error': 'Greška pri izvršavanju plaćanja',
-            'details': str(e)
+            'detail': 'Greška pri izvršavanju plaćanja.'
         }, status=status.HTTP_400_BAD_REQUEST)

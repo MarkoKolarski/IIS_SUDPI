@@ -174,12 +174,12 @@ const Penalties = () => {
 
       const response = await axiosInstance.post("penalties/auto-create/");
       
-      const { penalties_created, violations_found } = response.data;
-      
+      const { broj_kreiranih_penala, broj_krsenja } = response.data;
+
       // Prikaži success poruku
       setViolationMessage({
         type: "success",
-        text: `Pronađeno: ${violations_found}, Kreirano: ${penalties_created} penala.`,
+        text: `Pronađeno: ${broj_krsenja}, Kreirano: ${broj_kreiranih_penala} penala.`,
       });
 
       // Refresh penala i analize paralelno radi bržeg odziva UI-a
@@ -194,7 +194,7 @@ const Penalties = () => {
       console.error("Greška pri proveri kršenja:", err);
       setViolationMessage({
         type: "error",
-        text: err.response?.data?.error || "Greška pri proveri kršenja ugovora",
+        text: err.response?.data?.detail || "Greška pri proveri kršenja ugovora",
       });
       
       // Sakrij poruku nakon 5 sekundi
@@ -363,10 +363,10 @@ const Penalties = () => {
                         {row.sifra_p}
                       </div>
                       <div className={styles.tableCol} style={{ width: "12%" }}>
-                        {row.dobavljac_naziv}
+                        {row.naziv_db}
                       </div>
                       <div className={styles.tableCol} style={{ width: "14%" }}>
-                        {row.ugovor_sifra}
+                        {row.sifra_u}
                       </div>
                       <div className={styles.tableCol} style={{ width: "20%" }}>
                         {formatDate(row.datum_p)}
@@ -448,7 +448,7 @@ const Penalties = () => {
               ) : (
                 analysisData.map((analiza, index) => (
                   <div key={index} className={styles.analysisCard}>
-                    <h3>{analiza.naziv}</h3>
+                    <h3>{analiza.naziv_db}</h3>
                     <p>
                       <strong>Broj penala:</strong> {analiza.broj_penala}
                     </p>

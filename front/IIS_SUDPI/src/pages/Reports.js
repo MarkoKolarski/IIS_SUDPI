@@ -12,13 +12,13 @@ import PageTransition from "../components/PageTransition";
 const Reports = () => {
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [reportsData, setReportsData] = useState({
-    total_profitability: 0,
-    total_cost: 0,
-    total_quantity: 0,
-    data: [],
-    chart_data: {
-      profitability: [],
-      costs: [],
+    ukupna_profitabilnost: 0,
+    ukupan_trosak: 0,
+    ukupna_kolicina: 0,
+    stavke: [],
+    grafikoni: {
+      profitabilnost: [],
+      troskovi: [],
     },
   });
   const [filterOptions, setFilterOptions] = useState({
@@ -94,7 +94,7 @@ const Reports = () => {
   };
 
   const handlePageChange = (nextPage) => {
-    const totalItems = reportsData.data?.length || 0;
+    const totalItems = reportsData.stavke?.length || 0;
     const numPages = Math.ceil(totalItems / pagination.page_size) || 1;
     
     if (
@@ -382,7 +382,7 @@ const Reports = () => {
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(9);
       
-      (reportsData.data || []).forEach((row, index) => {
+      (reportsData.stavke || []).forEach((row, index) => {
         if (yPosition + 8 > pageHeight - margin - 15) {
           pdf.addPage();
           yPosition = margin;
@@ -425,33 +425,33 @@ const Reports = () => {
         
         // Tekst sa truncate ako je predugačak
         const maxNameLength = 35;
-        const displayName = row.name.length > maxNameLength 
-          ? row.name.substring(0, maxNameLength) + '...' 
-          : row.name;
+        const displayName = row.naziv.length > maxNameLength
+          ? row.naziv.substring(0, maxNameLength) + '...'
+          : row.naziv;
         pdf.text(encodeText(displayName), xPos + 3, yPosition + 5);
         xPos += colWidths.name;
-        
+
         pdf.text(
-          formatNumber(row.quantity),
+          formatNumber(row.kolicina),
           xPos + colWidths.quantity - 3,
           yPosition + 5,
           { align: 'right' }
         );
         xPos += colWidths.quantity;
-        
+
         pdf.text(
-          encodeText(formatCurrency(row.total_cost)),
+          encodeText(formatCurrency(row.ukupan_trosak)),
           xPos + colWidths.cost - 3,
           yPosition + 5,
           { align: 'right' }
         );
         xPos += colWidths.cost;
-        
+
         // Profitabilnost sa bojom (bez nepouzdanih unicode simbola u PDF-u)
-        if (row.profitability >= 0) {
+        if (row.profitabilnost >= 0) {
           pdf.setTextColor(0, 150, 0);
           pdf.text(
-            formatProfitabilityForPdf(row.profitability),
+            formatProfitabilityForPdf(row.profitabilnost),
             xPos + colWidths.profit - 3,
             yPosition + 5,
             { align: 'right' }
@@ -459,7 +459,7 @@ const Reports = () => {
         } else {
           pdf.setTextColor(200, 0, 0);
           pdf.text(
-            formatProfitabilityForPdf(row.profitability),
+            formatProfitabilityForPdf(row.profitabilnost),
             xPos + colWidths.profit - 3,
             yPosition + 5,
             { align: 'right' }
@@ -470,7 +470,7 @@ const Reports = () => {
       });
 
       // UKUPNI RED - istaknuto
-      if ((reportsData.data || []).length > 0) {
+      if ((reportsData.stavke || []).length > 0) {
         if (yPosition + 12 > pageHeight - margin) {
           pdf.addPage();
           yPosition = margin;
@@ -492,7 +492,7 @@ const Reports = () => {
         xPos += colWidths.name;
         
         pdf.text(
-          `${formatNumber(reportsData.total_quantity)} kom`,
+          `${formatNumber(reportsData.ukupna_kolicina)} kom`,
           xPos + colWidths.quantity - 3,
           yPosition + 7,
           { align: 'right' }
@@ -500,7 +500,7 @@ const Reports = () => {
         xPos += colWidths.quantity;
         
         pdf.text(
-          encodeText(formatCurrency(reportsData.total_cost)),
+          encodeText(formatCurrency(reportsData.ukupan_trosak)),
           xPos + colWidths.cost - 3,
           yPosition + 7,
           { align: 'right' }
@@ -508,7 +508,7 @@ const Reports = () => {
         xPos += colWidths.cost;
         
         pdf.text(
-          formatProfitabilityForPdf(reportsData.total_profitability),
+          formatProfitabilityForPdf(reportsData.ukupna_profitabilnost),
           xPos + colWidths.profit - 3,
           yPosition + 7,
           { align: 'right' }
@@ -576,13 +576,13 @@ const Reports = () => {
     };
   }, [expandedCard, isGeneratingPdf]);
 
-  const totalItems = reportsData.data?.length || 0;
+  const totalItems = reportsData.stavke?.length || 0;
   const numPages = Math.ceil(totalItems / pagination.page_size) || 1;
-  const totalCost = Number(reportsData.total_cost) || 0;
+  const totalCost = Number(reportsData.ukupan_trosak) || 0;
   
   const paginatedData = isGeneratingPdf 
-    ? (reportsData.data || []) 
-    : (reportsData.data || []).slice(
+    ? (reportsData.stavke || []) 
+    : (reportsData.stavke || []).slice(
         (pagination.current_page - 1) * pagination.page_size,
         pagination.current_page * pagination.page_size
       );
@@ -748,7 +748,7 @@ const Reports = () => {
                   <div className={styles.chartSummary}>
                     <h3>
                       Ukupna profitabilnost:{" "}
-                      {formatProfitability(reportsData.total_profitability)}
+                      {formatProfitability(reportsData.ukupna_profitabilnost)}
                     </h3>
                     <div
                       className={`${styles.chartScrollableList} ${
@@ -760,14 +760,14 @@ const Reports = () => {
                       aria-label="Lista profitabilnosti"
                       tabIndex={0}
                     >
-                      {(reportsData.chart_data?.profitability || []).map((item, index) => (
+                      {(reportsData.grafikoni?.profitabilnost || []).map((item, index) => (
                         <div key={index} className={styles.chartItem}>
                           <span>
-                            {item.name}: {formatProfitability(item.value)}
+                            {item.naziv}: {formatProfitability(item.vrednost)}
                           </span>
                           <div
                             className={styles.chartBar}
-                            style={{ width: `${Math.abs(item.value)}%` }}
+                            style={{ width: `${Math.abs(item.vrednost)}%` }}
                           ></div>
                         </div>
                       ))}
@@ -818,7 +818,7 @@ const Reports = () => {
                 <div className={styles.chartPlaceholder}>
                   <div className={styles.chartSummary}>
                     <h3>
-                      Ukupni troškovi: {formatCurrency(reportsData.total_cost)}
+                      Ukupni troškovi: {formatCurrency(reportsData.ukupan_trosak)}
                     </h3>
                     <div
                       className={`${styles.chartScrollableList} ${
@@ -828,17 +828,17 @@ const Reports = () => {
                       aria-label="Lista troškova"
                       tabIndex={0}
                     >
-                      {(reportsData.chart_data?.costs || []).map((item, index) => (
+                      {(reportsData.grafikoni?.troskovi || []).map((item, index) => (
                         <div key={index} className={styles.chartItem}>
                           <span>
-                            {item.name}: {formatCurrency(item.value)}
+                            {item.naziv}: {formatCurrency(item.vrednost)}
                           </span>
                           <div
                             className={styles.chartBar}
                             style={{
                               width: `${
                                 totalCost > 0
-                                  ? Math.min(100, Math.max(0, (item.value / totalCost) * 100))
+                                  ? Math.min(100, Math.max(0, (item.vrednost / totalCost) * 100))
                                   : 0
                               }%`,
                             }}
@@ -880,57 +880,57 @@ const Reports = () => {
                 <div className={styles.reportsTableBody}>
                   {paginatedData.map((row, index) => (
                     <div
-                      key={row.id || index}
+                      key={index}
                       className={`${styles.tableRow} ${
                         index % 2 === 0 ? styles.rowDark : styles.rowLight
                       }`}
                     >
                       <div className={`${styles.tableCol} ${styles.colProizvod}`}>
-                        {row.name}
+                        {row.naziv}
                       </div>
                       <div className={`${styles.tableCol} ${styles.colKolicina}`}>
-                        {formatNumber(row.quantity)}
+                        {formatNumber(row.kolicina)}
                       </div>
                       <div className={`${styles.tableCol} ${styles.colTrosak}`}>
-                        {formatCurrency(row.total_cost)}
+                        {formatCurrency(row.ukupan_trosak)}
                       </div>
                       <div
                         className={`${styles.tableCol} ${styles.colProfit} ${
-                          row.profitability >= 0
+                          row.profitabilnost >= 0
                             ? styles.profitPositive
                             : styles.profitNegative
                         }`}
                       >
                         <span className={styles.arrow}>
-                          {row.profitability >= 0 ? "▲" : "▼"}
+                          {row.profitabilnost >= 0 ? "▲" : "▼"}
                         </span>
-                        {formatProfitability(row.profitability)}
+                        {formatProfitability(row.profitabilnost)}
                       </div>
                     </div>
                   ))}
 
-                  {(reportsData.data || []).length > 0 && (
+                  {(reportsData.stavke || []).length > 0 && (
                     <div className={`${styles.tableRow} ${styles.summaryRow}`}>
                       <div className={`${styles.tableCol} ${styles.colProizvod}`}>
                         UKUPNO:
                       </div>
                       <div className={`${styles.tableCol} ${styles.colKolicina}`}>
-                        {formatNumber(reportsData.total_quantity)} kom
+                        {formatNumber(reportsData.ukupna_kolicina)} kom
                       </div>
                       <div className={`${styles.tableCol} ${styles.colTrosak}`}>
-                        {formatCurrency(reportsData.total_cost)}
+                        {formatCurrency(reportsData.ukupan_trosak)}
                       </div>
                       <div
                         className={`${styles.tableCol} ${styles.colProfit} ${
-                          reportsData.total_profitability >= 0
+                          reportsData.ukupna_profitabilnost >= 0
                             ? styles.profitPositive
                             : styles.profitNegative
                         }`}
                       >
                         <span className={styles.arrow}>
-                          {reportsData.total_profitability >= 0 ? "▲" : "▼"}
+                          {reportsData.ukupna_profitabilnost >= 0 ? "▲" : "▼"}
                         </span>
-                        {formatProfitability(reportsData.total_profitability)}
+                        {formatProfitability(reportsData.ukupna_profitabilnost)}
                       </div>
                     </div>
                   )}
@@ -939,7 +939,7 @@ const Reports = () => {
             )}
             
             {/* Pagination Controls */}
-            {!loading && (reportsData.data || []).length > 0 && numPages > 1 && !isGeneratingPdf && (
+            {!loading && (reportsData.stavke || []).length > 0 && numPages > 1 && !isGeneratingPdf && (
               <div className={styles.pagination}>
                 <button
                   onClick={() => handlePageChange(pagination.current_page - 1)}

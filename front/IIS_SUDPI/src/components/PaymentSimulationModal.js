@@ -45,9 +45,8 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
             
         } catch (err) {
             console.error('Greška pri simulaciji:', err);
-            const errorMessage = err.response?.data?.error 
-                || err.response?.data?.detail
-                || err.message 
+            const errorMessage = err.response?.data?.detail
+                || err.message
                 || 'Greška pri izvršavanju plaćanja';
             setError(errorMessage);
             setIsSimulating(false);
@@ -196,13 +195,13 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                             <div className={styles.paymentSuccessInfo}>
                                 <h3>✓ Plaćanje uspešno izvršeno</h3>
                                 <div className={styles.transactionDetails}>
-                                    <p><strong>Broj potvrde:</strong> {transactionData.transaction?.confirmation_number}</p>
-                                    <p><strong>Iznos:</strong> {transactionData.transaction?.amount} RSD</p>
-                                    <p><strong>Dobavljač:</strong> {transactionData.invoice?.supplier}</p>
-                                    {transactionData.notifications?.payment_notification_sent && (
+                                    <p><strong>Broj potvrde:</strong> {transactionData.transakcija?.broj_potvrde_t}</p>
+                                    <p><strong>Iznos:</strong> {transactionData.transakcija?.iznos_t} RSD</p>
+                                    <p><strong>Dobavljač:</strong> {transactionData.faktura?.naziv_db}</p>
+                                    {transactionData.notifikacije?.obavestenje_poslato && (
                                         <p className={styles.notificationStatus}>📧 Notifikacija poslata</p>
                                     )}
-                                    {transactionData.notifications?.confirmation_sent && (
+                                    {transactionData.notifikacije?.potvrda_poslata && (
                                         <p className={styles.notificationStatus}>📧 Potvrda poslata</p>
                                     )}
                                 </div>
