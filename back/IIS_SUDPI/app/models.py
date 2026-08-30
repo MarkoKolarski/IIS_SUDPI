@@ -300,6 +300,40 @@ class StavkaFakture(models.Model):
         return f"Stavka {self.naziv_sf} - {self.kolicina_sf} x {self.cena_po_jed_sf}"
 
 
+class Racun(models.Model):
+    """Račun naše firme sa kog se izvršavaju isplate dobavljačima. Stanje se
+    NIKAD ne izlaže preko API-ja (nema serijalajzer/endpoint) - koristi se
+    isključivo interno, u `simulate_payment`, da proveri pokriće pre isplate."""
+    sifra_r = models.AutoField(primary_key=True)
+    broj_racuna_r = models.CharField(max_length=34, unique=True)
+    naziv_r = models.CharField(max_length=150)
+    stanje_r = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+
+    valuta = models.ForeignKey(JedinicaMere, on_delete=models.PROTECT, db_column='JEDINICA_MERE_sifra_jm', related_name='racuni')
+
+    class Meta:
+        db_table = 'racun'
+        constraints = [
+            models.CheckConstraint(check=models.Q(stanje_r__gte=0), name='ck_racun_stanje_nenegativno'),
+        ]
+
+    def ima_dovoljno(self, iznos):
+        """Poslovno pravilo: plaćanje je moguće samo ako stanje pokriva ceo iznos."""
+        return self.stanje_r >= iznos
+
+    def skini_sredstva(self, iznos):
+        """Servisna metoda - JEDINA ispravna putanja za smanjenje stanja
+        (isti obrazac kao Faktura.promeni_status)."""
+        if not self.ima_dovoljno(iznos):
+            raise ValidationError("Nema dovoljno sredstava na računu.")
+        self.stanje_r = self.stanje_r - iznos
+        self.save(update_fields=['stanje_r'])
+        return self.stanje_r
+
+    def __str__(self):
+        return f"Račun {self.broj_racuna_r} ({self.stanje_r} {self.valuta.oznaka_jm})"
+
+
 class Transakcija(models.Model):
     STATUS_CHOICES = (
         ('na_cekanju', 'Na čekanju'),
@@ -316,6 +350,9 @@ class Transakcija(models.Model):
     # transakcija je finansijski dokaz o plaćanju, ne sme nestati
     # zajedno sa fakturom.
     faktura = models.ForeignKey(Faktura, on_delete=models.PROTECT, db_column='FAKTURA_sifra_f', related_name='transakcije')
+    # sa kog računa je transakcija izvršena - obavezno (ER: 1,1), svaka
+    # transakcija tereti tačno jedan naš račun.
+    racun = models.ForeignKey(Racun, on_delete=models.PROTECT, db_column='RACUN_sifra_r', related_name='transakcije')
 
     class Meta:
         db_table = 'transakcija'

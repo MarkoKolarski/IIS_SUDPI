@@ -23,6 +23,7 @@
 -- DELETE FROM ocena_dobavljaca;
 -- DELETE FROM promena_statusa;
 -- DELETE FROM transakcija;
+-- DELETE FROM racun;
 -- DELETE FROM stavka_fakture;
 -- DELETE FROM cenovnik;
 -- DELETE FROM proizvod_dobavljaca;
@@ -431,83 +432,95 @@ INSERT INTO stavka_fakture (sifra_sf, naziv_sf, kolicina_sf, cena_po_jed_sf, opi
 VALUES (31, 'Pavlaka 20%', 200, 180.00, 'Specijalna isporuka pavlake', 28, 4);
 
 -- ============================================
--- 13. TRANSAKCIJA (potvrda_t -> broj_potvrde_t)
+-- 12a. RAČUN (naš račun sa kog se izvršavaju isplate - Treća iteracija;
+-- stanje se NIKAD ne izlaže preko API-ja, koristi se samo interno pri
+-- simulaciji plaćanja da proveri pokriće pre isplate)
 -- ============================================
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (1, TO_TIMESTAMP('2026-03-14 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-001', 'uspesna', 62500.00, 2);
+INSERT INTO racun (sifra_r, broj_racuna_r, naziv_r, stanje_r, jedinica_mere_sifra_jm)
+VALUES (1, '160-0000000123456-78', 'Tekući račun - RSD', 100000.00, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (2, TO_TIMESTAMP('2026-03-10 14:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-002', 'uspesna', 125000.00, 6);
+INSERT INTO racun (sifra_r, broj_racuna_r, naziv_r, stanje_r, jedinica_mere_sifra_jm)
+VALUES (2, 'RS35160005010001234567', 'Devizni račun - EUR', 5000.00, 2);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (3, TO_TIMESTAMP('2026-03-25 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-003', 'na_cekanju', 85500.00, 1);
+-- ============================================
+-- 13. TRANSAKCIJA (potvrda_t -> broj_potvrde_t; dodat racun_sifra_r)
+-- ============================================
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (4, TO_TIMESTAMP('2026-03-13 16:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-004', 'na_cekanju', 22500.00, 4);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (1, TO_TIMESTAMP('2026-03-14 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-001', 'uspesna', 62500.00, 2, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (5, TO_TIMESTAMP('2026-02-01 11:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-005', 'neuspesna', 15750.00, 7);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (2, TO_TIMESTAMP('2026-03-10 14:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-002', 'uspesna', 125000.00, 6, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (6, TO_TIMESTAMP('2026-01-20 13:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-006', 'uspesna', 39000.00, 8);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (3, TO_TIMESTAMP('2026-03-25 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-003', 'na_cekanju', 85500.00, 1, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (7, TO_TIMESTAMP('2026-01-25 10:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-007', 'uspesna', 45500.00, 9);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (4, TO_TIMESTAMP('2026-03-13 16:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-004', 'na_cekanju', 22500.00, 4, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (8, TO_TIMESTAMP('2025-10-28 09:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-008', 'uspesna', 95000.00, 10);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (5, TO_TIMESTAMP('2026-02-01 11:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-005', 'neuspesna', 15750.00, 7, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (9, TO_TIMESTAMP('2025-11-25 14:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-05-009', 'uspesna', 142500.00, 11);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (6, TO_TIMESTAMP('2026-01-20 13:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-006', 'uspesna', 39000.00, 8, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (10, TO_TIMESTAMP('2025-12-22 11:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-010', 'uspesna', 190000.00, 12);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (7, TO_TIMESTAMP('2026-01-25 10:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-007', 'uspesna', 45500.00, 9, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (11, TO_TIMESTAMP('2026-01-30 15:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-011', 'uspesna', 118750.00, 13);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (8, TO_TIMESTAMP('2025-10-28 09:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-008', 'uspesna', 95000.00, 10, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (12, TO_TIMESTAMP('2026-02-28 11:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-012', 'uspesna', 95000.00, 14);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (9, TO_TIMESTAMP('2025-11-25 14:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-05-009', 'uspesna', 142500.00, 11, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (13, TO_TIMESTAMP('2026-03-18 09:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-013', 'uspesna', 110000.00, 15);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (10, TO_TIMESTAMP('2025-12-22 11:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-010', 'uspesna', 190000.00, 12, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (14, TO_TIMESTAMP('2026-03-24 14:55:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-08-014', 'uspesna', 87500.00, 16);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (11, TO_TIMESTAMP('2026-01-30 15:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-011', 'uspesna', 118750.00, 13, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (15, TO_TIMESTAMP('2026-03-23 10:10:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-015', 'uspesna', 102000.00, 17);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (12, TO_TIMESTAMP('2026-02-28 11:40:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-06-012', 'uspesna', 95000.00, 14, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (16, TO_TIMESTAMP('2026-02-20 14:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-016', 'uspesna', 52000.00, 18);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (13, TO_TIMESTAMP('2026-03-18 09:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-07-013', 'uspesna', 110000.00, 15, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (17, TO_TIMESTAMP('2026-03-22 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-017', 'uspesna', 76000.00, 19);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (14, TO_TIMESTAMP('2026-03-24 14:55:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-08-014', 'uspesna', 87500.00, 16, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (18, TO_TIMESTAMP('2026-01-08 16:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-018', 'uspesna', 285000.00, 20);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (15, TO_TIMESTAMP('2026-03-23 10:10:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-015', 'uspesna', 102000.00, 17, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (19, TO_TIMESTAMP('2026-02-16 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-019', 'uspesna', 47500.00, 21);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (16, TO_TIMESTAMP('2026-02-20 14:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-016', 'uspesna', 52000.00, 18, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (20, TO_TIMESTAMP('2026-03-21 10:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-020', 'uspesna', 94050.00, 23);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (17, TO_TIMESTAMP('2026-03-22 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-04-017', 'uspesna', 76000.00, 19, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (21, TO_TIMESTAMP('2026-03-19 14:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-021', 'uspesna', 80500.00, 24);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (18, TO_TIMESTAMP('2026-01-08 16:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-09-018', 'uspesna', 285000.00, 20, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (22, TO_TIMESTAMP('2026-03-15 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-022', 'uspesna', 52000.00, 25);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (19, TO_TIMESTAMP('2026-02-16 10:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-02-019', 'uspesna', 47500.00, 21, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (23, TO_TIMESTAMP('2026-02-06 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-023', 'uspesna', 166250.00, 26);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (20, TO_TIMESTAMP('2026-03-21 10:25:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-020', 'uspesna', 94050.00, 23, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (24, TO_TIMESTAMP('2026-01-05 13:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-024', 'uspesna', 76000.00, 27);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (21, TO_TIMESTAMP('2026-03-19 14:30:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-021', 'uspesna', 80500.00, 24, 1);
 
-INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f)
-VALUES (25, TO_TIMESTAMP('2026-04-20 15:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-025', 'uspesna', 36000.00, 28);
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (22, TO_TIMESTAMP('2026-03-15 11:15:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-022', 'uspesna', 52000.00, 25, 1);
+
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (23, TO_TIMESTAMP('2026-02-06 09:45:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-023', 'uspesna', 166250.00, 26, 1);
+
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (24, TO_TIMESTAMP('2026-01-05 13:20:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-024', 'uspesna', 76000.00, 27, 1);
+
+INSERT INTO transakcija (sifra_t, datum_t, broj_potvrde_t, status_t, iznos_t, faktura_sifra_f, racun_sifra_r)
+VALUES (25, TO_TIMESTAMP('2026-04-20 15:50:00', 'YYYY-MM-DD HH24:MI:SS'), 'TRX-2025-10-025', 'uspesna', 36000.00, 28, 1);
 
 -- ============================================
 -- 14. PROMENA_STATUSA (istorijat - zamenjuje bivši Faktura.razlog_cekanja_f)
@@ -676,6 +689,7 @@ DECLARE
             SELECT 'PENAL' FROM dual UNION ALL
             SELECT 'FAKTURA' FROM dual UNION ALL
             SELECT 'STAVKA_FAKTURE' FROM dual UNION ALL
+            SELECT 'RACUN' FROM dual UNION ALL
             SELECT 'TRANSAKCIJA' FROM dual UNION ALL
             SELECT 'PROMENA_STATUSA' FROM dual UNION ALL
             SELECT 'OCENA_DOBAVLJACA' FROM dual UNION ALL
@@ -768,6 +782,7 @@ UNION ALL SELECT 'UGOVORI', COUNT(*) FROM ugovor
 UNION ALL SELECT 'PENALI', COUNT(*) FROM penal
 UNION ALL SELECT 'FAKTURE', COUNT(*) FROM faktura
 UNION ALL SELECT 'STAVKE_FAKTURE', COUNT(*) FROM stavka_fakture
+UNION ALL SELECT 'RACUNI', COUNT(*) FROM racun
 UNION ALL SELECT 'TRANSAKCIJE', COUNT(*) FROM transakcija
 UNION ALL SELECT 'PROMENA_STATUSA', COUNT(*) FROM promena_statusa
 UNION ALL SELECT 'OCENA_DOBAVLJACA', COUNT(*) FROM ocena_dobavljaca

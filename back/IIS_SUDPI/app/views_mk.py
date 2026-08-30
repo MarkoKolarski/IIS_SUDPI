@@ -30,7 +30,7 @@ from .constants_mk import (
 )
 from .decorators import allowed_users
 from .models import (
-    Faktura, Ugovor, Dobavljac, Penal, StavkaFakture, Transakcija,
+    Faktura, Ugovor, Dobavljac, Penal, StavkaFakture, Transakcija, Racun,
     KontrolnaTabla, Kreiranje, Metrika, Merenje, JedinicaMere,
     Izvestaj, PredmetIzvestaja, OcenaDobavljaca,
 )
@@ -1114,6 +1114,47 @@ def send_confirmation_notification(dobavljac_email, transakcija, faktura):
         return False
 
 
+def send_insufficient_funds_notification(primalac_email, faktura):
+    """
+    Slanje email obaveštenja finansijskom analitičaru da nema dovoljno
+    sredstava na računu za izvršenje plaćanja. Primalac je ulogovani FA
+    (request.user.mail_k), ne dobavljač - nedostatak sredstava je interni
+    problem, ne dobavljačev.
+    """
+    logger.info(f"Email notifikacije su onemogućene - preskočeno obaveštenje o nedovoljnim sredstvima za fakturu {faktura.sifra_f}")
+    return True
+
+    try:
+        subject = f"UPOZORENJE: Nedovoljno sredstava za fakturu {faktura.sifra_f}"
+        message = f"""
+        Poštovani,
+
+        Pokušaj plaćanja fakture nije uspeo zbog nedovoljnog stanja sredstava na računu.
+
+        Broj fakture: {faktura.sifra_f}
+        Iznos: {faktura.iznos_f} RSD
+        Dobavljač: {faktura.ugovor.dobavljac.naziv_db}
+
+        Plaćanje je prekinuto. Molimo obezbedite dovoljno sredstava i pokušajte ponovo.
+
+        Srdačan pozdrav,
+        Sistem za upravljanje nabavkom
+        """
+
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [primalac_email],
+            fail_silently=False,
+        )
+        logger.info(f"Email o nedovoljnim sredstvima poslat na {primalac_email} za fakturu {faktura.sifra_f}")
+        return True
+    except Exception as e:
+        logger.error(f"Greška pri slanju email obaveštenja o nedovoljnim sredstvima: {str(e)}")
+        return False
+
+
 def send_penalty_notification(dobavljac_email, penal, ugovor, razlog_detalji="", connection=None):
     """
     Slanje email notifikacije dobavljaču o kršenju ugovora i dodeljenom penalu
@@ -1412,23 +1453,75 @@ def preview_contract_violations(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def create_transaction(faktura, korisnik):
+def _nadji_racun_za_fakturu(faktura):
+    """Bira račun sa kog se izvršava plaćanje - onaj u istoj valuti kao
+    faktura. Time Faktura.valuta (do sada nigde nekorišćeno polje) dobija
+    stvarnu funkciju. Ako postoji više računa u istoj valuti, uzima se onaj
+    sa najmanjom šifrom (deterministički izbor)."""
+    return Racun.objects.filter(valuta_id=faktura.valuta_id).order_by('sifra_r').first()
+
+
+def _zabelezi_neuspelu_transakciju(faktura, racun):
+    """Upisuje trag neuspelog pokušaja plaćanja (nedovoljno sredstava) - isti
+    obrazac kao 'uspesna' grana u create_transaction: ako transakcija za
+    fakturu već postoji, ažurira je umesto da gomila redove. Status fakture
+    se NE menja - plaćanje se može ponoviti kasnije."""
+    postojeca_transakcija = faktura.transakcija
+    if postojeca_transakcija is not None:
+        postojeca_transakcija.status_t = 'neuspesna'
+        postojeca_transakcija.datum_t = timezone.now()
+        postojeca_transakcija.iznos_t = faktura.iznos_f
+        postojeca_transakcija.racun = racun
+        postojeca_transakcija.save()
+        logger.info(f"Transakcija {postojeca_transakcija.broj_potvrde_t} označena kao 'neuspesna' (nedovoljno sredstava)")
+        return postojeca_transakcija
+
+    max_sifra = Transakcija.objects.aggregate(Max('sifra_t'))['sifra_t__max']
+    nova_sifra = (max_sifra or 0) + 1
+
+    broj_potvrde = f"TRX-{uuid.uuid4().hex[:12].upper()}"
+    while Transakcija.objects.filter(broj_potvrde_t=broj_potvrde).exists():
+        broj_potvrde = f"TRX-{uuid.uuid4().hex[:12].upper()}"
+
+    transakcija = Transakcija.objects.create(
+        sifra_t=nova_sifra,
+        faktura=faktura,
+        racun=racun,
+        broj_potvrde_t=broj_potvrde,
+        status_t='neuspesna',
+        datum_t=timezone.now(),
+        iznos_t=faktura.iznos_f,
+    )
+    logger.info(f"Transakcija {broj_potvrde} kreirana kao 'neuspesna' za fakturu {faktura.sifra_f} (nedovoljno sredstava)")
+    return transakcija
+
+
+def create_transaction(faktura, korisnik, racun):
     """
     Kreiranje transakcije za fakturu - automatsko skidanje sredstava.
     Ako transakcija već postoji, ažurira je na 'uspesna' i vraća je.
     Takođe prebacuje fakturu u status 'isplacena' preko promeni_status()
     (upisuje istorijat u PromenaStatusa - razlog čekanja se time briše, jer
     Faktura.razlog_cekanja_f sada čita razlog POSLEDNJE promene statusa).
+
+    `racun` mora biti već proveren (racun.ima_dovoljno(faktura.iznos_f)) pre
+    poziva - poziva se isključivo unutar transaction.atomic() bloka, gde se
+    red zaključava (select_for_update) i pokriće ponovo proverava, kao
+    zaštita od trke sa nekim drugim istovremenim plaćanjem.
     """
     try:
+        racun_zakljucan = Racun.objects.select_for_update().get(pk=racun.pk)
+
         postojeca_transakcija = faktura.transakcija
         if postojeca_transakcija is not None:
             logger.info(f"Transakcija već postoji za fakturu {faktura.sifra_f}, ažuriram status")
 
             if postojeca_transakcija.status_t != 'uspesna':
+                racun_zakljucan.skini_sredstva(faktura.iznos_f)
                 postojeca_transakcija.status_t = 'uspesna'
                 postojeca_transakcija.datum_t = timezone.now()
                 postojeca_transakcija.iznos_t = faktura.iznos_f
+                postojeca_transakcija.racun = racun_zakljucan
                 postojeca_transakcija.save()
                 logger.info(f"Status transakcije {postojeca_transakcija.broj_potvrde_t} promenjen na 'uspesna'")
 
@@ -1437,6 +1530,8 @@ def create_transaction(faktura, korisnik):
                 logger.info(f"Faktura {faktura.sifra_f}: status = 'isplacena'")
 
             return postojeca_transakcija
+
+        racun_zakljucan.skini_sredstva(faktura.iznos_f)
 
         max_sifra = Transakcija.objects.aggregate(Max('sifra_t'))['sifra_t__max']
         nova_sifra = (max_sifra or 0) + 1
@@ -1449,6 +1544,7 @@ def create_transaction(faktura, korisnik):
         transakcija = Transakcija.objects.create(
             sifra_t=nova_sifra,
             faktura=faktura,
+            racun=racun_zakljucan,
             broj_potvrde_t=broj_potvrde,
             status_t='uspesna',
             datum_t=timezone.now(),
@@ -1520,10 +1616,25 @@ def simulate_payment(request, invoice_id):
         dobavljac = faktura.ugovor.dobavljac
         dobavljac_email = dobavljac.email_db if dobavljac.email_db else 'noreply@example.com'
 
+        racun = _nadji_racun_za_fakturu(faktura)
+        if racun is None:
+            return Response({
+                'detail': 'Nije definisan račun za valutu ove fakture.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if not racun.ima_dovoljno(faktura.iznos_f):
+            # Van transaction.atomic() namerno - da upis neuspele transakcije
+            # opstane umesto da bude rollback-ovan zajedno sa ostatkom.
+            _zabelezi_neuspelu_transakciju(faktura, racun)
+            send_insufficient_funds_notification(request.user.mail_k, faktura)
+            return Response({
+                'detail': 'Nema dovoljno sredstava na računu za izvršenje ovog plaćanja. Plaćanje je prekinuto.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         with transaction.atomic():
             notification_sent = send_payment_notification(dobavljac_email, faktura)
 
-            transakcija = create_transaction(faktura, request.user)
+            transakcija = create_transaction(faktura, request.user, racun)
 
             confirmation_sent = send_confirmation_notification(dobavljac_email, transakcija, faktura)
 

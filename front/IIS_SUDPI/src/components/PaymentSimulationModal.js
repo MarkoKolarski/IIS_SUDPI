@@ -45,6 +45,9 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
             
         } catch (err) {
             console.error('Greška pri simulaciji:', err);
+            // Greška (npr. nedovoljno sredstava) nastaje u koraku "Automatsko
+            // skidanje sredstava" - zaustavi progress bar tu, ne na početku.
+            setCurrentStep(3);
             const errorMessage = err.response?.data?.detail
                 || err.message
                 || 'Greška pri izvršavanju plaćanja';
@@ -143,14 +146,7 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                     Simulacija plaćanja
                 </h2>
 
-                {error && (
-                    <div className={styles.paymentErrorMessage}>
-                        <span className={styles.errorIcon}>⚠️</span>
-                        <p>{error}</p>
-                    </div>
-                )}
-
-                {!error && (
+                {(!error || currentStep > 0) && (
                     <>
                         <div className={styles.paymentProgressBar}>
                             <div 
@@ -190,6 +186,13 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                                 );
                             })}
                         </ol>
+
+                        {error && (
+                            <div className={styles.paymentErrorMessage}>
+                                <span className={styles.errorIcon}>⚠️</span>
+                                <p>{error}</p>
+                            </div>
+                        )}
 
                         {simulationComplete && transactionData && (
                             <div className={styles.paymentSuccessInfo}>
