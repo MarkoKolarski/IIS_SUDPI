@@ -199,7 +199,7 @@ const PaymentSimulationModal = ({ isOpen, onClose, invoiceId }) => {
                                 <h3>✓ Plaćanje uspešno izvršeno</h3>
                                 <div className={styles.transactionDetails}>
                                     <p><strong>Broj potvrde:</strong> {transactionData.transakcija?.broj_potvrde_t}</p>
-                                    <p><strong>Iznos:</strong> {transactionData.transakcija?.iznos_t} RSD</p>
+                                    <p><strong>Iznos:</strong> {transactionData.transakcija?.iznos_t} {transactionData.transakcija?.oznaka_v || "RSD"}</p>
                                     <p><strong>Dobavljač:</strong> {transactionData.faktura?.naziv_db}</p>
                                     {transactionData.notifikacije?.obavestenje_poslato && (
                                         <p className={styles.notificationStatus}>📧 Notifikacija poslata</p>

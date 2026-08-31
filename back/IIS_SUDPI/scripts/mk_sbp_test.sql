@@ -36,6 +36,8 @@ DECLARE
     v_ugovor_id UGOVOR.SIFRA_U%TYPE;
     v_dobavljac_id DOBAVLJAC.SIFRA_DB%TYPE;
     v_proizvod_dobavljaca_id PROIZVOD_DOBAVLJACA.ID%TYPE;
+    v_valuta_id VALUTA.SIFRA_V%TYPE;
+    v_cenovnik_id CENOVNIK.SIFRA_C%TYPE;
 BEGIN
     DBMS_OUTPUT.PUT_LINE(CHR(10) || '--- ZADATAK 1: TESTIRANJE TRIGERA 1 ---');
     DBMS_OUTPUT.PUT_LINE(CHR(10) || 'Testiranje trigera AZURIRAJ_FAKTURU_NAKON_UNOSA...');
@@ -44,9 +46,11 @@ BEGIN
     -- ISPRAVKA: Korišćenje ROWNUM = 1 radi bolje kompatibilnosti
     SELECT SIFRA_U, DOBAVLJAC_SIFRA_DB INTO v_ugovor_id, v_dobavljac_id FROM UGOVOR WHERE ROWNUM = 1;
     SELECT SIFRA_PR INTO v_proizvod_id FROM PROIZVOD WHERE ROWNUM = 1;
+    SELECT SIFRA_V INTO v_valuta_id FROM VALUTA WHERE OZNAKA_V = 'RSD';
 
-    -- STAVKA_FAKTURE sada pokazuje na PROIZVOD_DOBAVLJACA (katalošku stavku
-    -- dobavljača), ne direktno na PROIZVOD - nađi je ili je kreiraj.
+    -- STAVKA_FAKTURE sada pokazuje na CENOVNIK (Peta iteracija - veza
+    -- naplaćena_po), ne direktno na PROIZVOD_DOBAVLJACA - nađi (ili kreiraj)
+    -- katalošku stavku dobavljača, pa (ili kreiraj) red cenovnika za nju.
     BEGIN
         SELECT ID INTO v_proizvod_dobavljaca_id
         FROM PROIZVOD_DOBAVLJACA
@@ -58,23 +62,35 @@ BEGIN
             RETURNING ID INTO v_proizvod_dobavljaca_id;
     END;
 
+    BEGIN
+        SELECT SIFRA_C INTO v_cenovnik_id
+        FROM CENOVNIK
+        WHERE PROIZVOD_DOBAVLJACA_ID = v_proizvod_dobavljaca_id AND DATUM_DO_C IS NULL
+        FETCH FIRST 1 ROWS ONLY;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            INSERT INTO CENOVNIK (SIFRA_C, CENA_C, DATUM_OD_C, DATUM_DO_C, PROIZVOD_DOBAVLJACA_ID, VALUTA_SIFRA_V)
+            VALUES (CENOVNIK_SEQ.NEXTVAL, 1000, SYSDATE, NULL, v_proizvod_dobavljaca_id, v_valuta_id)
+            RETURNING SIFRA_C INTO v_cenovnik_id;
+    END;
+
     -- Kreiranje nove fakture sa početnim iznosom 0
-    INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_SIFRA_U)
-    VALUES (FAKTURA_SEQ.NEXTVAL, 0, SYSDATE, SYSDATE + 30, 'primljena', v_ugovor_id)
+    INSERT INTO FAKTURA (SIFRA_F, IZNOS_F, DATUM_PRIJEMA_F, ROK_PLACANJA_F, STATUS_F, UGOVOR_SIFRA_U, VALUTA_SIFRA_V)
+    VALUES (FAKTURA_SEQ.NEXTVAL, 0, SYSDATE, SYSDATE + 30, 'primljena', v_ugovor_id, v_valuta_id)
     RETURNING SIFRA_F INTO v_faktura_id;
     COMMIT;
     DBMS_OUTPUT.PUT_LINE('Kreirana je nova test faktura sa ID: ' || v_faktura_id || ' i početnim iznosom 0.');
 
     -- Unos prve stavke fakture
     DBMS_OUTPUT.PUT_LINE('Unos prve stavke (Količina: 2, Cena po jed: 1000). Očekivani iznos fakture: 2000.');
-    INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED_SF, FAKTURA_SIFRA_F, PROIZVOD_DOBAVLJACA_ID)
-    VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, 'Test Stavka 1', 2, 1000, v_faktura_id, v_proizvod_dobavljaca_id);
+    INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED_SF, PDV_STOPA_SF, FAKTURA_SIFRA_F, CENOVNIK_SIFRA_C)
+    VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, 'Test Stavka 1', 2, 1000, 20, v_faktura_id, v_cenovnik_id);
     COMMIT;
 
     -- Unos druge stavke fakture
     DBMS_OUTPUT.PUT_LINE('Unos druge stavke (Količina: 5, Cena po jed: 300). Očekivani iznos fakture: 3500.');
-    INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED_SF, FAKTURA_SIFRA_F, PROIZVOD_DOBAVLJACA_ID)
-    VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, 'Test Stavka 2', 5, 300, v_faktura_id, v_proizvod_dobavljaca_id);
+    INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED_SF, PDV_STOPA_SF, FAKTURA_SIFRA_F, CENOVNIK_SIFRA_C)
+    VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, 'Test Stavka 2', 5, 300, 20, v_faktura_id, v_cenovnik_id);
     COMMIT;
 
     DBMS_OUTPUT.PUT_LINE('Unos stavki je završen. Proverite konačan IZNOS_F za fakturu sa ID-jem ' || v_faktura_id || '.');

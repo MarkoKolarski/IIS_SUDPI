@@ -235,7 +235,7 @@ COMMIT;
       i visoko-performantna tehnika za obradu rezultata upita koja puni celu kolekciju jednim odlaskom u bazu.
     ● SLOŽEN UPIT:
         - WITH klauzula: `ProdajaPoStavkama` se koristi za prethodnu obradu i filtriranje podataka.
-        - JOIN: Spaja se 5 tabela: STAVKA_FAKTURE, FAKTURA, PROIZVOD, TRANSAKCIJA, KATEGORIJA_PROIZVODA.
+        - JOIN: Spaja se 7 tabela: STAVKA_FAKTURE, FAKTURA, CENOVNIK, PROIZVOD_DOBAVLJACA, PROIZVOD, TRANSAKCIJA, KATEGORIJA_PROIZVODA.
         - WHERE: Filtrira podatke po plaćenim fakturama i uspešnim transakcijama u zadatom vremenskom periodu.
         - GROUP BY: Grupiše podatke po nazivu kategorije proizvoda.
         - AGREGACIJE: Koristi `SUM` za ukupan prihod i `COUNT` za broj prodatih stavki.
@@ -270,8 +270,9 @@ IS
 
 BEGIN
     -- 2. Kurzor (implicitni) i 3. Složen SQL upit
-    -- JOIN je sada 6 tabela (STAVKA_FAKTURE -> PROIZVOD_DOBAVLJACA -> PROIZVOD
-    -- je dodatni hop otkako STAVKA_FAKTURE ne pokazuje direktno na PROIZVOD).
+    -- JOIN je sada 7 tabela (STAVKA_FAKTURE -> CENOVNIK -> PROIZVOD_DOBAVLJACA
+    -- -> PROIZVOD je dodatni hop, Peta iteracija: STAVKA_FAKTURE se vezuje za
+    -- CENOVNIK, ne više direktno za PROIZVOD_DOBAVLJACA - veza naplaćena_po).
     WITH ProdajaPoStavkama AS (
         SELECT
             SF.KOLICINA_SF,
@@ -279,7 +280,8 @@ BEGIN
             P.KATEGORIJA_PROIZVODA_SIFRA_KP
         FROM STAVKA_FAKTURE SF
         JOIN FAKTURA F ON SF.FAKTURA_SIFRA_F = F.SIFRA_F
-        JOIN PROIZVOD_DOBAVLJACA PD ON SF.PROIZVOD_DOBAVLJACA_ID = PD.ID
+        JOIN CENOVNIK C ON SF.CENOVNIK_SIFRA_C = C.SIFRA_C
+        JOIN PROIZVOD_DOBAVLJACA PD ON C.PROIZVOD_DOBAVLJACA_ID = PD.ID
         JOIN PROIZVOD P ON PD.PROIZVOD_SIFRA_PR = P.SIFRA_PR
         JOIN TRANSAKCIJA T ON F.SIFRA_F = T.FAKTURA_SIFRA_F
         WHERE F.STATUS_F = 'isplacena'

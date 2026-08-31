@@ -68,12 +68,13 @@ class StavkaFaktureSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StavkaFakture
-        fields = ['sifra_sf', 'naziv_sf', 'kolicina_sf', 'cena_po_jed_sf', 'opis_sf']
+        fields = ['sifra_sf', 'naziv_sf', 'kolicina_sf', 'cena_po_jed_sf', 'pdv_stopa_sf', 'opis_sf']
 
 
 class FakturaSerializer(serializers.ModelSerializer):
     naziv_db = serializers.CharField(source='ugovor.dobavljac.naziv_db', read_only=True)
     sifra_db = serializers.IntegerField(source='ugovor.dobavljac.sifra_db', read_only=True)
+    oznaka_v = serializers.CharField(source='valuta.oznaka_v', read_only=True)
     status_display = serializers.SerializerMethodField()
 
     class Meta:
@@ -86,7 +87,8 @@ class FakturaSerializer(serializers.ModelSerializer):
             'status_f',
             'status_display',
             'naziv_db',
-            'sifra_db'
+            'sifra_db',
+            'oznaka_v'
         ]
 
     def get_status_display(self, obj):
@@ -97,6 +99,7 @@ class FakturaSerializer(serializers.ModelSerializer):
 class FakturaDetailSerializer(serializers.ModelSerializer):
     naziv_db = serializers.CharField(source='ugovor.dobavljac.naziv_db', read_only=True)
     sifra_db = serializers.IntegerField(source='ugovor.dobavljac.sifra_db', read_only=True)
+    oznaka_v = serializers.CharField(source='valuta.oznaka_v', read_only=True)
     status_display = serializers.SerializerMethodField()
     ugovor = UgovorSerializer(read_only=True)
     transakcija = serializers.SerializerMethodField()
@@ -115,6 +118,7 @@ class FakturaDetailSerializer(serializers.ModelSerializer):
             'razlog_cekanja_f',
             'naziv_db',
             'sifra_db',
+            'oznaka_v',
             'ugovor',
             'transakcija',
             'stavke',
@@ -198,6 +202,7 @@ class SimTransakcijaSerializer(serializers.Serializer):
     status_display = serializers.CharField()
     datum_t = serializers.CharField()
     iznos_t = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
+    oznaka_v = serializers.CharField()
 
 
 class SimFakturaSerializer(serializers.Serializer):

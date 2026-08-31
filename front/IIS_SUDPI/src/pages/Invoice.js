@@ -162,8 +162,8 @@ const Invoice = () => {
     return new Date(dateString).toLocaleDateString("sr-RS");
   };
 
-  const formatAmount = (amount) => {
-    return `${parseFloat(amount).toFixed(0)} RSD`;
+  const formatAmount = (amount, oznakaValute) => {
+    return `${parseFloat(amount).toFixed(0)} ${oznakaValute || "RSD"}`;
   };
 
   const getStatusClassName = (status) => {
@@ -375,7 +375,7 @@ const Invoice = () => {
                         {invoice.naziv_db}
                       </div>
                       <div className={styles.tableCol} style={{ width: "14%" }}>
-                        {formatAmount(invoice.iznos_f)}
+                        {formatAmount(invoice.iznos_f, invoice.oznaka_v)}
                       </div>
                       <div className={styles.tableCol} style={{ width: "20%" }}>
                         {formatDate(invoice.datum_prijema_f)}

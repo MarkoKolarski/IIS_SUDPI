@@ -31,7 +31,7 @@ from .constants_mk import (
 from .decorators import allowed_users
 from .models import (
     Faktura, Ugovor, Dobavljac, Penal, StavkaFakture, Transakcija, Racun,
-    KontrolnaTabla, Kreiranje, Metrika, Merenje, JedinicaMere,
+    KontrolnaTabla, Kreiranje, Metrika, Merenje, Prikazuje, JedinicaMere, Valuta,
     Izvestaj, PredmetIzvestaja, OcenaDobavljaca,
 )
 from .serializers_mk import (
@@ -153,13 +153,23 @@ def _get_or_create_kontrolna_tabla(fa):
     return tabla
 
 
-def _upisi_merenje(kontrolna_tabla, metrika, vrednost, vreme=None, period_od=None, period_do=None):
+def _prikazi_metriku_na_tabli(kontrolna_tabla, metrika):
+    """Peta iteracija: upisuje vezu 'prikazuje' (KontrolnaTabla <-> Metrika) -
+    zaseban korak od upisa samog merenja, jer merenje više ne zna ni za jednu
+    tablu (vidi Merenje u models.py)."""
+    Prikazuje.objects.get_or_create(kontrolna_tabla=kontrolna_tabla, metrika=metrika)
+
+
+def _upisi_merenje(metrika, vrednost, vreme=None, period_od=None, period_do=None, dobavljac=None):
     """Servisna funkcija (tačka 8.4 specifikacije): upisuje jedno merenje
-    metrike na kontrolnoj tabli. Koristi update_or_create da ponovljeni poziv
-    za isti (tabla, metrika, vreme) samo osveži vrednost umesto duplog reda."""
+    metrike (Peta iteracija: Merenje je samostalan TE, ne visi o kontrolnoj
+    tabli - vidi models.py). Koristi update_or_create da ponovljeni poziv za
+    isti (metrika, dobavljac, vreme) samo osveži vrednost umesto duplog reda -
+    time ista metrika za isti period ima uvek tačno jednu vrednost, bez obzira
+    na to koliko tabli je prikazuje."""
     return Merenje.objects.update_or_create(
-        kontrolna_tabla=kontrolna_tabla,
         metrika=metrika,
+        dobavljac=dobavljac,
         vreme_merenja_me=vreme or timezone.now(),
         defaults={
             'vrednost_me': vrednost,
@@ -169,18 +179,23 @@ def _upisi_merenje(kontrolna_tabla, metrika, vrednost, vreme=None, period_od=Non
     )[0]
 
 
-def _upisi_ocenu_dobavljaca(dobavljac, kriterijum, vrednost, period_od, period_do):
+def _upisi_ocenu_dobavljaca(fa, dobavljac, broj_penala, period_od, period_do):
     """Servisna funkcija (tačka 8.4 specifikacije): obračun/upis ocene
-    dobavljača po kriterijumu i periodu (OcenaDobavljaca)."""
+    dobavljača za kriterijum 'Broj penala' (Peta iteracija: kriterijum i
+    period se sada čitaju sa povezanog Merenje-a, ne sa same ocene - vidi
+    OcenaDobavljaca u models.py). Ocena je na 0-10 skali, manje penala = veća
+    ocena."""
     try:
+        sada = timezone.now()
+        metrika = _get_or_create_metrika('Broj penala', 'kom', 'Komad', 'KOLICINA')
+        merenje = _upisi_merenje(metrika, broj_penala, vreme=sada, period_od=period_od, period_do=period_do, dobavljac=dobavljac)
         return OcenaDobavljaca.objects.update_or_create(
             dobavljac=dobavljac,
-            kriterijum_od=kriterijum,
-            period_od_od=period_od,
+            merenje=merenje,
             defaults={
-                'vrednost_od': vrednost,
-                'period_do_od': period_do,
+                'vrednost_od': max(0, 10 - broj_penala),
                 'datum_ocenj_od': date.today(),
+                'finansijski_analiticar': fa,
             }
         )[0]
     except Exception as e:
@@ -193,10 +208,16 @@ def _save_dashboard_snapshot(fa, dashboard_data):
     Deo D: kontrolna tabla prestaje da bude mrtva tabela - svaki poziv upisuje
     stvarna Merenje-a za definisane Metrika-e (zamena za stari JSON snapshot).
     Ne utiče na HTTP odgovor - greška ovde se samo loguje.
+
+    Peta iteracija: `sada` je početak tekućeg dana (a ne trenutni tajmstamp)
+    da bi ponovljeno otvaranje dashboard-a - od strane istog ili drugog FA -
+    istog dana ažuriralo ISTI red Merenje-a umesto da dodaje nov. To je i
+    stvarna svrha razdvajanja Merenje/KontrolnaTabla: ista metrika za isti
+    period postoji tačno jednom, bez obzira koliko tabli je prikazuje.
     """
     try:
         tabla = _get_or_create_kontrolna_tabla(fa)
-        sada = timezone.now()
+        sada = timezone.make_aware(datetime.combine(date.today(), datetime.min.time()))
         pf = dashboard_data['pregled_finansija']
 
         m_placeno = _get_or_create_metrika('Ukupno plaćeno', 'RSD', 'Srpski dinar', 'NOVAC')
@@ -206,11 +227,14 @@ def _save_dashboard_snapshot(fa, dashboard_data):
         m_udeo = _get_or_create_metrika('Udeo sredstava na čekanju', '%', 'Procenat', 'PROCENAT')
         m_mesecni_trosak = _get_or_create_metrika('Mesečni trošak', 'RSD', 'Srpski dinar', 'NOVAC')
 
-        _upisi_merenje(tabla, m_placeno, pf['ukupno_placeno'], vreme=sada)
-        _upisi_merenje(tabla, m_cekanje, pf['na_cekanju'], vreme=sada)
-        _upisi_merenje(tabla, m_vreme, pf['prosecno_vreme_placanja'], vreme=sada)
-        _upisi_merenje(tabla, m_broj, pf['broj_faktura_na_cekanju'], vreme=sada)
-        _upisi_merenje(tabla, m_udeo, pf['udeo_na_cekanju'], vreme=sada)
+        for metrika in (m_placeno, m_cekanje, m_vreme, m_broj, m_udeo, m_mesecni_trosak):
+            _prikazi_metriku_na_tabli(tabla, metrika)
+
+        _upisi_merenje(m_placeno, pf['ukupno_placeno'], vreme=sada)
+        _upisi_merenje(m_cekanje, pf['na_cekanju'], vreme=sada)
+        _upisi_merenje(m_vreme, pf['prosecno_vreme_placanja'], vreme=sada)
+        _upisi_merenje(m_broj, pf['broj_faktura_na_cekanju'], vreme=sada)
+        _upisi_merenje(m_udeo, pf['udeo_na_cekanju'], vreme=sada)
 
         # Mesečni trošak - jedno Merenje po mesecu iz prozora (period_od/do_me
         # nose taj mesec, vreme_merenja_me je njegov prvi dan).
@@ -219,7 +243,7 @@ def _save_dashboard_snapshot(fa, dashboard_data):
             period_od = date(int(godina_str), int(mesec_str), 1)
             period_do = shift_month(period_od, 1) - timedelta(days=1)
             vreme_mesec = timezone.make_aware(datetime.combine(period_od, datetime.min.time()))
-            _upisi_merenje(tabla, m_mesecni_trosak, stavka['iznos'], vreme=vreme_mesec, period_od=period_od, period_do=period_do)
+            _upisi_merenje(m_mesecni_trosak, stavka['iznos'], vreme=vreme_mesec, period_od=period_od, period_do=period_do)
 
         return tabla
     except Exception as e:
@@ -282,11 +306,16 @@ def dashboard_finansijski_analiticar(request):
 
     # 2. PROFITABILNOST DOBAVLJAČA
     dobavljaci_profitabilnost = []
+    # Peta iteracija: OcenaDobavljaca sada zahteva finansijski_analiticar
+    # (veza dao_ocenu), pa se upis penala-po-dobavljaču samo priprema ovde, a
+    # stvarno upisuje niže, u FA-only bloku (endpoint sme i nabavni_menadzer,
+    # koji nema finansijski_analiticar).
+    penali_za_ocenu = []
+    pre_6_meseci = date.today() - timedelta(days=180)
     for dobavljac in Dobavljac.objects.filter(izabran=True):
 
         aktivni_ugovori = dobavljac.ugovori.filter(status_u='aktivan').count()
 
-        pre_6_meseci = date.today() - timedelta(days=180)
         penali_count = Penal.objects.filter(
             ugovor__dobavljac=dobavljac,
             datum_p__gte=pre_6_meseci
@@ -301,9 +330,7 @@ def dashboard_finansijski_analiticar(request):
             'profitabilnost': round(profitabilnost, 0)
         })
 
-        # Servisna funkcija (tačka 8.4): upiši ocenu dobavljača za kriterijum
-        # BROJ_PENALA za tekući 6-mesečni period (0-10 skala, manje penala = veća ocena).
-        _upisi_ocenu_dobavljaca(dobavljac, 'BROJ_PENALA', max(0, 10 - penali_count), pre_6_meseci, date.today())
+        penali_za_ocenu.append((dobavljac, penali_count))
 
     dobavljaci_profitabilnost.sort(key=lambda x: x['profitabilnost'], reverse=True)
 
@@ -340,9 +367,13 @@ def dashboard_finansijski_analiticar(request):
     }
 
     # Deo D: snimi Merenje-a na kontrolnoj tabli samo kada je pozivalac stvarno FA
-    # (NM takođe sme da vidi ovaj ekran, ali 'kreira' veza je FA-specifična u ER-u).
+    # (NM takođe sme da vidi ovaj ekran, ali 'kreira' i 'dao_ocenu' veze su
+    # FA-specifične u ER-u).
     if getattr(request.user, 'tip_k', None) == 'finansijski_analiticar' and hasattr(request.user, 'finansijski_analiticar'):
-        _save_dashboard_snapshot(request.user.finansijski_analiticar, dashboard_data)
+        fa = request.user.finansijski_analiticar
+        _save_dashboard_snapshot(fa, dashboard_data)
+        for dobavljac, penali_count in penali_za_ocenu:
+            _upisi_ocenu_dobavljaca(fa, dobavljac, penali_count, pre_6_meseci, date.today())
 
     serializer = DashboardSerializer(dashboard_data)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -797,14 +828,16 @@ def reports_data(request):
     if status_filter != 'sve':
         fakture_queryset = fakture_queryset.filter(status_f=status_filter)
 
+    # Peta iteracija: StavkaFakture više ne pokazuje direktno na
+    # ProizvodDobavljaca - putanja ide preko Cenovnik (veza naplaćena_po).
     stavke_queryset = StavkaFakture.objects.filter(
         faktura__in=fakture_queryset
-    ).select_related('faktura', 'proizvod_dobavljaca__proizvod')
+    ).select_related('faktura', 'cenovnik__proizvod_dobavljaca__proizvod')
 
     stavke = []
 
     if group_by_filter == 'proizvodu':
-        proizvodi_data = stavke_queryset.values('proizvod_dobavljaca__proizvod__naziv_pr').annotate(
+        proizvodi_data = stavke_queryset.values('cenovnik__proizvod_dobavljaca__proizvod__naziv_pr').annotate(
             ukupna_kolicina=Sum('kolicina_sf'),
             ukupan_trosak=Sum('cena_po_jed_sf'),
             broj_stavki=Count('sifra_sf'),
@@ -812,7 +845,7 @@ def reports_data(request):
         ).order_by('-ukupan_trosak')
 
         for proizvod in proizvodi_data:
-            naziv = proizvod['proizvod_dobavljaca__proizvod__naziv_pr'] or 'Nepoznat proizvod'
+            naziv = proizvod['cenovnik__proizvod_dobavljaca__proizvod__naziv_pr'] or 'Nepoznat proizvod'
             kolicina = int(proizvod['ukupna_kolicina'] or 0)
             trosak = proizvod['ukupan_trosak'] or Decimal('0.00')
 
@@ -844,14 +877,14 @@ def reports_data(request):
             })
 
     elif group_by_filter == 'kategoriji':
-        kategorije_data = stavke_queryset.values('proizvod_dobavljaca__proizvod__kategorija__naziv_kp').annotate(
+        kategorije_data = stavke_queryset.values('cenovnik__proizvod_dobavljaca__proizvod__kategorija__naziv_kp').annotate(
             ukupna_kolicina=Sum('kolicina_sf'),
             ukupan_trosak=Sum('cena_po_jed_sf'),
             broj_stavki=Count('sifra_sf')
         ).order_by('-ukupan_trosak')
 
         for kategorija in kategorije_data:
-            naziv = kategorija['proizvod_dobavljaca__proizvod__kategorija__naziv_kp'] or 'Nepoznata kategorija'
+            naziv = kategorija['cenovnik__proizvod_dobavljaca__proizvod__kategorija__naziv_kp'] or 'Nepoznata kategorija'
             kolicina = int(kategorija['ukupna_kolicina'] or 0)
             trosak = kategorija['ukupan_trosak'] or Decimal('0.00')
 
@@ -1454,10 +1487,13 @@ def preview_contract_violations(request):
 
 
 def _nadji_racun_za_fakturu(faktura):
-    """Bira račun sa kog se izvršava plaćanje - onaj u istoj valuti kao
-    faktura. Time Faktura.valuta (do sada nigde nekorišćeno polje) dobija
-    stvarnu funkciju. Ako postoji više računa u istoj valuti, uzima se onaj
-    sa najmanjom šifrom (deterministički izbor)."""
+    """Bira račun sa kog se izvršava plaćanje - onaj u istoj Valuta (Peta
+    iteracija: zaseban TE, odvojen od JedinicaMere) kao faktura. Poslovno
+    pravilo: valuta računa koji se tereti (veza tereti) mora biti jednaka
+    valuti fakture koju transakcija izmiruje (veza ima_plaćanje) - ovo
+    strukturno ne može izraziti sam EER, pa se sprovodi ovde. Ako postoji
+    više računa u istoj valuti, uzima se onaj sa najmanjom šifrom
+    (deterministički izbor)."""
     return Racun.objects.filter(valuta_id=faktura.valuta_id).order_by('sifra_r').first()
 
 
@@ -1590,6 +1626,7 @@ def simulate_payment(request, invoice_id):
                         'status_display': transakcija.get_status_t_display(),
                         'datum_t': transakcija.datum_t.isoformat(),
                         'iznos_t': faktura.iznos_f,
+                        'oznaka_v': faktura.valuta.oznaka_v,
                     },
                     'faktura': {
                         'sifra_f': faktura.sifra_f,
@@ -1647,6 +1684,7 @@ def simulate_payment(request, invoice_id):
                 'status_display': transakcija.get_status_t_display(),
                 'datum_t': transakcija.datum_t.isoformat(),
                 'iznos_t': faktura.iznos_f,
+                'oznaka_v': faktura.valuta.oznaka_v,
             },
             'faktura': {
                 'sifra_f': faktura.sifra_f,

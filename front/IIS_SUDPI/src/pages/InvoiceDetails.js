@@ -99,8 +99,8 @@ const InvoiceDetails = () => {
     return new Date(dateString).toLocaleDateString("sr-RS");
   };
 
-  const formatAmount = (amount) => {
-    return `${parseFloat(amount).toFixed(2)} RSD`;
+  const formatAmount = (amount, oznakaValute) => {
+    return `${parseFloat(amount).toFixed(2)} ${oznakaValute || "RSD"}`;
   };
 
   useEffect(() => {
@@ -392,7 +392,7 @@ const InvoiceDetails = () => {
               </div>
               <div className={styles.summaryCol}>
                 <span className={styles.summaryLabel}>Iznos:</span>
-                <span className={styles.summaryValue}>{formatAmount(invoice.iznos_f)}</span>
+                <span className={styles.summaryValue}>{formatAmount(invoice.iznos_f, invoice.oznaka_v)}</span>
               </div>
             </div>
             <div className={`${styles.invoiceSummaryRow} ${styles.rowMedium}`}>
@@ -486,7 +486,8 @@ const InvoiceDetails = () => {
                           <p className={styles.invoiceItemTitle}>{stavka.naziv_sf}</p>
                           <span className={styles.invoiceItemPrice}>
                             {formatAmount(
-                              Number(stavka.kolicina_sf) * Number(stavka.cena_po_jed_sf)
+                              Number(stavka.kolicina_sf) * Number(stavka.cena_po_jed_sf),
+                              invoice.oznaka_v
                             )}
                           </span>
                         </div>
@@ -502,7 +503,21 @@ const InvoiceDetails = () => {
                               Cena po jedinici
                             </span>
                             <span className={styles.invoiceItemMetaValue}>
-                              {formatAmount(stavka.cena_po_jed_sf)}
+                              {formatAmount(stavka.cena_po_jed_sf, invoice.oznaka_v)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className={styles.invoiceItemMetaLabel}>PDV</span>
+                            <span className={styles.invoiceItemMetaValue}>
+                              {stavka.pdv_stopa_sf}% (
+                              {formatAmount(
+                                (Number(stavka.kolicina_sf) *
+                                  Number(stavka.cena_po_jed_sf) *
+                                  Number(stavka.pdv_stopa_sf)) /
+                                  100,
+                                invoice.oznaka_v
+                              )}
+                              )
                             </span>
                           </div>
                         </div>

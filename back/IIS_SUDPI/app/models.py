@@ -70,6 +70,18 @@ class JedinicaMere(models.Model):
         return f"{self.naziv_jm} ({self.oznaka_jm})"
 
 
+class Valuta(models.Model):
+    sifra_v = models.AutoField(primary_key=True)
+    naziv_v = models.CharField(max_length=100)
+    oznaka_v = models.CharField(max_length=10, unique=True)
+
+    class Meta:
+        db_table = 'valuta'
+
+    def __str__(self):
+        return f"{self.naziv_v} ({self.oznaka_v})"
+
+
 class Dobavljac(models.Model):
     sifra_db = models.AutoField(primary_key=True)
     naziv_db = models.CharField(max_length=150)
@@ -124,19 +136,12 @@ class KategorijaProizvoda(models.Model):
 
 
 class Proizvod(models.Model):
-    PDV_CHOICES = (
-        (0, '0%'),
-        (10, '10%'),
-        (20, '20%'),
-    )
-
     sifra_pr = models.AutoField(primary_key=True)
     naziv_pr = models.CharField(max_length=150)
     # ER deklariše VARCHAR2(2000); zadržan TextField (CLOB) - NVARCHAR2 na
     # Oracle-u koristi 2 bajta/karakter pa bi 2000 karaktera tražilo 4000+
     # bajtova, na granici/preko standardnog Oracle limita (ORA-00910).
     opis_pr = models.TextField(blank=True)
-    pdv_stopa_pr = models.IntegerField(choices=PDV_CHOICES, default=20)
 
     kategorija = models.ForeignKey(KategorijaProizvoda, on_delete=models.PROTECT, db_column='KATEGORIJA_PROIZVODA_sifra_kp', related_name='proizvodi')
     jedinica_mere = models.ForeignKey(JedinicaMere, on_delete=models.PROTECT, db_column='JEDINICA_MERE_sifra_jm', related_name='proizvodi')
@@ -171,7 +176,7 @@ class Cenovnik(models.Model):
     datum_do_c = models.DateField(null=True, blank=True, help_text="NULL = trenutno važeća cena")
 
     proizvod_dobavljaca = models.ForeignKey(ProizvodDobavljaca, on_delete=models.CASCADE, db_column='PROIZVOD_DOBAVLJACA_id', related_name='cenovnik')
-    valuta = models.ForeignKey(JedinicaMere, on_delete=models.PROTECT, db_column='JEDINICA_MERE_sifra_jm', related_name='cene')
+    valuta = models.ForeignKey(Valuta, on_delete=models.PROTECT, db_column='VALUTA_sifra_v', related_name='cene')
 
     class Meta:
         db_table = 'cenovnik'
@@ -227,7 +232,7 @@ class Faktura(models.Model):
 
     # faktura je finansijski dokument, ne sme nestati ako se ugovor obriše.
     ugovor = models.ForeignKey(Ugovor, on_delete=models.PROTECT, db_column='UGOVOR_sifra_u', related_name='fakture')
-    valuta = models.ForeignKey(JedinicaMere, on_delete=models.PROTECT, db_column='JEDINICA_MERE_sifra_jm', related_name='fakture')
+    valuta = models.ForeignKey(Valuta, on_delete=models.PROTECT, db_column='VALUTA_sifra_v', related_name='fakture')
 
     class Meta:
         db_table = 'faktura'
@@ -266,14 +271,21 @@ class Faktura(models.Model):
         return f"Faktura {self.sifra_f} - {self.iznos_f} RSD"
 
 class StavkaFakture(models.Model):
+    PDV_CHOICES = (
+        (0, '0%'),
+        (10, '10%'),
+        (20, '20%'),
+    )
+
     sifra_sf = models.AutoField(primary_key=True)
     naziv_sf = models.CharField(max_length=150)
     kolicina_sf = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     cena_po_jed_sf = models.DecimalField(max_digits=12, decimal_places=2)
+    pdv_stopa_sf = models.IntegerField(choices=PDV_CHOICES, default=20)
     opis_sf = models.CharField(max_length=1000, blank=True)
 
     faktura = models.ForeignKey(Faktura, on_delete=models.CASCADE, db_column='FAKTURA_sifra_f', related_name='stavke')
-    proizvod_dobavljaca = models.ForeignKey(ProizvodDobavljaca, on_delete=models.PROTECT, db_column='PROIZVOD_DOBAVLJACA_id', related_name='stavke_fakture')
+    cenovnik = models.ForeignKey(Cenovnik, on_delete=models.PROTECT, db_column='CENOVNIK_sifra_c', related_name='stavke_fakture')
 
     class Meta:
         db_table = 'stavka_fakture'
@@ -283,15 +295,20 @@ class StavkaFakture(models.Model):
         return self.cena_po_jed_sf
 
     @property
+    def proizvod_dobavljaca(self):
+        """Kompatibilnost - kataloška stavka dobavljača, sada dostupna preko cenovnika."""
+        return self.cenovnik.proizvod_dobavljaca
+
+    @property
     def proizvod(self):
         """Kompatibilnost - direktan pristup proizvodu kroz katalošku stavku dobavljača."""
-        return self.proizvod_dobavljaca.proizvod
+        return self.cenovnik.proizvod_dobavljaca.proizvod
 
     def clean(self):
         """Poslovno pravilo #1: dobavljač na fakturi (preko ugovora) mora biti
-        isti kao dobavljač kataloške stavke koju ova stavka fakture koristi."""
-        if self.proizvod_dobavljaca_id and self.faktura_id:
-            if self.proizvod_dobavljaca.dobavljac_id != self.faktura.ugovor.dobavljac_id:
+        isti kao dobavljač kataloške stavke na koju cenovnik ove stavke pokazuje."""
+        if self.cenovnik_id and self.faktura_id:
+            if self.cenovnik.proizvod_dobavljaca.dobavljac_id != self.faktura.ugovor.dobavljac_id:
                 raise ValidationError(
                     "Dobavljač stavke fakture mora biti isti kao dobavljač na ugovoru fakture."
                 )
@@ -309,7 +326,7 @@ class Racun(models.Model):
     naziv_r = models.CharField(max_length=150)
     stanje_r = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
 
-    valuta = models.ForeignKey(JedinicaMere, on_delete=models.PROTECT, db_column='JEDINICA_MERE_sifra_jm', related_name='racuni')
+    valuta = models.ForeignKey(Valuta, on_delete=models.PROTECT, db_column='VALUTA_sifra_v', related_name='racuni')
 
     class Meta:
         db_table = 'racun'
@@ -331,7 +348,7 @@ class Racun(models.Model):
         return self.stanje_r
 
     def __str__(self):
-        return f"Račun {self.broj_racuna_r} ({self.stanje_r} {self.valuta.oznaka_jm})"
+        return f"Račun {self.broj_racuna_r} ({self.stanje_r} {self.valuta.oznaka_v})"
 
 
 class Transakcija(models.Model):
@@ -379,6 +396,7 @@ class Penal(models.Model):
     tip_penala_p = models.CharField(max_length=30, choices=TIP_PENALA_CHOICES, default='OSTALO')
 
     ugovor = models.ForeignKey(Ugovor, on_delete=models.PROTECT, db_column='UGOVOR_sifra_u', related_name='penali')
+    faktura = models.ForeignKey(Faktura, on_delete=models.PROTECT, db_column='FAKTURA_sifra_f', related_name='penali', null=True, blank=True)
 
     class Meta:
         db_table = 'penal'
@@ -406,34 +424,6 @@ class PromenaStatusa(models.Model):
         return f"Faktura {self.faktura_id}: {self.stari_status_ps} -> {self.novi_status_ps}"
 
 
-class OcenaDobavljaca(models.Model):
-    KRITERIJUM_CHOICES = (
-        ('TACNOST_FAKTURISANJA', 'Tačnost fakturisanja'),
-        ('POSTOVANJE_ROKOVA', 'Poštovanje rokova'),
-        ('BROJ_PENALA', 'Broj penala'),
-        ('ODNOS_CENA', 'Odnos cena'),
-    )
-
-    sifra_od = models.AutoField(primary_key=True)
-    kriterijum_od = models.CharField(max_length=30, choices=KRITERIJUM_CHOICES)
-    vrednost_od = models.DecimalField(max_digits=5, decimal_places=2)
-    period_od_od = models.DateField()
-    period_do_od = models.DateField()
-    datum_ocenj_od = models.DateField()
-
-    dobavljac = models.ForeignKey(Dobavljac, on_delete=models.CASCADE, db_column='DOBAVLJAC_sifra_db', related_name='ocene')
-
-    class Meta:
-        db_table = 'ocena_dobavljaca'
-        constraints = [
-            models.UniqueConstraint(fields=['dobavljac', 'kriterijum_od', 'period_od_od'], name='uq_ocena_dobavljac_kriterijum_period'),
-            models.CheckConstraint(check=models.Q(period_do_od__gte=models.F('period_od_od')), name='ck_ocena_period_do_posle_od'),
-            models.CheckConstraint(check=models.Q(datum_ocenj_od__gte=models.F('period_do_od')), name='ck_ocena_datum_posle_period'),
-        ]
-
-    def __str__(self):
-        return f"Ocena {self.dobavljac.naziv_db} - {self.kriterijum_od}: {self.vrednost_od}"
-
 class KontrolnaTabla(models.Model):
     sifra_kt = models.AutoField(primary_key=True)
     naziv_kt = models.CharField(max_length=150)
@@ -441,6 +431,9 @@ class KontrolnaTabla(models.Model):
 
     finansijski_analiticari = models.ManyToManyField(
         FinansijskiAnaliticar, through='Kreiranje', blank=True, related_name='kontrolne_table'
+    )
+    metrike = models.ManyToManyField(
+        'Metrika', through='Prikazuje', blank=True, related_name='kontrolne_table'
     )
 
     class Meta:
@@ -453,14 +446,17 @@ class KontrolnaTabla(models.Model):
 # Gerund nad vezom "kreira" (FinansijskiAnaliticar <-> KontrolnaTabla).
 class Kreiranje(models.Model):
     finansijski_analiticar = models.ForeignKey(FinansijskiAnaliticar, on_delete=models.CASCADE, db_column='FINANSIJSKI_ANALITICAR_sifra_k')
-    kontrolna_tabla = models.ForeignKey(KontrolnaTabla, on_delete=models.CASCADE, db_column='KONTROLNA_TABLA_sifra_kt')
+    # OneToOneField (umesto FK + zaseban UniqueConstraint na jednoj koloni) -
+    # obična FK već dobija sopstveni indeks od Django-a (db_index=True je
+    # podrazumevano za FK), pa bi UniqueConstraint na istoj jednoj koloni
+    # tražio DRUGI indeks nad identičnom listom kolona (Oracle: ORA-01408
+    # "such column list already indexed"). OneToOneField pravi samo JEDAN
+    # (unique) indeks za ovu kolonu - i tačno odslikava kardinalitet (1,1).
+    kontrolna_tabla = models.OneToOneField(KontrolnaTabla, on_delete=models.CASCADE, db_column='KONTROLNA_TABLA_sifra_kt')
     datum_kr = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'kreiranje'
-        constraints = [
-            models.UniqueConstraint(fields=['finansijski_analiticar', 'kontrolna_tabla'], name='uq_kreiranje_fa_tabla'),
-        ]
 
     def __str__(self):
         return f"{self.finansijski_analiticar} kreira {self.kontrolna_tabla}"
@@ -480,9 +476,8 @@ class Metrika(models.Model):
         return self.naziv_m
 
 
-# Gerund nad vezom "se_meri" (KontrolnaTabla <-> Metrika)
 class Merenje(models.Model):
-    kontrolna_tabla = models.ForeignKey(KontrolnaTabla, on_delete=models.CASCADE, db_column='KONTROLNA_TABLA_sifra_kt', related_name='merenja')
+    sifra_me = models.AutoField(primary_key=True)
     metrika = models.ForeignKey(Metrika, on_delete=models.PROTECT, db_column='METRIKA_sifra_m', related_name='merenja')
     vrednost_me = models.DecimalField(max_digits=14, decimal_places=2)
 
@@ -490,14 +485,77 @@ class Merenje(models.Model):
     period_od_me = models.DateField(null=True, blank=True)
     period_do_me = models.DateField(null=True, blank=True)
 
+    # dimenzija merenja - opciona (0,1)
+    dobavljac = models.ForeignKey(Dobavljac, on_delete=models.SET_NULL, db_column='DOBAVLJAC_sifra_db', related_name='merenja', null=True, blank=True)
+
     class Meta:
         db_table = 'merenje'
         constraints = [
-            models.UniqueConstraint(fields=['kontrolna_tabla', 'metrika', 'vreme_merenja_me'], name='uq_merenje_tabla_metrika_vreme'),
+            models.UniqueConstraint(fields=['metrika', 'dobavljac', 'vreme_merenja_me'], name='uq_merenje_metrika_dimenzija_vreme'),
         ]
 
     def __str__(self):
-        return f"{self.metrika.naziv_m} = {self.vrednost_me} ({self.kontrolna_tabla})"
+        dimenzija = f" [{self.dobavljac.naziv_db}]" if self.dobavljac_id else ""
+        return f"{self.metrika.naziv_m}{dimenzija} = {self.vrednost_me}"
+
+
+# Nova veza "prikazuje" (KontrolnaTabla <-> Metrika) - obična M:N veza, ne
+# gerund (na nju se ne kači nijedan drugi tip poveznika).
+class Prikazuje(models.Model):
+    kontrolna_tabla = models.ForeignKey(KontrolnaTabla, on_delete=models.CASCADE, db_column='KONTROLNA_TABLA_sifra_kt')
+    metrika = models.ForeignKey(Metrika, on_delete=models.PROTECT, db_column='METRIKA_sifra_m')
+
+    class Meta:
+        db_table = 'prikazuje'
+        constraints = [
+            models.UniqueConstraint(fields=['kontrolna_tabla', 'metrika'], name='uq_prikazuje_tabla_metrika'),
+        ]
+
+    def __str__(self):
+        return f"{self.kontrolna_tabla} prikazuje {self.metrika}"
+
+
+class OcenaDobavljaca(models.Model):
+    sifra_od = models.AutoField(primary_key=True)
+    vrednost_od = models.DecimalField(max_digits=5, decimal_places=2)
+    datum_ocenj_od = models.DateField()
+
+    dobavljac = models.ForeignKey(Dobavljac, on_delete=models.CASCADE, db_column='DOBAVLJAC_sifra_db', related_name='ocene')
+    # veza "dao_ocenu" (1,1) - anonimna ocena nema odgovornost.
+    finansijski_analiticar = models.ForeignKey(FinansijskiAnaliticar, on_delete=models.PROTECT, db_column='FINANSIJSKI_ANALITICAR_sifra_k', related_name='date_ocene')
+    # veza "zasniva_se_na" (1,1) - ocena sada sledi iz konkretnog merenja.
+    merenje = models.ForeignKey(Merenje, on_delete=models.PROTECT, db_column='MERENJE_sifra_me', related_name='ocene')
+
+    class Meta:
+        db_table = 'ocena_dobavljaca'
+        constraints = [
+            models.UniqueConstraint(fields=['dobavljac', 'merenje'], name='uq_ocena_dobavljac_merenje'),
+        ]
+
+    def clean(self):
+        """Poslovno pravilo: merenje na koje se ocena poziva mora imati
+        popunjenu dimenziju, i to istog dobavljača koji se ocenjuje."""
+        if self.merenje_id and self.dobavljac_id:
+            if self.merenje.dobavljac_id != self.dobavljac_id:
+                raise ValidationError(
+                    "Merenje na koje se ocena poziva mora biti izmereno za istog dobavljača koji se ocenjuje."
+                )
+
+    # --- kompatibilnost sa starim pristupom (kriterijum/period su sada na Merenje) ---
+    @property
+    def kriterijum_od(self):
+        return self.merenje.metrika.naziv_m
+
+    @property
+    def period_od_od(self):
+        return self.merenje.period_od_me
+
+    @property
+    def period_do_od(self):
+        return self.merenje.period_do_me
+
+    def __str__(self):
+        return f"Ocena {self.dobavljac.naziv_db} - {self.kriterijum_od}: {self.vrednost_od}"
 
 
 class Izvestaj(models.Model):

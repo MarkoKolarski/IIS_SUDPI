@@ -5,8 +5,9 @@ from rest_framework import status
 from django.db import connection, transaction
 from django.db.models import Sum, Count, F
 from django.utils import timezone
+from datetime import date
 from .decorators import allowed_users
-from .models import Faktura, StavkaFakture, Proizvod, ProizvodDobavljaca, Izvestaj
+from .models import Faktura, StavkaFakture, Proizvod, ProizvodDobavljaca, Izvestaj, Cenovnik, Valuta
 import time
 
 
@@ -54,23 +55,30 @@ def dodaj_stavku_fakture(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # StavkaFakture sada referencira ProizvodDobavljaca (katalošku stavku
-        # dobavljača), ne direktno Proizvod - nađi je (ili je kreiraj) za
-        # dobavljača sa ugovora ove fakture, čime je automatski zadovoljeno
-        # poslovno pravilo #1 (dobavljač stavke = dobavljač fakture).
+        # StavkaFakture sada referencira Cenovnik (Peta iteracija - veza
+        # naplaćena_po), ne direktno ProizvodDobavljaca - nađi (ili kreiraj)
+        # katalošku stavku dobavljača sa ugovora ove fakture (poslovno pravilo
+        # #1: dobavljač stavke = dobavljač fakture), pa (ili kreiraj) red
+        # cenovnika za nju - "nudi" ne sme postojati bez ijedne cene.
         proizvod_dobavljaca, _ = ProizvodDobavljaca.objects.get_or_create(
             dobavljac=faktura.ugovor.dobavljac,
             proizvod=proizvod,
+        )
+        valuta_rsd, _ = Valuta.objects.get_or_create(oznaka_v='RSD', defaults={'naziv_v': 'Srpski dinar'})
+        cenovnik, _ = Cenovnik.objects.get_or_create(
+            proizvod_dobavljaca=proizvod_dobavljaca,
+            datum_od_c=date.today(),
+            defaults={'cena_c': cena_po_jed, 'valuta': valuta_rsd},
         )
 
         with transaction.atomic():
             with connection.cursor() as cursor:
                 try:
                     sql = """
-                        INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED_SF, FAKTURA_SIFRA_F, PROIZVOD_DOBAVLJACA_ID)
-                        VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, %s, %s, %s, %s, %s)
+                        INSERT INTO STAVKA_FAKTURE (SIFRA_SF, NAZIV_SF, KOLICINA_SF, CENA_PO_JED_SF, PDV_STOPA_SF, FAKTURA_SIFRA_F, CENOVNIK_SIFRA_C)
+                        VALUES (STAVKA_FAKTURE_SEQ.NEXTVAL, %s, %s, %s, %s, %s, %s)
                     """
-                    cursor.execute(sql, [naziv_sf, kolicina_sf, cena_po_jed, faktura_id, proizvod_dobavljaca.id])
+                    cursor.execute(sql, [naziv_sf, kolicina_sf, cena_po_jed, 20, faktura_id, cenovnik.sifra_c])
                 except Exception as e:
                     raise
 
@@ -371,9 +379,12 @@ def _rekonstruisi_sadrzaj_izvestaja(izvestaj):
             faktura__transakcije__datum_t__date__lte=izvestaj.period_do_i,
         )
 
+    # Peta iteracija: StavkaFakture -> Cenovnik -> ProizvodDobavljaca -> Proizvod
+    # (jedan hop više otkako StavkaFakture ne pokazuje direktno na katalošku
+    # stavku dobavljača, već na konkretan red cenovnika - veza naplaćena_po).
     kategorije = (
         stavke_qs
-        .values('proizvod_dobavljaca__proizvod__kategorija__naziv_kp')
+        .values('cenovnik__proizvod_dobavljaca__proizvod__kategorija__naziv_kp')
         .annotate(
             ukupan_prihod=Sum(F('kolicina_sf') * F('cena_po_jed_sf')),
             broj_prodatih_artikala=Count('sifra_sf'),
@@ -388,7 +399,7 @@ def _rekonstruisi_sadrzaj_izvestaja(izvestaj):
         'godina': izvestaj.period_od_i.year if izvestaj.period_od_i else None,
         'stavke': [
             {
-                'kategorija': k['proizvod_dobavljaca__proizvod__kategorija__naziv_kp'],
+                'kategorija': k['cenovnik__proizvod_dobavljaca__proizvod__kategorija__naziv_kp'],
                 'ukupan_prihod': float(k['ukupan_prihod'] or 0),
                 'broj_prodatih_artikala': k['broj_prodatih_artikala'],
             }
